@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FocusEvent } from 'react'
+import { useRef, useState, type FocusEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
@@ -60,6 +60,11 @@ export function ActivarForm() {
   const [errores, setErrores] = useState<Errores>({})
   const [mensajeInvalido, setMensajeInvalido] = useState(MENSAJE_ENLACE_INVALIDO)
   const [verPassword, setVerPassword] = useState(false)
+  // El token es de un solo uso: una vez canjeado, la sesión queda abierta y un
+  // segundo intento (por ejemplo tras una contraseña rechazada) NO debe
+  // canjearlo otra vez, o Supabase responde `otp_expired` con un enlace que en
+  // realidad se gastó aquí mismo.
+  const tokenCanjeado = useRef(false)
 
   /*
     Los dos errores de contraseña son de CLIENTE y aquí sí sabemos cuál campo
@@ -94,19 +99,36 @@ export function ActivarForm() {
     // cargar la página. Así un GET pasivo (un escaneo automático de enlaces,
     // el propio Gmail revisando el correo) no lo gasta antes de que la
     // persona lo use de verdad.
-    const { error: errVerify } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: tipo as 'invite' | 'recovery',
-    })
-    if (errVerify) {
-      setMensajeInvalido(errVerify.code === 'otp_expired' ? MENSAJE_ENLACE_VENCIDO : MENSAJE_ENLACE_INVALIDO)
-      setEstado('invalido')
-      return
+    if (!tokenCanjeado.current) {
+      const { error: errVerify } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: tipo as 'invite' | 'recovery',
+      })
+      if (errVerify) {
+        setMensajeInvalido(errVerify.code === 'otp_expired' ? MENSAJE_ENLACE_VENCIDO : MENSAJE_ENLACE_INVALIDO)
+        setEstado('invalido')
+        return
+      }
+      tokenCanjeado.current = true
     }
 
     const { error: errUpdate } = await supabase.auth.updateUser({ password: nueva })
     if (errUpdate) {
+      // Sesión perdida entre intentos (pestaña cerrada, sesión caducada): el
+      // token ya no sirve y hace falta un enlace nuevo.
+      if (errUpdate.name === 'AuthSessionMissingError' || errUpdate.code === 'session_not_found') {
+        tokenCanjeado.current = false
+        setMensajeInvalido(MENSAJE_ENLACE_VENCIDO)
+        setEstado('invalido')
+        return
+      }
       setEstado('listo')
+      if (errUpdate.code === 'weak_password') {
+        setErrores({
+          password: 'Esa contraseña es muy común o ha aparecido en filtraciones. Elige otra más difícil de adivinar.',
+        })
+        return
+      }
       setErrores({ global: 'No se pudo activar la cuenta. Vuelve a intentarlo.' })
       return
     }
