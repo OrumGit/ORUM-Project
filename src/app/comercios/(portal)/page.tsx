@@ -126,63 +126,67 @@ export default async function ComerciosHomePage() {
 
   return (
     <div className={styles.cuerpo}>
-      {/* ── LA HERRAMIENTA ─────────────────────────────────────────────── */}
-      <div className={[styles.herramienta, ENTRADA].join(' ')} style={retardoEntrada(2)}>
-        <VerificacionTool sucursales={sucursales} promociones={promociones} />
+      {/* Las dos columnas en su caja: el lateral `sticky` no puede pasar de
+          ella y montarse sobre las reseñas (ver `.columnas`). */}
+      <div className={styles.columnas}>
+        {/* ── LA HERRAMIENTA ─────────────────────────────────────────────── */}
+        <div className={[styles.herramienta, ENTRADA].join(' ')} style={retardoEntrada(2)}>
+          <VerificacionTool sucursales={sucursales} promociones={promociones} />
+        </div>
+
+        {/* ── LO QUE SE PUEDE APLICAR HOY, Y LA AYUDA ───────────────────── */}
+        <aside className={[styles.lateral, ENTRADA].join(' ')} style={retardoEntrada(4)}>
+          <section className={styles.tarjeta} aria-labelledby="titulo-promociones">
+            <TituloSeccion
+              id="titulo-promociones"
+              como="h2"
+              tamano="bloque"
+              texto="Tus promociones"
+            />
+
+            {promociones.length > 0 ? (
+              <ul className={styles.promociones}>
+                {promociones.map((p) => (
+                  <li key={p.id} className={styles.promocion}>
+                    {/* La cifra corta de las tarjetas del directorio («10%»,
+                        «2x1»): el título de al lado ya dice el resto. */}
+                    <span className={styles.promocionValor}>
+                      {formatearBeneficioCorto(p.tipoCodigo, p.valor)}
+                    </span>
+                    <span className={styles.promocionTitulo}>
+                      {p.titulo}
+                      {p.diasTexto && (
+                        <span className={styles.promocionDias}>
+                          {p.disponibleHoy ? p.diasTexto : `${p.diasTexto} · ${p.ahoraTexto.toLowerCase()}`}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.sinPromociones}>
+                Hoy no tienes promociones vigentes. La venta se registra igual, sin descuento.
+              </p>
+            )}
+          </section>
+
+          <p className={styles.ayuda}>
+            ¿Necesitas ayuda con una venta?{' '}
+            {soporte ? (
+              <a
+                href={`https://wa.me/${soporte}?text=${encodeURIComponent(MENSAJE_SOPORTE)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Escríbenos por WhatsApp
+              </a>
+            ) : (
+              'Escribe al administrador del club.'
+            )}
+          </p>
+        </aside>
       </div>
-
-      {/* ── LO QUE SE PUEDE APLICAR HOY, Y LA AYUDA ───────────────────── */}
-      <aside className={[styles.lateral, ENTRADA].join(' ')} style={retardoEntrada(4)}>
-        <section className={styles.tarjeta} aria-labelledby="titulo-promociones">
-          <TituloSeccion
-            id="titulo-promociones"
-            como="h2"
-            tamano="bloque"
-            texto="Tus promociones"
-          />
-
-          {promociones.length > 0 ? (
-            <ul className={styles.promociones}>
-              {promociones.map((p) => (
-                <li key={p.id} className={styles.promocion}>
-                  {/* La cifra corta de las tarjetas del directorio («10%»,
-                      «2x1»): el título de al lado ya dice el resto. */}
-                  <span className={styles.promocionValor}>
-                    {formatearBeneficioCorto(p.tipoCodigo, p.valor)}
-                  </span>
-                  <span className={styles.promocionTitulo}>
-                    {p.titulo}
-                    {p.diasTexto && (
-                      <span className={styles.promocionDias}>
-                        {p.disponibleHoy ? p.diasTexto : `${p.diasTexto} · ${p.ahoraTexto.toLowerCase()}`}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.sinPromociones}>
-              Hoy no tienes promociones vigentes. La venta se registra igual, sin descuento.
-            </p>
-          )}
-        </section>
-
-        <p className={styles.ayuda}>
-          ¿Necesitas ayuda con una venta?{' '}
-          {soporte ? (
-            <a
-              href={`https://wa.me/${soporte}?text=${encodeURIComponent(MENSAJE_SOPORTE)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Escríbenos por WhatsApp
-            </a>
-          ) : (
-            'Escribe al administrador del club.'
-          )}
-        </p>
-      </aside>
 
       {/* ── LAS RESEÑAS ─────────────────────────────────────────────────── */}
       {resenas.disponible && (

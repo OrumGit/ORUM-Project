@@ -29,7 +29,8 @@
    LA PÁGINA  ·  herramienta a la izquierda, promociones y ayuda a la derecha
    ========================================================================== */
 
-.cuerpo {
+.cuerpo,
+.columnas {
   display: grid;
   gap: var(--space-6);
 }
@@ -50,10 +51,22 @@
   gap: var(--space-4);
 }
 
+/*
+  LAS DOS COLUMNAS VAN EN SU PROPIA CAJA (`.columnas`), y las reseñas debajo,
+  FUERA de ella (29/10/2026). Un `sticky` se pega dentro de su bloque
+  contenedor, que es el grid entero, no su celda: cuando las reseñas eran la
+  segunda fila del mismo grid, el lateral seguía bajando al desplazar y se
+  montaba ENCIMA de ellas. Ahora su recorrido acaba donde acaba la fila de la
+  herramienta. Un bloque nuevo debajo va en `.cuerpo`, nunca en `.columnas`.
+*/
 @container contenido (min-width: 900px) {
-  .cuerpo {
-    grid-template-columns: minmax(0, 1fr) 360px;
+  .cuerpo,
+  .columnas {
     gap: var(--space-7);
+  }
+
+  .columnas {
+    grid-template-columns: minmax(0, 1fr) 360px;
     align-items: start;
   }
 
@@ -875,8 +888,9 @@
   gap: var(--space-3);
 }
 
-/* Las reseñas ocupan el ancho de las dos columnas, debajo de ellas. En una
-   sola columna se quedan en el ancho de una herramienta, como las demás. */
+/* Las reseñas van debajo de las dos columnas (fuera de `.columnas`: ver
+   arriba), a todo el ancho. En una sola columna se quedan en el ancho de
+   una herramienta, como las demás. */
 .resenas {
   width: 100%;
   min-width: 0;
@@ -886,7 +900,6 @@
 
 @container contenido (min-width: 900px) {
   .resenas {
-    grid-column: 1 / -1;
     max-width: none;
   }
 }

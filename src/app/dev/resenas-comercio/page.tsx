@@ -8,7 +8,8 @@ export const metadata = { title: 'Vista previa de reseñas del comercio · ORUM'
 
 /**
  * Las reseñas de la caja con datos FALSOS, solo en desarrollo. `?caso=vacio`
- * para el estado sin reseñas. Enviar llama a la acción real, que sin sesión de
+ * para el estado sin reseñas; `?caso=pagina` para la página entera (el
+ * lateral pegado no debe montarse sobre las reseñas al desplazar). Enviar llama a la acción real, que sin sesión de
  * comercio contesta con un error y no escribe nada.
  */
 
@@ -57,17 +58,45 @@ export default async function DevResenasComercioPage({
   searchParams: Promise<{ caso?: string }>
 }) {
   if (process.env.NODE_ENV === 'production') notFound()
-  const vacio = (await searchParams).caso === 'vacio'
+  const { caso } = await searchParams
+  const vacio = caso === 'vacio'
+  const resenas = (
+    <ResenasComercio
+      total={vacio ? 0 : 23}
+      promedio={vacio ? null : 4}
+      resenas={vacio ? [] : RESENAS}
+    />
+  )
+
+  // `?caso=pagina`: la página entera de la caja (herramienta, promociones y
+  // reseñas), para mirar cómo convive el lateral pegado con las reseñas.
+  if (caso === 'pagina') {
+    return (
+      <div className={portal.portal} data-theme="light">
+        <main className={portal.main}>
+          <div className={verificar.cuerpo}>
+            <div className={verificar.columnas}>
+              <div className={verificar.herramienta}>
+                <section className={verificar.tarjeta} style={{ minHeight: 360 }}>
+                  <h2>Verificar membresía</h2>
+                </section>
+              </div>
+              <aside className={verificar.lateral}>
+                <section className={verificar.tarjeta} style={{ minHeight: 420 }}>
+                  <h2>Tus promociones</h2>
+                </section>
+              </aside>
+            </div>
+            <div className={verificar.resenas}>{resenas}</div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className={portal.portal} data-theme="light" style={{ padding: 24, minHeight: '100dvh' }}>
-      <div className={verificar.resenas}>
-        <ResenasComercio
-          total={vacio ? 0 : 23}
-          promedio={vacio ? null : 4}
-          resenas={vacio ? [] : RESENAS}
-        />
-      </div>
+      <div className={verificar.resenas}>{resenas}</div>
     </div>
   )
 }

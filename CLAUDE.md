@@ -1429,6 +1429,15 @@ ayuda por WhatsApp; en el teléfono, una sola columna. Sus superficies son
 `.tarjeta` de `verificar.module.css` (radio `--radius-lg`, como los paneles
 de la fachada), no `Card`. `obtenerMiComercio` (`lib/comercios/comercio-sesion.ts`)
 es el comercio de la sesión, con `cache`: lo piden el layout y la página.
+⚠️ **La herramienta y el lateral van en su propia caja (`.columnas`), y las
+reseñas DEBAJO, fuera de ella** (29/10/2026: «el apartado de reseñas se
+sobreponía a los otros componentes»). El lateral es `sticky`, y un `sticky`
+se pega dentro de su bloque contenedor —el grid ENTERO, no su celda—:
+cuando las reseñas eran la segunda fila del mismo grid, al desplazar el
+lateral seguía bajando y se montaba ~240 px sobre ellas. Un bloque nuevo
+de la página va en `.cuerpo`, nunca dentro de `.columnas`. La regla vale
+para todo `sticky`: su contenedor tiene que acabar donde debe acabar su
+recorrido. Se comprueba en `/dev/resenas-comercio?caso=pagina` a ≥900 px.
 
 **El resultado de buscar llega en una VENTANA encima, no debajo** (encargo del
 04/10/2026: «quiero que sea una ventana encima; no quiero que vaya debajo»).

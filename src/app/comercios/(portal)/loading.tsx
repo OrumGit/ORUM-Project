@@ -26,27 +26,29 @@ import styles from './_components/verificar.module.css'
 export default function Loading() {
   return (
     <div className={styles.cuerpo} aria-busy="true">
-      <div className={styles.herramienta}>
-        <div className={`${styles.tarjeta} ${styles.principal}`}>
-          <div className={styles.esqueletoLineas}>
-            {/* El título del bloque y su bajada. */}
-            <Skeleton width="min(240px, 70%)" height="28px" />
-            <Skeleton width="min(320px, 90%)" height="14px" />
+      <div className={styles.columnas}>
+        <div className={styles.herramienta}>
+          <div className={`${styles.tarjeta} ${styles.principal}`}>
+            <div className={styles.esqueletoLineas}>
+              {/* El título del bloque y su bajada. */}
+              <Skeleton width="min(240px, 70%)" height="28px" />
+              <Skeleton width="min(320px, 90%)" height="14px" />
+            </div>
+            {/* El botón único de reposo: «Escanear código QR», en píldora. */}
+            <Skeleton width="100%" height="52px" radius="var(--radius-full)" />
+            {/* La salida en texto, centrada bajo él como en la pantalla real. */}
+            <Skeleton width="min(220px, 70%)" height="14px" />
           </div>
-          {/* El botón único de reposo: «Escanear código QR», en píldora. */}
-          <Skeleton width="100%" height="52px" radius="var(--radius-full)" />
-          {/* La salida en texto, centrada bajo él como en la pantalla real. */}
-          <Skeleton width="min(220px, 70%)" height="14px" />
         </div>
-      </div>
 
-      <div className={styles.lateral}>
-        <div className={styles.tarjeta}>
-          <Skeleton width="min(200px, 70%)" height="28px" />
-          <div className={styles.esqueletoLineas}>
-            <Skeleton width="100%" height="22px" />
-            <Skeleton width="85%" height="22px" />
-            <Skeleton width="92%" height="22px" />
+        <div className={styles.lateral}>
+          <div className={styles.tarjeta}>
+            <Skeleton width="min(200px, 70%)" height="28px" />
+            <div className={styles.esqueletoLineas}>
+              <Skeleton width="100%" height="22px" />
+              <Skeleton width="85%" height="22px" />
+              <Skeleton width="92%" height="22px" />
+            </div>
           </div>
         </div>
       </div>
