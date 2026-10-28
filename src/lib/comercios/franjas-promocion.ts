@@ -246,6 +246,22 @@ export function textoDisponibilidad(estado: EstadoPromocion): string {
   return 'Hoy no está disponible'
 }
 
+/**
+ * Lo mismo, partido para la ficha minimalista (29/10/2026): la PALABRA va en
+ * su color y el detalle, si lo hay, detrás de «·» en gris.
+ */
+export function partesDisponibilidad(estado: EstadoPromocion): { palabra: string; detalle: string | null } {
+  if (estado.tipo === 'aplica') {
+    return estado.hasta && estado.hasta !== '23:59'
+      ? { palabra: 'Disponible ahora', detalle: `hasta ${aLas(estado.hasta).replace(/^a /, '')}` }
+      : { palabra: 'Disponible hoy', detalle: null }
+  }
+  if (estado.tipo === 'mas_tarde') {
+    return { palabra: `Hoy desde ${aLas(estado.desde).replace(/^a /, '')}`, detalle: null }
+  }
+  return { palabra: 'Hoy no disponible', detalle: null }
+}
+
 /** La línea de estado para el cajero. */
 export function textoEstadoPromocion(estado: EstadoPromocion): string {
   if (estado.tipo === 'aplica') return estado.hasta ? `Aplica ahora · hasta ${aLas(estado.hasta).replace(/^a /, '')}` : 'Aplica hoy'

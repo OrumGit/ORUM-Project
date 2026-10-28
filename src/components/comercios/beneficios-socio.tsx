@@ -1,11 +1,11 @@
 'use client'
 
-import { BadgeDollarSign, CalendarClock, Gift, Info, Percent, Ticket } from 'lucide-react'
+import { BadgeDollarSign, CalendarClock, Gift, Percent, Ticket } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { sinCortarHoras } from '@/lib/comercios/horario'
 import {
   estadoPromocion,
-  textoDisponibilidad,
+  partesDisponibilidad,
   type FranjaPromocion,
   type GrupoUso,
 } from '@/lib/comercios/franjas-promocion'
@@ -14,26 +14,24 @@ import { useInstanteAlMinuto } from './use-minuto'
 import estilos from './beneficios-socio.module.css'
 
 /*
-  LOS BENEFICIOS DEL SOCIO EN LA FICHA  ·  rediseño del 28/10/2026
+  LOS BENEFICIOS DEL SOCIO EN LA FICHA  ·  versión minimalista (29/10/2026)
   ---------------------------------------------------------------------------
-  Encargo del cliente: «ese color [el crema] no me gusta», «que el título
-  diga el beneficio y en qué —10% de descuento · Brunch, Regalo · Bebida— y
-  vaya subrayado», y que se entienda CUÁNDO aplica, ahora que una promoción
-  puede valer solo en ciertas horas.
+  La anterior (28/10) no gustó: «mucha negrita, se ve muy cargado; que sea
+  minimalista y se entienda a la primera». Ahora cada beneficio es:
 
-  Cada beneficio, de arriba abajo:
-    · su icono (porcentaje, monto, 2x1 o regalo) en un aro dorado;
-    · el TITULAR, subrayado con un trazo de marcador dorado: el valor en
-      negrita y, tras «·», en qué (`asuntoDelTitulo`);
-    · la descripción, si la hay;
-    · «CUÁNDO PUEDES USARLO» (29/10/2026, tras «no lo entiendo»): un
-      recuadro con su rótulo, un renglón por grupo de días con los días
-      ENTEROS y las horas COMPLETAS («Martes y miércoles · 8:00 a. m. –
-      9:30 a. m. · 6:00 p. m. – 7:00 p. m.»), y debajo si puede usarlo
-      AHORA («Puedes usarlo ahora, hasta las 9:30 a. m.», «Hoy podrás
-      usarlo desde las 6:00 p. m.», «Hoy no está disponible») con su punto
-      —lleno si puede, hueco si no—: el color nunca va solo;
-    · las condiciones y restricciones, en letra pequeña con su icono.
+    (%)  10% de descuento · Tu compra          ← el valor en 600, lo demás normal,
+         Obtén el cambio de helado…               subrayado FINO dorado
+         🗓 Disponible hoy                        ← solo la palabra en su color
+            Todos los días   Todo el día          ← la semana, peso normal
+         Condiciones: beneficios alternativos…    ← pequeño y gris
+
+  Sin recuadro, sin rótulo en versales, sin píldora con punto, sin negrita
+  en los días. Lo que dice «cuándo» es la misma lectura que el horario de la
+  sede (`HorarioSede`): un icono, una frase de estado y los días con sus
+  horas. El estado lo dice la palabra («Disponible ahora», «Hoy desde las
+  6:00 p. m.», «Hoy no disponible»): el color nunca va solo. Se conserva lo
+  que pidió el cliente el 28/10: el titular dice el beneficio y en qué
+  (`asuntoDelTitulo`) y va subrayado, y nada en crema.
 
   De cliente solo por el estado de «ahora» (`useInstanteAlMinuto`): el resto
   llega pintado del servidor y el estado aparece al montar.
@@ -68,6 +66,7 @@ export function BeneficiosSocio({ beneficios }: { beneficios: BeneficioSocio[] }
     <ul className={estilos.lista}>
       {beneficios.map((b) => {
         const estado = instante ? estadoPromocion(b.dias, b.franjas, instante) : null
+        const disponible = estado ? partesDisponibilidad(estado) : null
         return (
           <li key={b.id} className={estilos.beneficio}>
             <span className={estilos.icono} aria-hidden="true">
@@ -77,7 +76,7 @@ export function BeneficiosSocio({ beneficios }: { beneficios: BeneficioSocio[] }
             <div className={estilos.cuerpo}>
               <p className={estilos.titular}>
                 <span className={estilos.marcador}>
-                  <strong className={estilos.valor}>{b.valor}</strong>
+                  <span className={estilos.valor}>{b.valor}</span>
                   {b.asunto && (
                     <>
                       {/* El «·» se queda con el valor: si el titular parte,
@@ -95,37 +94,35 @@ export function BeneficiosSocio({ beneficios }: { beneficios: BeneficioSocio[] }
               {b.descripcion && <p className={estilos.descripcion}>{b.descripcion}</p>}
 
               <div className={estilos.uso}>
-                <p className={estilos.usoRotulo}>
-                  <CalendarClock size={14} aria-hidden="true" className={estilos.cuandoIcono} />
-                  Cuándo puedes usarlo
-                </p>
-                <dl className={estilos.usoLista}>
-                  {b.cuando.map((g) => (
-                    <div key={g.dias} className={estilos.usoFila}>
-                      <dt className={estilos.usoDias}>{g.dias}</dt>
-                      <dd className={estilos.usoHoras}>
-                        {g.horas.map((h) => (
-                          <span key={h}>{sinCortarHoras(h)}</span>
-                        ))}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                {estado && (
-                  <p className={estilos.estado} data-tipo={estado.tipo}>
-                    <span className={estilos.punto} aria-hidden="true" />
-                    {sinCortarHoras(textoDisponibilidad(estado))}
-                  </p>
-                )}
+                <CalendarClock size={15} aria-hidden="true" className={estilos.usoIcono} />
+                <div className={estilos.usoCuerpo}>
+                  {disponible && estado && (
+                    <p className={estilos.estado}>
+                      <span className={estilos.palabra} data-tipo={estado.tipo}>
+                        {sinCortarHoras(disponible.palabra)}
+                      </span>
+                      {disponible.detalle && <> · {sinCortarHoras(disponible.detalle)}</>}
+                    </p>
+                  )}
+                  <dl className={estilos.usoLista} aria-label="Cuándo puedes usarlo">
+                    {b.cuando.map((g) => (
+                      <div key={g.dias} className={estilos.usoFila}>
+                        <dt className={estilos.usoDias}>{g.dias}</dt>
+                        <dd className={estilos.usoHoras}>
+                          {g.horas.map((h) => (
+                            <span key={h}>{sinCortarHoras(h)}</span>
+                          ))}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               </div>
 
               {b.restricciones && (
                 <p className={estilos.condiciones}>
-                  <Info size={14} aria-hidden="true" className={estilos.condicionesIcono} />
-                  <span>
-                    <span className={estilos.condicionesRotulo}>Condiciones y restricciones: </span>
-                    {b.restricciones}
-                  </span>
+                  <span className={estilos.condicionesRotulo}>Condiciones: </span>
+                  {b.restricciones}
                 </p>
               )}
             </div>

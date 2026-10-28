@@ -3,6 +3,7 @@ import {
   aplicaAhora,
   cuandoUsarlo,
   textoDisponibilidad,
+  partesDisponibilidad,
   diasDeFranjas,
   estadoPromocion,
   leerFranjasDelFormulario,
@@ -175,5 +176,19 @@ describe('para el socio: cuándo usarlo y si puede ahora', () => {
     expect(textoDisponibilidad({ tipo: 'aplica', hasta: '23:59' })).toBe('Puedes usarlo hoy')
     expect(textoDisponibilidad({ tipo: 'mas_tarde', desde: '18:00' })).toBe('Hoy podrás usarlo desde las 6:00 p. m.')
     expect(textoDisponibilidad({ tipo: 'hoy_no' })).toBe('Hoy no está disponible')
+  })
+
+  it('partesDisponibilidad: la palabra y el detalle por separado', () => {
+    expect(partesDisponibilidad({ tipo: 'aplica', hasta: '09:30' })).toEqual({
+      palabra: 'Disponible ahora',
+      detalle: 'hasta las 9:30 a. m.',
+    })
+    expect(partesDisponibilidad({ tipo: 'aplica', hasta: '23:59' })).toEqual({ palabra: 'Disponible hoy', detalle: null })
+    expect(partesDisponibilidad({ tipo: 'aplica', hasta: null })).toEqual({ palabra: 'Disponible hoy', detalle: null })
+    expect(partesDisponibilidad({ tipo: 'mas_tarde', desde: '13:00' })).toEqual({
+      palabra: 'Hoy desde la 1:00 p. m.',
+      detalle: null,
+    })
+    expect(partesDisponibilidad({ tipo: 'hoy_no' })).toEqual({ palabra: 'Hoy no disponible', detalle: null })
   })
 })

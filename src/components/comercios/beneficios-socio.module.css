@@ -1,5 +1,7 @@
 /* ==========================================================================
-   LOS BENEFICIOS DEL SOCIO  ·  uno debajo de otro, separados por un filo
+   LOS BENEFICIOS DEL SOCIO  ·  versión minimalista (29/10/2026)
+   Uno debajo de otro, separados por un filo. Peso normal en casi todo: solo
+   el valor del titular (600) y la palabra del estado (600, en su color).
    La tarjeta la pone la ficha (`.beneficio`); aquí solo la lista.
    ========================================================================== */
 
@@ -15,7 +17,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-4);
-  padding-block: var(--space-4);
+  padding-block: var(--space-5);
 }
 
 .beneficio:first-child {
@@ -31,16 +33,21 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* --- El icono, en su aro dorado ----------------------------------------------- */
+/* --- El icono, en un aro fino ------------------------------------------------- */
 
 .icono {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
-  box-shadow: inset 0 0 0 1.5px var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand-edge);
   color: var(--brand);
+}
+
+.icono svg {
+  width: 16px;
+  height: 16px;
 }
 
 .cuerpo {
@@ -50,39 +57,32 @@
   min-width: 0;
 }
 
-/* --- El titular, subrayado ------------------------------------------------------
-   «Subrayado» con un trazo de marcador dorado bajo el texto: se lee como
-   subrayado, no como una caja, y acompaña al texto cuando parte en dos
-   líneas (`box-decoration-break`). El texto va en tinta sobre el dorado
-   pálido: el contraste lo da la tinta, no el oro. */
+/* --- El titular ----------------------------------------------------------------
+   Sigue subrayado (lo pidió el cliente el 28/10), pero con un trazo FINO
+   dorado bajo el texto en vez del marcador grueso. El texto va en tinta: el
+   contraste lo da la tinta, no el oro. */
 .titular {
   margin: 0;
   font-size: var(--t-title-3-size);
-  line-height: 1.35;
-  font-weight: 600;
+  line-height: 1.4;
+  font-weight: 400;
   color: var(--text);
   text-wrap: balance;
 }
 
 .marcador {
-  background-image: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--gold-400) 42%, transparent) 0.38em,
-    transparent 0.38em
-  );
-  background-repeat: no-repeat;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  padding-inline: 2px;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--brand-edge);
+  text-underline-offset: 0.3em;
 }
 
 .valor {
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .separador {
   color: var(--text-3);
-  font-weight: 400;
 }
 
 .descripcion {
@@ -92,40 +92,56 @@
   color: var(--text-2);
 }
 
-/* --- Cuándo puedes usarlo ---------------------------------------------------------
-   Un recuadro hundido con su rótulo: los días enteros a la izquierda y las
-   horas completas a la derecha, una por renglón; debajo, si se puede ahora. */
+/* --- Cuándo puedes usarlo ----------------------------------------------------------
+   La misma lectura que el horario de la sede: el icono, la frase del estado
+   y los días con sus horas. Sin recuadro ni rótulo. */
 
 .uso {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-hundida);
+  margin-top: var(--space-1);
+  font-size: var(--t-callout-size);
+  line-height: 1.5;
 }
 
-.usoRotulo {
+.usoIcono {
+  flex-shrink: 0;
+  margin-top: calc((1lh - 15px) / 2);
+  color: var(--brand);
+}
+
+.usoCuerpo {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.estado {
   margin: 0;
-  font-size: var(--t-caption-size);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--text-2);
 }
 
-.cuandoIcono {
-  flex-shrink: 0;
-  color: var(--brand);
+/* La palabra lleva el color (de texto: los tres pasan AA sobre blanco); el
+   texto la dice igual. */
+.palabra {
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.palabra[data-tipo='aplica'] {
+  color: var(--success);
+}
+
+.palabra[data-tipo='mas_tarde'] {
+  color: var(--warning);
 }
 
 .usoLista {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  gap: var(--space-1) var(--space-4);
+  gap: 2px var(--space-5);
   margin: 0;
 }
 
@@ -134,103 +150,45 @@
 }
 
 .usoDias {
-  font-size: var(--t-footnote-size);
-  font-weight: 700;
-  color: var(--text);
+  color: var(--text-2);
 }
 
 .usoHoras {
   display: flex;
   flex-direction: column;
   margin: 0;
-  font-size: var(--t-footnote-size);
+  font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
-@media (max-width: 420px) {
+@media (max-width: 360px) {
   .usoLista {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    row-gap: 0;
   }
 
   .usoHoras {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
   }
 }
 
-/* Píldora sin sombra (no se levanta): punto + texto. Lleno si aplica, hueco
-   si no: la forma cambia, no solo el color. */
-.estado {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 2px var(--space-3);
-  border-radius: var(--radius-full);
-  /* Un tinte de SU color, no el crema (el cliente no lo quiso en la ficha). */
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-  align-self: flex-start;
-  font-size: var(--t-caption-size);
-  font-weight: 700;
-  color: var(--text);
-  /* En un teléfono estrecho parte en dos líneas antes que salirse. */
-  max-width: 100%;
-}
-
-.punto {
-  flex-shrink: 0;
-  box-sizing: border-box;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  border: 1px solid currentColor;
-  color: var(--text-3);
-}
-
-.estado[data-tipo='aplica'] {
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-}
-
-.estado[data-tipo='mas_tarde'] {
-  background: color-mix(in srgb, var(--warning) 14%, transparent);
-}
-
-.estado[data-tipo='aplica'] .punto {
-  color: var(--success);
-  background: currentColor;
-}
-
-.estado[data-tipo='mas_tarde'] .punto {
-  color: var(--warning);
-}
-
-/* --- Condiciones y restricciones ----------------------------------------------- */
+/* --- Condiciones: pequeño y gris, sin icono ni negrita -------------------------- */
 
 .condiciones {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
   margin: 0;
   font-size: var(--t-footnote-size);
   line-height: 1.5;
-  color: var(--text-2);
+  color: var(--text-3);
   white-space: pre-line;
 }
 
-.condicionesIcono {
-  flex-shrink: 0;
-  margin-top: calc((1lh - 14px) / 2);
-  color: var(--text-3);
-}
-
 .condicionesRotulo {
-  font-weight: 600;
-  color: var(--text);
+  color: var(--text-2);
 }
 
-/* Estrecho: el icono, más pequeño, para dejar el ancho al texto. Con
-   `@media` y no `@container`: la ficha se abre también encima, en una
-   ventana que no es el contenedor `contenido`. */
+/* Estrecho: menos aire entre el icono y el texto. Con `@media` y no
+   `@container`: la ficha se abre también encima, en una ventana que no es
+   el contenedor `contenido`. */
 @media (max-width: 480px) {
   .beneficio {
     gap: var(--space-3);
@@ -239,10 +197,5 @@
   .icono {
     width: 32px;
     height: 32px;
-  }
-
-  .icono svg {
-    width: 16px;
-    height: 16px;
   }
 }

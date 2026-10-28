@@ -1161,26 +1161,27 @@ el cierre» es 23:59), hasta `MAX_FRANJAS` (6) y sin cruzarse el mismo día.
   no) y la escritura (`escribirConFranjas`) reintenta sin ella; solo si la
   promoción LLEVA franjas avisa de que falta aplicarla.
 
-**Los beneficios en la ficha del socio** (`BeneficiosSocio`, 28/10/2026:
-«ese color no me gusta; que el título diga el beneficio y en qué —10% de
-descuento · Brunch, Regalo · Bebida— y vaya subrayado»). El recuadro del
-beneficio (`.beneficio`) es una TARJETA BLANCA con su sombra (era un hueco
-crema hundido: no vuelvas a él) con el rótulo «Tus beneficios ORUM» y la
-estrella de ORUM. Cada beneficio: su icono por tipo en un aro dorado; el
-TITULAR subrayado con un trazo de marcador dorado bajo el texto
-(`asuntoDelTitulo`, `lib/comercios/titulo-beneficio.ts`: el valor en negrita
-y, tras «·», en qué, quitando el valor si el título lo repite); la
-descripción; «CUÁNDO PUEDES USARLO» (29/10/2026: un recuadro hundido con su
-rótulo, los días con su nombre completo y las horas completas, una por
-renglón —`cuandoUsarlo`—, y debajo si se puede AHORA en palabras de socio
-—`textoDisponibilidad`: «Puedes usarlo ahora, hasta las 9:30 a. m.», «Hoy
-podrás usarlo desde las 6:00 p. m.», «Hoy no está disponible»—, de cliente,
-`useInstanteAlMinuto`); y las condiciones en letra pequeña con su icono. La
-caja del comercio sigue con el texto corto del cajero
-(`textoEstadoPromocion`). Entre beneficios, un filo fino. El título de una promoción se
-escribe CORTO («Brunch»): lo pide la ayuda del formulario. Vista previa con
-datos falsos (Coraje, el caso que lo pidió) y el editor de franjas:
-`/dev/beneficios`.
+**Los beneficios en la ficha del socio** (`BeneficiosSocio`; versión
+MINIMALISTA del 29/10/2026: «mucha negrita, se ve muy cargado; que se
+entienda a la primera»). El recuadro del beneficio (`.beneficio`) es una
+TARJETA BLANCA con su sombra (nunca el crema) con el rótulo «Tus beneficios
+ORUM» y la estrella. Cada beneficio: su icono por tipo en un aro FINO
+dorado; el TITULAR (`asuntoDelTitulo`, `lib/comercios/titulo-beneficio.ts`:
+el valor y, tras «·», en qué) en peso normal con el valor en 600 y
+SUBRAYADO con un trazo fino dorado (el cliente pidió subrayado el 28/10; el
+marcador grueso se retiró); la descripción en gris; CUÁNDO, con la misma
+lectura que el horario de la sede: el calendario dorado, una frase de
+estado donde solo la PALABRA lleva su color (`partesDisponibilidad`:
+«Disponible ahora · hasta las 9:30 a. m.», «Disponible hoy», «Hoy desde
+las 6:00 p. m.», «Hoy no disponible»; de cliente, `useInstanteAlMinuto`) y
+debajo los días con sus horas (`cuandoUsarlo`), en peso normal; y
+«Condiciones: …» pequeño y gris. **No vuelvas al recuadro hundido, al
+rótulo «CUÁNDO PUEDES USARLO» en versales, a la píldora con punto ni a la
+negrita.** La caja del comercio sigue con el texto corto del cajero
+(`textoEstadoPromocion`). Entre beneficios, un filo fino. El título de una
+promoción se escribe CORTO («Brunch»): lo pide la ayuda del formulario.
+Vista previa con datos falsos (Coraje, el caso que lo pidió) y el editor de
+franjas: `/dev/beneficios`.
 
 `Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `Textarea` `Switch` `Checkbox` `Radio`
 `SegmentedControl` · `Card` `FormCard` `Stack` `Grid` `Section` `PageHeader` `Divider` ·
