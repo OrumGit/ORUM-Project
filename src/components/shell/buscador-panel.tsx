@@ -254,7 +254,9 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
           aria-label="Resultados"
           data-barra=""
         >
-          {conMiembros && (
+          {/* Sin nada que enseñar, solo el aviso de abajo: antes salían dos
+              que decían lo mismo («Ningún miembro…» y «Nada coincide…»). */}
+          {conMiembros && !sinResultados && (
             <>
               <p className={styles.grupo}>
                 Miembros

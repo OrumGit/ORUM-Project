@@ -1476,7 +1476,10 @@ paleta:
   `AppShell`: va encima de la barra inferior, no hay WhatsApp).
 - **En el teléfono** (29/10/2026: «se ven opciones corridas en el celular,
   por ejemplo las búsquedas»): el buscador de arriba dice solo «Buscar» (la
-  frase entera se cortaba); las `Pestanas` van en una rejilla de dos
+  frase entera se cortaba) y su LISTA se coloca contra la barra entera, de
+  lado a lado (bajo 768 px `.buscador` es `position: static`; antes se
+  anclaba al borde derecho del campo y se salía por la izquierda), con los
+  nombres en dos líneas y un solo aviso cuando nada coincide; las `Pestanas` van en una rejilla de dos
   columnas iguales bajo 520 px; y los filtros de las listas (plan, orden,
   categoría) esconden su prefijo a la vista para caber en una fila
   (`.prefijoFiltro` de `lista-panel.module.css`; el lector lo sigue

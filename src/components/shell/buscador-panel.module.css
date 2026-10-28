@@ -132,6 +132,38 @@
   animation: llegar var(--dur-base) var(--ease-out);
 }
 
+/*
+  EN EL TELÉFONO (29/10/2026: «todavía se ve mal en celular»). La lista
+  medía casi el ancho de la pantalla pero se anclaba al borde DERECHO del
+  buscador, que ahí no llega al borde (a su derecha va «Registrar
+  miembro»): se salía por la izquierda y cortaba los textos. Bajo 768 px
+  el buscador deja de ser la referencia (`position: static`) y la lista se
+  coloca contra la BARRA entera (que es `sticky`, así que la contiene), de
+  lado a lado con el mismo margen que el contenido.
+*/
+@media (max-width: 767px) {
+  .buscador {
+    position: static;
+  }
+
+  .desplegable {
+    top: calc(100% + var(--space-1));
+    right: max(var(--space-4), env(safe-area-inset-right, 0px));
+    left: max(var(--space-4), env(safe-area-inset-left, 0px));
+    width: auto;
+    max-height: min(70dvh, 520px);
+    transform-origin: top center;
+  }
+
+  /* «Registrar miembro y vender membresía» no cabe en una línea: en el
+     teléfono los nombres pueden partir en dos en vez de cortarse (con
+     `.desplegable` delante: la regla base de `.nombre` va más abajo). */
+  .desplegable .nombre {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
 @keyframes llegar {
   from {
     opacity: 0;
