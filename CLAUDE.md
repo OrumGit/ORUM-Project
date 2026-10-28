@@ -1532,6 +1532,23 @@ imagen se AJUSTA antes de subirla, como la foto del socio:
   (`Modal onAtras`) vuelven a la rejilla sin guardar. Lo mismo en «Mi foto»
   del socio. Un editor de imagen nuevo sigue esta regla.
 
+**El socio cambia su foto UNA VEZ AL MES** (29/10/2026, encargo del
+cliente: «subir o cambiar su foto una vez al mes, y eliminarla cuando
+quiera; pero si la puso y la eliminó en el mismo mes, no puede volver a
+subirla»). Mes del CALENDARIO en hora de Colombia
+(`lib/miembros/foto-mensual.ts`, puro y probado): quien la cambió el 30 de
+octubre vuelve a poder el 1 de noviembre. Lo que gasta el cambio es SUBIR;
+«Quitar mi foto» (nuevo, `quitarMiFoto`, con confirmación en la misma
+tarjeta) se puede siempre y no lo devuelve. **No hay columna nueva**: la
+fuente es la bitácora, donde cada foto que sube el socio ya quedaba anotada
+(`entidad 'miembro'`, `datos_nuevos.origen = 'portal_miembro'`, `foto_url`
+no nulo; `fotoDelMes`, `lib/miembros/foto-socio.ts`). Si la bitácora no se
+puede leer, no se bloquea a nadie. Los cambios del panel (administrador y
+empleados) llevan otro origen y NO cuentan: la regla es solo del socio. La
+acción `guardarMiFoto` es quien decide; el editor lo dice antes (foto
+quieta y «Podrás cambiarla de nuevo el 1 de …»). Vista previa con datos
+falsos: `/dev/foto` (`?caso=bloqueada`, `?caso=sinfoto`).
+
 **El panel edita las imágenes de un comercio igual que el comercio**
 (13/10/2026; `admin/comercios/[id]/imagenes`, `GestorImagenes`). Antes eran
 tres subidas de archivo y una lista con «orden» numérico: no se podía

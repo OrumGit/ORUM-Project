@@ -260,6 +260,76 @@
   color: var(--franja-fg-3);
 }
 
+/* --- Una vez al mes: la foto quieta, el aviso y quitarla ------------------- */
+
+/* Sin el cambio del mes la foto solo se enseña: ni cursor ni hundirse. */
+.quieta {
+  cursor: default;
+}
+
+.quieta:active {
+  scale: 1;
+}
+
+.limite {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 34ch;
+  margin: 0;
+  font-size: var(--t-callout-size);
+  line-height: 1.45;
+  text-align: start;
+  color: var(--franja-fg-2);
+}
+
+.limite strong {
+  font-weight: 700;
+  color: var(--franja-fg);
+}
+
+.limiteIcono {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--n-300);
+}
+
+.confirmar {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: 36ch;
+  animation: aparecer-confirmar var(--dur-base) var(--ease-out);
+}
+
+.confirmarTexto {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  line-height: 1.45;
+  color: var(--franja-fg);
+}
+
+.confirmarAcciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@keyframes aparecer-confirmar {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirmar {
+    animation: none;
+  }
+}
+
 /* «O arrástrala hasta aquí» solo tiene sentido con ratón. */
 @media (hover: none) {
   .soloRaton {

@@ -12,7 +12,7 @@ import {
   type PointerEvent,
 } from 'react'
 import Link from 'next/link'
-import { Camera, Check, ImagePlus, RotateCcw, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { CalendarClock, Camera, Check, ImagePlus, RotateCcw, RotateCw, Trash2, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { useCerrarCuando, useCerrarOverlay } from '@/components/shell/overlay-ruta'
@@ -25,7 +25,7 @@ import {
   permiteContinuar,
   veredictoDeCaras,
 } from '@/lib/imagenes/derechos'
-import { guardarMiFoto } from '@/app/miembros/(portal)/perfil/imagenes-actions'
+import { guardarMiFoto, quitarMiFoto } from '@/app/miembros/(portal)/perfil/imagenes-actions'
 import { ESTADO_SUBIDA_INICIAL } from '@/lib/imagenes/estado'
 import { LIMITE_AVATARES } from '@/lib/imagenes/validacion'
 import {
@@ -67,6 +67,12 @@ import estilos from './editor-foto.module.css'
   servidor vuelve a validar tipo y peso: esto es comodidad, no seguridad.
 
   La acción NO recibe el id del miembro: lo deriva de la sesión.
+
+  UNA VEZ AL MES (29/10/2026, encargo del cliente): si el cambio del mes ya
+  se usó, la foto no se puede elegir y se dice cuándo vuelve a poder. Quitarla
+  se puede siempre («Quitar mi foto», con confirmación en la misma tarjeta),
+  pero no devuelve el cambio: la confirmación lo avisa. Quien decide es la
+  acción; esto solo lo dice antes.
 */
 
 /** Lado del JPEG que se sube: nítido en el carnet a 96 px con pantalla 3x y de sobra. */
@@ -81,12 +87,18 @@ type Fuente = { url: string; ancho: number; alto: number; imagen: HTMLImageEleme
 type Props = {
   nombre: string
   fotoUrl: string | null
+  /** Si todavía no gastó el cambio de foto de este mes. */
+  puedeCambiar: boolean
+  /** «el 1 de noviembre». */
+  proximoCambio: string
   /** A pantalla completa (enlace directo): título `h1` y la X vuelve al portal. */
   enPagina?: boolean
 }
 
-export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
+export function EditorFoto({ nombre, fotoUrl, puedeCambiar, proximoCambio, enPagina = false }: Props) {
   const [estado, accion, enviando] = useActionState(guardarMiFoto, ESTADO_SUBIDA_INICIAL)
+  const [estadoQuitar, quitar, quitando] = useActionState(quitarMiFoto, ESTADO_SUBIDA_INICIAL)
+  const [confirmando, setConfirmando] = useState(false)
   const cerrar = useCerrarOverlay()
   useCerrarCuando(estado.ok)
 
@@ -101,6 +113,7 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
 
   const idArchivo = useId()
   const idTitulo = useId()
+  const idConfirmar = useId()
   const entrada = useRef<HTMLInputElement>(null)
   /** URL de la foto que se está comprobando; se suelta al desmontar. */
   const pendiente = useRef<string | null>(null)
@@ -144,13 +157,14 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
     return () => nodo.removeEventListener('wheel', alGirarRueda)
   }, [fuente])
 
-  const error = errorLocal ?? estado.error ?? null
-  const ocupado = preparando || enviando
+  const error = errorLocal ?? estado.error ?? estadoQuitar.error ?? null
+  const ocupado = preparando || enviando || quitando
 
   function cargar(archivo: File | undefined) {
     // Mientras se comprueba una foto no se acepta otra: dos `onload` en vuelo
     // competirían y ganaría la que termine última, no la última elegida.
-    if (preparando) return
+    // Sin el cambio del mes, tampoco (soltarla sobre la ventana llega aquí).
+    if (preparando || !puedeCambiar) return
     setErrorLocal(null)
     if (!archivo) return
     if (!archivo.type.startsWith('image/')) {
@@ -330,7 +344,7 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
   /* --- Soltar un archivo sobre la ventana ---------------------------------- */
 
   const alArrastrarEncima = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return
+    if (!puedeCambiar || !e.dataTransfer.types.includes('Files')) return
     e.preventDefault()
     setSoltando(true)
   }
@@ -345,7 +359,7 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
 
   const Titulo = enPagina ? 'h1' : 'h2'
   const inicial = nombre.trim().charAt(0).toUpperCase() || '?'
-  const mostrada = estado.url ?? fotoUrl
+  const mostrada = estadoQuitar.ok ? null : (estado.url ?? fotoUrl)
 
   // Las variables que coloca la imagen: tamaño en diámetros del círculo y
   // desplazamiento en fracciones de su propio tamaño (lo que entiende
@@ -427,6 +441,7 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
 
       {error && <Alert tone="danger">{error}</Alert>}
       {estado.ok && enPagina && <Alert tone="success">Listo: tu carnet ya tiene la foto nueva.</Alert>}
+      {estadoQuitar.ok && <Alert tone="success">Listo: quitamos la foto de tu carnet.</Alert>}
 
       {fuente ? (
         <div key="ajuste" className={estilos.vista}>
@@ -520,6 +535,10 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
             onChange={setDeclarada}
           />
 
+          <p className={estilos.ayuda}>
+            Puedes cambiar tu foto una vez al mes: la próxima vez podrás hacerlo {proximoCambio}.
+          </p>
+
           {/* Las dos secundarias, como enlaces; «Guardar» baja a su propia
               fila si no le queda sitio. */}
           <div className={estilos.acciones}>
@@ -545,44 +564,115 @@ export function EditorFoto({ nombre, fotoUrl, enPagina = false }: Props) {
         </div>
       ) : (
         <div key="reposo" className={`${estilos.vista} ${estilos.reposo}`}>
-          {/* La foto también elige: es lo primero que se toca. La etiqueta no
-              es un control propio; el de teclado es el botón de debajo. */}
-          <label htmlFor={idArchivo} className={estilos.actual}>
-            <span className={estilos.recorte}>
-              {mostrada ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
-                <img src={mostrada} alt="" className={estilos.actualImagen} decoding="async" />
-              ) : (
-                <span className={estilos.inicial} aria-hidden="true">
-                  {inicial}
+          {puedeCambiar ? (
+            <>
+              {/* La foto también elige: es lo primero que se toca. La etiqueta no
+                  es un control propio; el de teclado es el botón de debajo. */}
+              <label htmlFor={idArchivo} className={estilos.actual}>
+                <span className={estilos.recorte}>
+                  {mostrada ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
+                    <img src={mostrada} alt="" className={estilos.actualImagen} decoding="async" />
+                  ) : (
+                    <span className={estilos.inicial} aria-hidden="true">
+                      {inicial}
+                    </span>
+                  )}
+                  <span className={estilos.velo} aria-hidden="true">
+                    {mostrada && (
+                      // eslint-disable-next-line @next/next/no-img-element -- la misma URL, desenfocada
+                      <img src={mostrada} alt="" className={estilos.veloFoto} decoding="async" />
+                    )}
+                    <span className={estilos.veloTexto}>
+                      <Camera size={20} />
+                      Elegir foto
+                    </span>
+                  </span>
                 </span>
-              )}
-              <span className={estilos.velo} aria-hidden="true">
-                {mostrada && (
-                  // eslint-disable-next-line @next/next/no-img-element -- la misma URL, desenfocada
-                  <img src={mostrada} alt="" className={estilos.veloFoto} decoding="async" />
-                )}
-                <span className={estilos.veloTexto}>
-                  <Camera size={20} />
-                  Elegir foto
+              </label>
+
+              <Button
+                variant="primary"
+                pildora
+                loading={preparando}
+                disabled={quitando}
+                icon={<ImagePlus size={16} aria-hidden="true" />}
+                onClick={elegir}
+              >
+                Elegir una foto
+              </Button>
+              <p className={estilos.ayuda}>
+                <span className={estilos.soloRaton}>O arrástrala hasta aquí. </span>
+                Después la ajustas antes de guardar. Puedes cambiarla una vez al mes.
+              </p>
+            </>
+          ) : (
+            <>
+              {/* Sin el cambio del mes la foto no elige: solo se enseña. */}
+              <span className={`${estilos.actual} ${estilos.quieta}`}>
+                <span className={estilos.recorte}>
+                  {mostrada ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
+                    <img src={mostrada} alt="" className={estilos.actualImagen} decoding="async" />
+                  ) : (
+                    <span className={estilos.inicial} aria-hidden="true">
+                      {inicial}
+                    </span>
+                  )}
                 </span>
               </span>
-            </span>
-          </label>
+              <p className={estilos.limite}>
+                <CalendarClock size={18} aria-hidden="true" className={estilos.limiteIcono} />
+                <span>
+                  Ya cambiaste tu foto este mes. Podrás cambiarla de nuevo <strong>{proximoCambio}</strong>.
+                </span>
+              </p>
+            </>
+          )}
 
-          <Button
-            variant="primary"
-            pildora
-            loading={preparando}
-            icon={<ImagePlus size={16} aria-hidden="true" />}
-            onClick={elegir}
-          >
-            Elegir una foto
-          </Button>
-          <p className={estilos.ayuda}>
-            <span className={estilos.soloRaton}>O arrástrala hasta aquí. </span>
-            Después la ajustas antes de guardar.
-          </p>
+          {mostrada && !confirmando && (
+            <button
+              type="button"
+              className={estilos.enlace}
+              onClick={() => setConfirmando(true)}
+              disabled={ocupado}
+            >
+              <Trash2 size={16} aria-hidden="true" />
+              Quitar mi foto
+            </button>
+          )}
+
+          {/* La confirmación, en la misma tarjeta: nada de una ventana dentro
+              de otra. Dice qué pasa con el cambio del mes. */}
+          {mostrada && confirmando && (
+            <div className={estilos.confirmar} role="group" aria-labelledby={idConfirmar}>
+              <p id={idConfirmar} className={estilos.confirmarTexto}>
+                {puedeCambiar
+                  ? '¿Quitar tu foto? Tu carnet quedará sin foto hasta que subas otra.'
+                  : `¿Quitar tu foto? Tu carnet quedará sin foto y no podrás subir otra hasta ${proximoCambio}.`}
+              </p>
+              <div className={estilos.confirmarAcciones}>
+                <button
+                  type="button"
+                  className={estilos.enlace}
+                  onClick={() => setConfirmando(false)}
+                  disabled={quitando}
+                >
+                  Cancelar
+                </button>
+                <Button
+                  variant="danger"
+                  pildora
+                  size="sm"
+                  loading={quitando}
+                  icon={<Trash2 size={15} aria-hidden="true" />}
+                  onClick={() => startTransition(() => quitar())}
+                >
+                  Sí, quitarla
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>

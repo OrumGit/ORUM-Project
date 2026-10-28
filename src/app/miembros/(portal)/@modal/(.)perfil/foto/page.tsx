@@ -15,7 +15,12 @@ export default async function MiFotoInterceptada() {
 
   return (
     <OverlayRuta ariaLabel="Mi foto" width="460px" desnudo>
-      <EditorFoto nombre={datos.nombre} fotoUrl={datos.fotoUrl} />
+      <EditorFoto
+        nombre={datos.nombre}
+        fotoUrl={datos.fotoUrl}
+        puedeCambiar={datos.puedeCambiar}
+        proximoCambio={datos.proximoCambio}
+      />
     </OverlayRuta>
   )
 }

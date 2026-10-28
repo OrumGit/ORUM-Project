@@ -17,7 +17,13 @@ export default async function MiFotoPage() {
 
   return (
     <div className={estilos.pagina}>
-      <EditorFoto nombre={datos.nombre} fotoUrl={datos.fotoUrl} enPagina />
+      <EditorFoto
+        nombre={datos.nombre}
+        fotoUrl={datos.fotoUrl}
+        puedeCambiar={datos.puedeCambiar}
+        proximoCambio={datos.proximoCambio}
+        enPagina
+      />
     </div>
   )
 }
