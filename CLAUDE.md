@@ -1379,7 +1379,10 @@ paleta:
   (`acciones-panel.ts`). **No se enseña ningún atajo** («no quiero que
   aparezcan comandos»): Ctrl/⌘+K y «/» siguen llevando al campo, en
   silencio. `enfocarBuscador()` (un evento) lo pide desde fuera — lo usa la
-  pestaña «Buscar» del teléfono.
+  pestaña «Buscar» del teléfono. **Nada sale marcado al abrir la lista** (29/10/2026:
+  «no me gusta que se vea como señalada esa opción»): solo las FLECHAS
+  marcan, con un filo dorado fino; el ratón no marca, la fila se desliza
+  3px; Enter sin nada marcado abre la primera.
 - **Los botones secundarios del panel no tienen borde**: píldora blanca con
   sombra que sube al pasar y se hunde al pulsar. Los ganchos
   `--boton-secundario-*` de `button.module.css` los pone el shell; fuera

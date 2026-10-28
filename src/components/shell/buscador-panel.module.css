@@ -200,10 +200,12 @@
   transition: box-shadow var(--dur-fast) var(--ease-out);
 }
 
-/* La elegida (ratón o flechas): un filo plateado muy sutil, sin relleno. */
+/* La marcada con las FLECHAS: un filo dorado fino, sin relleno ni sombra
+   (la tarjeta levantada se leía como «ya elegida», 29/10/2026). El ratón no
+   marca nada: la fila que pisa se desliza (abajo). */
 .fila[data-seleccionada='true'],
 .accion[data-seleccionada='true'] {
-  box-shadow: inset 0 0 0 1px var(--border-subtle), var(--shadow-card);
+  box-shadow: inset 0 0 0 1px var(--brand-edge);
 }
 
 .filaPrincipal,
@@ -226,6 +228,20 @@
 .accion {
   box-shadow: inset 0 0 0 1px transparent;
   transition: box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* Al apuntar, movimiento y no tinte: el contenido se desliza 3px, como las
+   filas de los menús del sitio. */
+.filaPrincipal > *,
+.accion > * {
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .filaPrincipal:hover > *,
+  .accion:hover > * {
+    translate: 3px 0;
+  }
 }
 
 .filaPrincipal:focus-visible,
@@ -311,4 +327,11 @@
   font-size: var(--t-footnote-size);
   line-height: 1.5;
   color: var(--text-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filaPrincipal > *,
+  .accion > * {
+    transition: none;
+  }
 }

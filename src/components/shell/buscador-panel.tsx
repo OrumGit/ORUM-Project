@@ -78,7 +78,14 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
   const [consulta, setConsulta] = useState('')
   const [abierto, setAbierto] = useState(false)
   const [miembros, setMiembros] = useState<MiembroEncontrado[]>([])
-  const [seleccion, setSeleccion] = useState(0)
+  /*
+    La opción marcada con las FLECHAS; -1 = ninguna (29/10/2026: «no me
+    gusta que se vea como señalada esa opción»). Antes la primera salía
+    marcada al abrir y el ratón marcaba la que pisaba: ahora solo marca el
+    teclado, que sí necesita saber dónde está. Enter sin nada marcado abre
+    la primera, como antes.
+  */
+  const [seleccion, setSeleccion] = useState(-1)
   const [buscando, iniciarBusqueda] = useTransition()
 
   const termino = consulta.trim()
@@ -153,7 +160,7 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
 
   function cerrar() {
     setAbierto(false)
-    setSeleccion(0)
+    setSeleccion(-1)
   }
 
   function ir(href: string) {
@@ -176,12 +183,14 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
     if (!abierto) setAbierto(true)
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSeleccion((s) => (destinos.length ? (s + 1) % destinos.length : 0))
+      setSeleccion((s) => (destinos.length ? (s + 1) % destinos.length : -1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setSeleccion((s) => (destinos.length ? (s - 1 + destinos.length) % destinos.length : 0))
+      setSeleccion((s) =>
+        destinos.length ? (s < 0 ? destinos.length - 1 : (s - 1 + destinos.length) % destinos.length) : -1,
+      )
     } else if (e.key === 'Enter') {
-      const destino = destinos[seleccion]
+      const destino = destinos[seleccion < 0 ? 0 : seleccion]
       if (destino) {
         e.preventDefault()
         ir(destino)
@@ -210,7 +219,7 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
           value={consulta}
           onChange={(e) => {
             setConsulta(e.target.value)
-            setSeleccion(0)
+            setSeleccion(-1)
             setAbierto(true)
           }}
           onFocus={() => setAbierto(true)}
@@ -269,7 +278,6 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
                   aria-selected={seleccion === i}
                   data-seleccionada={seleccion === i}
                   className={styles.fila}
-                  onMouseMove={() => setSeleccion(i)}
                 >
                   <Link
                     href={`/admin/miembros/${m.id}`}
@@ -322,7 +330,6 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
                     aria-selected={seleccion === i}
                     data-seleccionada={seleccion === i}
                     className={styles.accion}
-                    onMouseMove={() => setSeleccion(i)}
                     onClick={() => {
                       cerrar()
                       setConsulta('')
