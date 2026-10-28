@@ -51,3 +51,11 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
+
+/* Una gráfica sin datos: una línea, sin otro estado vacío grande al lado
+   del de su tabla. */
+.sinDatos {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}

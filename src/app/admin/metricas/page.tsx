@@ -11,6 +11,8 @@ import {
   type ResumenEmpleado,
   type ResumenUsoMiembro,
 } from '@/lib/metricas/metricas'
+import { primerosYOtros, serieVentas } from '@/lib/metricas/graficas'
+import { GraficaBarras, GraficaColumnas } from '@/components/ui/graficas'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Cifra } from '@/components/ui/cifra'
@@ -130,7 +132,7 @@ export default async function MetricasPage({
     admin.from('empleados').select('id, nombres, apellidos').is('deleted_at', null),
     admin
       .from('ventas')
-      .select('sucursal_id, miembro_id, valor_final, valor_descuento')
+      .select('sucursal_id, miembro_id, valor_final, valor_descuento, fecha_hora')
       .gte('fecha_hora', inicioDiaBogota(desde))
       .lte('fecha_hora', finDiaBogota(hasta)),
     admin.from('sucursales').select('id, comercio_id'),
@@ -154,6 +156,22 @@ export default async function MetricasPage({
   const ingresoMembresias = porEmpleado.reduce((s, r) => s + r.monto, 0)
   const membresiasVendidasCount = porEmpleado.reduce((s, r) => s + r.cantidad, 0)
   const ahorroEntregado = porComercio.reduce((s, r) => s + r.descuentoTotal, 0)
+
+  /*
+    LAS GRÁFICAS (29/10/2026: «gráficas simples para ver gráficamente todos
+    los datos»). Salen de lo mismo que las tablas de abajo, que se quedan
+    como la vista exacta: las ventas en el tiempo, quién vendió más
+    membresías y qué comercios vendieron más.
+  */
+  const serie = serieVentas(ventas ?? [], desde, hasta)
+  const maxVentas = Math.max(...serie.puntos.map((p) => p.cantidad), 0)
+  const ventasTexto = (n: number) => (n === 1 ? '1 venta' : `${n.toLocaleString('es-CO')} ventas`)
+  const barrasEmpleados = primerosYOtros(
+    porEmpleado.map((r) => ({ clave: String(r.empleadoId ?? 'admin'), etiqueta: r.nombre, valor: r.cantidad })),
+  ).map((b) => ({ ...b, texto: b.valor.toLocaleString('es-CO'), resto: b.clave === 'otros' }))
+  const barrasComercios = primerosYOtros(
+    porComercio.map((r) => ({ clave: String(r.comercioId), etiqueta: r.nombre, valor: r.cantidad })),
+  ).map((b) => ({ ...b, texto: b.valor.toLocaleString('es-CO'), resto: b.clave === 'otros' }))
 
   /** Atajos: mismo destino que el formulario, un clic en vez de dos fechas. */
   const atajos = [7, 30, 90].map((dias) => {
@@ -241,6 +259,56 @@ export default async function MetricasPage({
               size="sm"
             />
           </Card>
+        </Grid>
+
+        <Section title="Ventas en los comercios">
+          <Card padding="lg">
+            {maxVentas > 0 ? (
+              <GraficaColumnas
+                etiqueta={serie.unidad === 'dia' ? 'Ventas por día' : 'Ventas por semana'}
+                columnas={serie.puntos.map((p) => ({
+                  clave: p.clave,
+                  etiqueta: p.etiqueta,
+                  valor: p.cantidad,
+                  texto: ventasTexto(p.cantidad),
+                  nota: PESOS.format(p.monto),
+                }))}
+                maximoTexto={ventasTexto(maxVentas)}
+                pie={
+                  serie.unidad === 'dia'
+                    ? 'Ventas registradas cada día. Apunta una columna para ver el detalle.'
+                    : 'Ventas registradas cada semana (el periodo es largo). Apunta una columna para ver el detalle.'
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<BarChart3 size={24} />}
+                title="Sin ventas en el periodo"
+                description="Ningún comercio aliado registró ventas entre las fechas seleccionadas."
+              />
+            )}
+          </Card>
+        </Section>
+
+        <Grid min="320px">
+          <Section title="Quién vendió más membresías">
+            <Card padding="lg">
+              {barrasEmpleados.length > 0 ? (
+                <GraficaBarras etiqueta="Membresías vendidas por empleado" barras={barrasEmpleados} />
+              ) : (
+                <p className={styles.sinDatos}>No se vendió ninguna membresía en el periodo.</p>
+              )}
+            </Card>
+          </Section>
+          <Section title="Comercios con más ventas">
+            <Card padding="lg">
+              {barrasComercios.length > 0 ? (
+                <GraficaBarras etiqueta="Ventas por comercio" barras={barrasComercios} />
+              ) : (
+                <p className={styles.sinDatos}>Ningún comercio registró ventas en el periodo.</p>
+              )}
+            </Card>
+          </Section>
         </Grid>
 
         <Section title="Membresías vendidas por empleado">

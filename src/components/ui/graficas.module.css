@@ -1,0 +1,273 @@
+/* ==========================================================================
+   GRÁFICAS SIMPLES  ·  un tono, marcas finas, el texto en tinta
+   ========================================================================== */
+
+/* --- Barras horizontales ------------------------------------------------------ */
+
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barraFila {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--t-footnote-size);
+  animation: entrar var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--escalonado));
+}
+
+.barraEtiqueta {
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barraPista {
+  display: block;
+  height: 12px;
+}
+
+.barra {
+  display: block;
+  width: max(var(--ancho), 4px);
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--gold-600);
+}
+
+.barra[data-resto] {
+  background: color-mix(in srgb, var(--gold-600) 45%, var(--blanco));
+}
+
+.barraValor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Estrecho: el nombre arriba, la barra y la cifra debajo. */
+@media (max-width: 560px) {
+  .barraFila {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--space-1);
+  }
+
+  .barraEtiqueta {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- Columnas en el tiempo ------------------------------------------------------ */
+
+.figura {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.plano {
+  position: relative;
+  padding-top: var(--space-5);
+}
+
+/* El valor más alto, sobre una línea punteada: la escala sin un eje entero. */
+.maximo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: var(--t-caption-size);
+  color: var(--text-3);
+}
+
+.plano::before {
+  content: '';
+  position: absolute;
+  top: var(--space-5);
+  right: 0;
+  left: 0;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(1px, calc(24px / var(--n)), 6px);
+  height: 180px;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+/* La columna entera es el objetivo (más alto que la barra): el globo sale
+   aunque se apunte encima de una barra baja. */
+.columna {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  border-radius: 4px 4px 0 0;
+  outline: none;
+  cursor: default;
+}
+
+.columnaBarra {
+  display: block;
+  width: 100%;
+  height: max(var(--alto), 2px);
+  border-radius: 4px 4px 0 0;
+  background: var(--gold-600);
+  transition: background-color var(--dur-fast) var(--ease-out);
+  animation: entrar var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--escalonado));
+}
+
+/* Un día sin ventas: una raya, para que el hueco se lea como «cero». */
+.columnaBarra[data-vacia] {
+  height: 2px;
+  background: var(--border-subtle);
+}
+
+.columna:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* El globo: el detalle de la columna. */
+.globo {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: max-content;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-flotante);
+  font-size: var(--t-caption-size);
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 4px;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
+}
+
+.columna[data-borde='inicio'] .globo {
+  left: 0;
+  translate: 0 4px;
+}
+
+.columna[data-borde='fin'] .globo {
+  right: 0;
+  left: auto;
+  translate: 0 4px;
+}
+
+.globoTitulo {
+  color: var(--text-2);
+}
+
+.globoValor {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.globoNota {
+  color: var(--text-2);
+}
+
+.columna:focus-visible .globo {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.columna[data-borde]:focus-visible .globo {
+  translate: 0 0;
+}
+
+.columna:focus-visible .columnaBarra:not([data-vacia]) {
+  background: var(--gold-700);
+}
+
+@media (hover: hover) {
+  .columna:hover .globo {
+    opacity: 1;
+    translate: -50% 0;
+  }
+
+  .columna[data-borde]:hover .globo {
+    translate: 0 0;
+  }
+
+  .columna:hover .columnaBarra:not([data-vacia]) {
+    background: var(--gold-700);
+  }
+}
+
+/* Las fechas bajo el eje: la primera, la del medio y la última. */
+.eje {
+  position: relative;
+  height: 1.4em;
+  font-size: var(--t-caption-size);
+  color: var(--text-3);
+}
+
+.ejeMarca {
+  position: absolute;
+  top: 0;
+  left: calc((var(--pos) + 0.5) / var(--n) * 100%);
+  translate: -50% 0;
+  white-space: nowrap;
+}
+
+.ejeMarca[data-lado='inicio'] {
+  left: 0;
+  translate: 0 0;
+}
+
+.ejeMarca[data-lado='fin'] {
+  right: 0;
+  left: auto;
+  translate: 0 0;
+}
+
+.pie {
+  font-size: var(--t-footnote-size);
+  color: var(--text-3);
+}
+
+/* --- El movimiento -------------------------------------------------------------- */
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barraFila,
+  .columnaBarra {
+    animation: none;
+  }
+
+  .globo {
+    transition: none;
+  }
+}
