@@ -1209,6 +1209,15 @@ franjas: `/dev/beneficios`.
 `DataList` `AccionEstado` `Copiar` · `PantallaAuth` `ComercioLogo` `QrCode` `WhatsAppButton`
 · `Agitar`
 
+**`SegmentedControl` habla como `Pestanas`** (29/10/2026: «no me gusta el
+diseño de este tipo de opciones»; antes era un carril con trazo y la
+elegida con filo dorado). Franja gris suave (`--surface-hueco`) sin borde,
+radio `--radius-lg`, y la elegida en una píldora blanca con
+`--shadow-card` (SIN `--filo-activo`) que se desliza, con el texto en 700.
+Lo usan «Nuevo usuario» (Empleado / Administrador), el editor de imágenes
+(Imagen completa / Llenar el marco) y las vistas previas. No le vuelvas a
+poner el trazo ni el filo dorado.
+
 **`SelectMenu`** (04/10/2026) es un desplegable CON DISEÑO: el campo se ve
 como un `Input` y la lista que abre es el `DropdownMenu` del sitio, no la del
 sistema (en Windows, un recuadro gris que el CSS no puede vestir). Nació para

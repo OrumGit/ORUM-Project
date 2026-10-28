@@ -1,41 +1,40 @@
+/*
+  EL MISMO LENGUAJE QUE LAS PESTAÑAS DE LAS LISTAS (29/10/2026). El
+  propietario no quiso el carril con trazo y la pastilla con filo dorado
+  («no me gusta el diseño de este tipo de opciones»): ahora es la franja
+  gris suave de `Pestanas`, sin borde, con la elegida en una píldora blanca
+  con su sombra que se desliza. Lo que dice cuál está elegida es la
+  píldora, el peso del texto y el radio marcado; el foco sigue con su filo.
+*/
 .group {
   position: relative;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
 
-  padding: 3px;
-  /* El carril ya no se tiñe: lo dibuja su trazo. */
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-full);
-  background: var(--surface-sunk);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+  background: var(--surface-hueco);
 
-  /* Radio interno = radio externo − padding (regla de anidamiento). */
-  --radio-interno: calc(var(--radius-full) - 3px);
+  /* Radio interno = radio externo − relleno (regla de anidamiento). */
+  --radio-interno: var(--radius-md);
 }
 
 /* El indicador SE DESLIZA entre posiciones. Parpadear de una a otra rompe la
    continuidad espacial: el ojo pierde de dónde vino la selección. */
 .indicator {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc((100% - 6px) / var(--total, 3));
+  top: var(--space-1);
+  bottom: var(--space-1);
+  left: var(--space-1);
+  width: calc((100% - 2 * var(--space-1)) / var(--total, 3));
 
   border-radius: var(--radio-interno);
   background: var(--surface);
-  /*
-    Carril y pastilla son el MISMO papel. Lo que dice cuál está seleccionada es
-    el par de §2.3 para el estado ACTIVO —filo dorado de 1px + sombra—: la
-    pastilla es una ficha apoyada sobre el carril, no una zona más clara.
-
-    Se queda en el escalón 1 y no sube: una pastilla de control es pequeña, y
-    §2.2 dice que la superficie grande es la que se lee gruesa. Con más sombra
-    esto sería un botón levitando dentro de otro control.
-  */
+  /* Escalón 1: una píldora de control es pequeña; con más sombra sería un
+     botón levitando dentro de otro control. Sin filo dorado. */
   border: 1px solid var(--border-superficie);
-  box-shadow: var(--filo-activo), var(--shadow-card), var(--edge);
+  box-shadow: var(--shadow-card), var(--edge);
 
   transform: translateX(calc(var(--indice, 0) * 100%));
   transition:
@@ -61,12 +60,19 @@
   gap: var(--space-2);
 
   border-radius: var(--radio-interno);
-  color: var(--text-3);
+  color: var(--text-2);
 
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: color var(--dur-fast) var(--ease-out);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    scale var(--dur-press) var(--ease-out);
+}
+
+/* Presionar hunde un poco, como las pestañas. */
+.option:active {
+  scale: 0.97;
 }
 
 /* En táctil el `:hover` NO se retira al levantar el dedo: lo que se toca se
@@ -75,12 +81,13 @@
 
 @media (hover: hover) {
   .option:hover {
-    color: var(--text-2);
+    color: var(--text);
   }
 }
 
 .option:has(.radio:checked) {
   color: var(--text);
+  font-weight: 700;
 }
 
 .option:has(.radio:focus-visible) {
@@ -95,10 +102,10 @@
 
 /* Tamaños */
 .sm .option {
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 var(--space-3);
   font-size: var(--t-caption-size);
-  font-weight: var(--t-caption-weight);
+  font-weight: 500;
   letter-spacing: var(--t-caption-tracking);
 }
 
@@ -106,7 +113,7 @@
   min-height: 38px;
   padding: 0 var(--space-4);
   font-size: var(--t-callout-size);
-  font-weight: var(--t-callout-weight);
+  font-weight: 500;
   letter-spacing: var(--t-callout-tracking);
 }
 
@@ -145,5 +152,11 @@
 
   .group[data-compacto='true'] .option {
     padding: 0 var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option:active {
+    scale: 1;
   }
 }
