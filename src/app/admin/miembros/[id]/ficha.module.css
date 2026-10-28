@@ -199,3 +199,40 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- Revocar (29/10/2026) -----------------------------------------------------
+   Qué va a pasar, antes del motivo: el plan con lo que le queda y tres
+   consecuencias en palabras. Con el filo rojo de 1px a la izquierda, como una
+   cita: dice «cuidado» sin una caja de alarma. */
+.revocarAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--danger);
+}
+
+.revocarPlan {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.revocarLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-4);
+  font-size: var(--t-callout-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* La línea de la revocación, en la ficha y en el historial. */
+.revocada {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--danger);
+}

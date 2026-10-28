@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resumirRevocacion } from '../miembros/revocacion'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -51,10 +52,12 @@ export function resumirEventoBitacora(
 
   if (accion === 'reenvio_activacion') return 'Correo de activación reenviado'
 
+  if (accion === 'revocacion') return resumirRevocacion(datosNuevos?.motivo, datosNuevos?.nota)
+
   return `Evento: ${accion}`
 }
 
-export type AccionBitacora = 'alta' | 'edicion' | 'renovacion' | 'reenvio_activacion'
+export type AccionBitacora = 'alta' | 'edicion' | 'renovacion' | 'reenvio_activacion' | 'revocacion'
 
 export type RegistrarActividadInput = {
   actorId: string | null

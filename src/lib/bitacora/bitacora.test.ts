@@ -81,3 +81,11 @@ describe('resumirEventoBitacora — acción desconocida', () => {
     expect(resumirEventoBitacora('otra_cosa', null, null)).toBe('Evento: otra_cosa')
   })
 })
+
+describe('resumirEventoBitacora · revocación', () => {
+  it('dice que se revocó y por qué', () => {
+    expect(
+      resumirEventoBitacora('revocacion', { estado: 'activa' }, { motivo: 'uso_indebido', nota: 'prestó el carnet' }),
+    ).toBe('Membresía revocada — Uso indebido del carnet: prestó el carnet')
+  })
+})

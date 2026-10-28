@@ -11,8 +11,11 @@ import { enviarCorreoInvitacion } from '@/lib/correo/correo'
 import {
   calcularFechaFin,
   calcularFechaInicioRenovacion,
+  derivarEstadoMembresia,
+  type EstadoMembresia,
 } from '@/lib/miembros/membresias'
 import { esNumeroRegistroValido } from '@/lib/miembros/numeros-registro'
+import { revisarRevocacion } from '@/lib/miembros/revocacion'
 import { construirEnlaceActivacion, urlBaseSitio } from '@/lib/auth/activacion'
 import { errorDeCorreoOcupado } from '@/lib/auth/correo-registrado'
 import { cambiarCorreoDeCuenta } from '@/lib/auth/cambiar-correo'
@@ -445,5 +448,70 @@ export async function editarMiembro(
 
   revalidatePath('/admin/miembros')
   revalidatePath(`/admin/miembros/${miembroId}`)
+  return { ok: true }
+}
+
+export type RevocarState = { error?: string; ok?: boolean; campo?: 'motivo' | 'nota' }
+
+/**
+ * REVOCA la membresía vigente de un miembro (29/10/2026). Solo el
+ * administrador: es una decisión que deja a alguien sin beneficios, como
+ * retirar una foto. La membresía pasa a `cancelada` —no se borra—, la caja
+ * deja de aceptarla (`fn_validar_venta` exige `activa`) y el socio ve su
+ * pantalla de membresía cancelada. El motivo y la nota quedan en la
+ * bitácora del miembro.
+ */
+export async function revocarMembresia(_prev: RevocarState, formData: FormData): Promise<RevocarState> {
+  const actor = await getPerfilActual()
+  if (!actor || !actor.activo || actor.rolCodigo !== 'super_admin') {
+    return { error: 'Solo el administrador puede revocar membresías.' }
+  }
+
+  const miembroId = Number(formData.get('miembro_id'))
+  const membresiaId = Number(formData.get('membresia_id'))
+  if (!Number.isInteger(miembroId) || miembroId < 1 || !Number.isInteger(membresiaId) || membresiaId < 1) {
+    return { error: 'Falta la membresía que se quiere revocar.' }
+  }
+
+  const revision = revisarRevocacion(formData.get('motivo'), formData.get('nota'))
+  if (!revision.ok) return { error: revision.error, campo: revision.campo }
+
+  const admin = createAdminClient()
+  // La membresía tiene que ser de ESTE miembro: el id viene del formulario.
+  const { data: membresia } = await admin
+    .from('membresias')
+    .select('id, estado, fecha_fin, plan_id')
+    .eq('id', membresiaId)
+    .eq('miembro_id', miembroId)
+    .maybeSingle()
+  if (!membresia) return { error: 'No encontramos esa membresía.' }
+
+  const derivado = derivarEstadoMembresia(membresia.estado as EstadoMembresia, membresia.fecha_fin, hoyISO())
+  if (!derivado.activa) return { error: 'Esta membresía ya no está vigente: no hay nada que revocar.' }
+
+  const { error } = await admin
+    .from('membresias')
+    .update({ estado: 'cancelada', updated_by: actor.userId })
+    .eq('id', membresia.id)
+    .eq('estado', 'activa')
+  if (error) return { error: mensajeDeError('No se pudo revocar la membresía', error) }
+
+  await registrarActividad(admin, {
+    actorId: actor.userId,
+    accion: 'revocacion',
+    entidadId: miembroId,
+    datosAnteriores: { estado: 'activa' },
+    datosNuevos: {
+      membresia_id: membresia.id,
+      fecha_fin: membresia.fecha_fin,
+      motivo: revision.motivo,
+      nota: revision.nota,
+    },
+  })
+
+  revalidatePath('/admin/miembros')
+  revalidatePath(`/admin/miembros/${miembroId}`)
+  revalidatePath('/admin')
+  revalidatePath('/miembros', 'layout')
   return { ok: true }
 }

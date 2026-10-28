@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation'
-import { Camera, CreditCard, Pencil, Trash2 } from 'lucide-react'
+import { Ban, Camera, CreditCard, Pencil, Trash2 } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { derivarEstadoMembresia, type EstadoMembresia } from '@/lib/miembros/membresias'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
+import { ETIQUETA_MOTIVO_REVOCACION, esMotivoRevocacion } from '@/lib/miembros/revocacion'
 import { hoyISO } from '@/lib/shared/fecha'
 import { Badge, StatusBadge, VenceEn, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,12 +25,14 @@ const TONO_ACCION: Record<string, BadgeTone> = {
   alta: 'success',
   renovacion: 'info',
   edicion: 'neutral',
+  revocacion: 'danger',
 }
 
 const ETIQUETA_ACCION: Record<string, string> = {
   alta: 'Alta',
   renovacion: 'Renovación',
   edicion: 'Edición',
+  revocacion: 'Revocación',
 }
 
 /* `fecha_hora` es un timestamptz real: aquí SÍ se formatea en Bogotá. */
@@ -180,6 +183,24 @@ export default async function FichaMiembroPage({
     actor: e.actor_id ? (correoActor.get(e.actor_id) ?? '—') : '—',
   }))
 
+  /* Las revocaciones, por membresía: la bitácora guarda cuál, cuándo y por
+     qué (`revocarMembresia`). `membresias` no guarda ni la fecha ni el
+     motivo; sin esto, una revocada se leería como una vencida más. */
+  const revocaciones = new Map<number, { fechaISO: string; motivo: string }>()
+  for (const e of eventos ?? []) {
+    const n = e.datos_nuevos as Record<string, unknown> | null
+    if (e.accion !== 'revocacion' || typeof n?.membresia_id !== 'number') continue
+    if (revocaciones.has(n.membresia_id)) continue
+    revocaciones.set(n.membresia_id, {
+      fechaISO: e.fecha_hora,
+      motivo: esMotivoRevocacion(n.motivo) ? ETIQUETA_MOTIVO_REVOCACION[n.motivo] : 'sin motivo',
+    })
+  }
+  const textoRevocada = (id: number) => {
+    const r = revocaciones.get(id)
+    return r ? `Revocada el ${SELLO.format(new Date(r.fechaISO))} · ${r.motivo}` : null
+  }
+
   const hoy = hoyISO()
   const historial = (membresias ?? []).map((m) => ({
     ...m,
@@ -235,6 +256,18 @@ export default async function FichaMiembroPage({
               Antes era un formulario desplegado al final de la ficha, así que
               había que bajar hasta el fondo para cobrar.
             */}
+            {/* Revocar: solo el administrador y solo con una vigente. Va
+                antes de «Renovar» y en secundario: es la excepción, no la
+                acción del día. */}
+            {actor.rolCodigo === 'super_admin' && vigente?.derivado.activa && (
+              <Button
+                href={`/admin/miembros/${miembro.id}/revocar`}
+                variant="secondary"
+                icon={<Ban size={16} />}
+              >
+                Revocar membresía
+              </Button>
+            )}
             <Button
               href={`/admin/miembros/${miembro.id}/renovar`}
               icon={<CreditCard size={16} />}
@@ -264,7 +297,9 @@ export default async function FichaMiembroPage({
                 <p className={styles.estadoNota}>
                   {vigente.derivado.activa
                     ? `Vigente hasta el ${formatearFecha(vigente.fecha_fin)}.`
-                    : `La última membresía terminó el ${formatearFecha(vigente.fecha_fin)}.`}
+                    : textoRevocada(vigente.id)
+                      ? `${textoRevocada(vigente.id)}. Para devolvérsela, renuévala.`
+                      : `La última membresía terminó el ${formatearFecha(vigente.fecha_fin)}.`}
                 </p>
               )}
             </div>
@@ -325,6 +360,8 @@ export default async function FichaMiembroPage({
                       <span className={styles.hitoFechas}>
                         {formatearFecha(m.fecha_inicio)} — {formatearFecha(m.fecha_fin)}
                       </span>
+
+                      {textoRevocada(m.id) && <p className={styles.revocada}>{textoRevocada(m.id)}</p>}
 
                       <div className={styles.hitoMeta}>
                         {m.es_cortesia ? (

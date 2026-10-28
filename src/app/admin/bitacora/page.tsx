@@ -37,12 +37,14 @@ const TONO_ACCION: Record<string, BadgeTone> = {
   alta: 'success',
   renovacion: 'info',
   edicion: 'neutral',
+  revocacion: 'danger',
 }
 
 const ETIQUETA_ACCION: Record<string, string> = {
   alta: 'Alta',
   renovacion: 'Renovación',
   edicion: 'Edición',
+  revocacion: 'Revocación',
 }
 
 /* Bogotá siempre: el negocio es colombiano y el servidor puede no estarlo. */
@@ -132,6 +134,7 @@ const ACCIONES: { valor: string; etiqueta: string; tono?: TonoPestana }[] = [
   { valor: 'alta', etiqueta: 'Altas', tono: 'exito' },
   { valor: 'edicion', etiqueta: 'Ediciones', tono: 'neutro' },
   { valor: 'renovacion', etiqueta: 'Renovaciones', tono: 'aviso' },
+  { valor: 'revocacion', etiqueta: 'Revocaciones', tono: 'peligro' },
 ]
 
 export default async function BitacoraPage({
