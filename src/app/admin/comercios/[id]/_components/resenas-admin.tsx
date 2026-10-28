@@ -202,7 +202,7 @@ export function ResenasAdmin({
                         onClick={() => abrir(r)}
                         disabled={ocupadaId === r.id}
                       >
-                        {r.respuestaAdmin ? 'Editar respuesta de ORUM' : 'Responder como ORUM'}
+                        {r.respuestaAdmin ? 'Editar respuesta' : 'Responder como ORUM'}
                       </Button>
                       {r.respuestaAdmin && (
                         <Button

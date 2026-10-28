@@ -91,6 +91,14 @@
   margin-bottom: var(--space-2);
 }
 
+/* En un teléfono estrecho, siete píldoras en una fila no dejaban leer «Mié»
+   ni «Dom» (29/10/2026): van en dos filas de cuatro. */
+@media (max-width: 420px) {
+  .dias {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .dia {
   min-height: 36px;
   padding: 0 var(--space-1);

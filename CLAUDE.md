@@ -2038,6 +2038,35 @@ El ancho útil del contenido no es el del viewport — cambia según la barra la
 abierta o en rail. Un `@media` se equivoca en ~200px justo donde importa. Un `@container`
 sin contenedor ancestro **nunca casa**: si escribes uno, comprueba que hay contenedor.
 
+### Nada se sale de su caja en un teléfono de 320 px
+
+Auditoría del 29/10/2026 («hay componentes que están mal en este portal»: el
+pie «Descartar / Guardar cambios» de la ficha del comercio se salía). Las
+causas, y sus reglas:
+
+- **Una columna de rejilla es `minmax(0, 1fr)`, nunca `1fr` a secas.** `1fr`
+  vale `minmax(auto, 1fr)`: la columna no baja de lo que mide su contenido, y
+  un desplegable con «Membresía anual · $ 120.000» empujaba el campo 58 px
+  fuera. Lo mismo en `grid-auto-columns` y en una rejilla SIN columnas
+  declaradas (pon `grid-template-columns: minmax(0, 1fr)`).
+- **Un `minmax(260px, 1fr)` en `auto-fill`** se escribe
+  `minmax(min(260px, 100%), 1fr)`: en 320 px no caben 260 de mínimo.
+- **Los botones no parten su texto** (`white-space: nowrap`): dos botones en
+  una fila estrecha van en flex con `flex-wrap`, `min-width: 0` y sin
+  columnas fijas; un nombre largo («Añadir otros días con otro horario») se
+  acorta en la vista y el largo queda en `aria-label` (empezando por lo
+  visible, WCAG 2.5.3).
+- **Una palabra larga en un control estrecho** («Administrador» en un
+  `SegmentedControl` de dos) pide menos relleno o letra un paso menor, no
+  partir la palabra.
+
+**Cómo se comprueba**: `/dev/panel-movil` monta TODOS los formularios y
+piezas del panel con datos falsos (`?f=` para uno); se mira a 320, 360, 375,
+414 y 1280 px, y se mide —con `getBoundingClientRect`, contra la caja de
+CONTENIDO del padre, no contra su borde— que nada pase de su caja ni de la
+pantalla. Las páginas de servidor del panel no se pueden montar sin sesión:
+lo nuevo que vaya en ellas se lleva a esta vista previa.
+
 ### Fechas
 
 Dos casos distintos, y confundirlos desplaza un día:

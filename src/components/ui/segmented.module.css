@@ -10,7 +10,9 @@
   position: relative;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  /* `minmax(0, 1fr)`: con `1fr` una opción larga («Administrador») no podía
+     encoger y se salía del control en un teléfono de 320 px. */
+  grid-auto-columns: minmax(0, 1fr);
 
   padding: var(--space-1);
   border-radius: var(--radius-lg);
@@ -135,6 +137,30 @@
   width: 15px;
   height: 15px;
   flex-shrink: 0;
+}
+
+/* Estrecho: menos relleno y, si aun así no cabe, la etiqueta parte en dos
+   líneas en vez de salirse (29/10/2026). */
+@media (max-width: 420px) {
+  .md .option {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--t-footnote-size);
+  }
+
+  .option {
+    text-align: center;
+  }
+
+  .sm .option {
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (max-width: 340px) {
+  .md .option,
+  .sm .option {
+    padding-inline: var(--space-1);
+  }
 }
 
 /* En pantallas estrechas el control puede reducirse a iconos. */

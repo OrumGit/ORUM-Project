@@ -14,15 +14,18 @@
   max-width: 560px;
 }
 
+/* `minmax(0, 1fr)` y no `1fr` (29/10/2026): `1fr` no deja que una columna
+   sea más estrecha que su contenido, y un desplegable con «Membresía anual ·
+   $ 120.000» empujaba el campo 58 px fuera de la ventana en un teléfono. */
 .pareja {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
 @media (max-width: 640px) {
   .pareja {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

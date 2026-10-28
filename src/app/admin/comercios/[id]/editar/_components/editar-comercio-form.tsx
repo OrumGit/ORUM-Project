@@ -160,10 +160,17 @@ function Formulario({
           variant="secondary"
           onClick={enPagina ? onDescartar : cerrar}
           disabled={enPagina && !v.sinGuardar}
+          className={styles.descartar}
         >
           {enPagina ? 'Descartar' : 'Cancelar'}
         </Button>
-        <Button type="submit" variant="brand" loading={pending} icon={<Save size={16} />}>
+        <Button
+          type="submit"
+          variant="brand"
+          loading={pending}
+          icon={<Save size={16} />}
+          className={styles.guardar}
+        >
           Guardar cambios
         </Button>
       </div>

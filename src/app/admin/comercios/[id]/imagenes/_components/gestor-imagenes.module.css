@@ -14,6 +14,9 @@
 
 .bloque {
   display: grid;
+  /* Una columna que PUEDE encoger: sin ella, la fila del título se quedaba
+     en su ancho natural y se salía 4 px de la tarjeta a 320 px. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
@@ -33,6 +36,7 @@
 
 .filaTitulo {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
@@ -58,8 +62,9 @@
 
 .filaLogo {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-4) var(--space-5);
 }
 
 /* `.filaLogo .logo` (0,2,0): le gana a `.placa`, que vive en otro módulo. */
@@ -71,6 +76,7 @@
 
 .logoTextos {
   display: grid;
+  flex: 1 1 160px;
   justify-items: start;
   gap: var(--space-3);
   min-width: 0;
@@ -88,7 +94,9 @@
   display: grid;
   /* 260px: caben los cinco botones de una foto de galería (mover ×2,
      portada, editar, quitar) a 44px cada uno. */
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  /* `min(260px, 100%)`: en un teléfono de 320 px la columna mínima de 260 no
+     cabía y la rejilla se salía de la tarjeta. */
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: 0;

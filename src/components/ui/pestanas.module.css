@@ -70,6 +70,15 @@
   }
 }
 
+/* En los teléfonos más estrechos, «Sin membresía 9» se pasaba 3 px de su
+   mitad: menos aire alrededor del punto y del recuento. */
+@media (max-width: 360px) {
+  .pestana {
+    gap: var(--space-1);
+    padding-inline: var(--space-1);
+  }
+}
+
 /* La elegida: una píldora blanca que se levanta. Es un control elegido, no
    una superficie en reposo: aquí la sombra dice «esta». */
 .pestana[data-activa] {

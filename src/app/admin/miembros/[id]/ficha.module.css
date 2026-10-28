@@ -162,7 +162,7 @@
 
 .renovarCampos {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
@@ -179,7 +179,7 @@
 
 @media (max-width: 640px) {
   .renovarCampos {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -29,7 +29,7 @@ import styles from './editor-franjas.module.css'
         │ Horas: (•) Todo el día  ( ) Solo de [08:00] a [09:30]
         │                                    + Añadir otra hora
         └
-        + Añadir otros días con otro horario
+        + Añadir otros días
 
   Cada «grupo» son unos días con su horario: «martes y miércoles de 8:00 a
   9:30 y de 6:00 a 7:00 p. m.» es UN grupo con dos horas; «el fin de semana,
@@ -258,8 +258,10 @@ export function EditorFranjas({
                     return [...gs, { clave: clave(), dias: libres, todoElDia: true, rangos: [rango()] }]
                   })
                 }
+                aria-label="Añadir otros días con otro horario"
               >
-                Añadir otros días con otro horario
+                {/* Corto: el largo no cabía en un teléfono de 320 px. */}
+                Añadir otros días
               </Button>
             </div>
           )}
