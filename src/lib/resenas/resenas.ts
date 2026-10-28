@@ -134,6 +134,15 @@ export function formatearPromedio(valor: number | null): string {
   return valor.toFixed(1).replace('.', ',')
 }
 
+/**
+ * Lo que significa cada calificación, en palabras (29/10/2026). El selector
+ * lo enseña al lado de las estrellas, para que nadie tenga que adivinar si
+ * tres es bueno o regular. Vacío fuera de 1–5.
+ */
+export function etiquetaEstrellas(n: number): string {
+  return ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'][Number.isInteger(n) ? n : 0] ?? ''
+}
+
 function capitalizar(palabra: string): string {
   const [primera = '', ...resto] = Array.from(palabra)
   return primera.toLocaleUpperCase('es') + resto.join('').toLocaleLowerCase('es')

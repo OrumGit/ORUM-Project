@@ -1239,6 +1239,31 @@ en la misma fila); la del admin se muestra como «ORUM».
   `bitacora_actividad` (entidad `resena`, sin el texto de la reseña).
 - Vistas previas con datos falsos, solo fuera de producción: `/dev/resenas`,
   `/dev/resenas-comercio`, `/dev/resenas-admin`.
+- **El diseño, unificado** (29/10/2026: «se implementó la funcionalidad pero
+  no se detalló el diseño»). Los tres portales pintan con las MISMAS piezas
+  de `components/resenas/` y UNA hoja (`resenas.module.css`; las dos copias
+  de la caja y del panel se borraron): `ResumenResenas` (el título con
+  `TituloSeccion` de bloque y el promedio en el serif de la marca con sus
+  estrellas), `TarjetaResena` (avatar con iniciales, decorativo; nombre y
+  fecha; las estrellas con lo que significan —`etiquetaEstrellas`: Malo ·
+  Regular · Bueno · Muy bueno · Excelente—; las respuestas colgando de un
+  filo fino, la del comercio con su tienda y la de ORUM con la estrella),
+  `ZonaAviso` (el `role="status"` y el error) y `FormularioRespuesta` (el
+  comercio y ORUM responden con el mismo; cada portal pasa su acción). Peso
+  normal en casi todo; **nada en crema**: la reseña propia y la invitación
+  son tarjetas BLANCAS con su sombra, y la cita de la ventana de responder
+  es un filo dorado de 1px.
+- **Calificar es tocar una estrella**: el socio que puede reseñar ve «¿Cómo
+  te fue en X?» con las cinco estrellas A LA VISTA (`EstrellasAccion`,
+  botones, no radios: elegir abre una ventana), y la ventana abre con esa
+  nota puesta. Su reseña lleva «Editar» y «Borrar» en la cabecera. Quien no
+  puede reseñar lee una línea que dice cuándo podrá.
+- **El movimiento**: en el selector las estrellas se llenan de la primera a
+  la elegida (30 ms entre una y otra), la elegida da un salto corto SOLO al
+  tocarla (no al montar), y el significado cambia con un fundido; la lista
+  entra escalonada en la primera pintura (`--escalonado`, tope de 8); el
+  aviso y la tarjeta propia aparecen con un fundido y un desliz de 6px. Todo
+  `transform`/`opacity`, y fuera con movimiento reducido.
 
 **`ComercioLogo` pinta un CÍRCULO** en sus tres variantes (`tarjeta` 72px,
 `hero` 144px, `portada` responsiva). `object-fit` se queda en **`contain`**: un

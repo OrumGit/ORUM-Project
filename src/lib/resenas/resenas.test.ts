@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MENSAJE_MAXIMO,
   esTablaAusente,
+  etiquetaEstrellas,
   formatearPromedio,
   nombreCorto,
   promedio,
@@ -114,5 +115,18 @@ describe('resumenDeConteos', () => {
   })
   it('no se trunca a 1000', () => {
     expect(resumenDeConteos([0, 0, 0, 0, 1500]).total).toBe(1500)
+  })
+})
+
+describe('etiquetaEstrellas', () => {
+  it('nombra cada calificación de 1 a 5', () => {
+    expect([1, 2, 3, 4, 5].map(etiquetaEstrellas)).toEqual(['Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'])
+  })
+
+  it('fuera de la escala no dice nada', () => {
+    expect(etiquetaEstrellas(0)).toBe('')
+    expect(etiquetaEstrellas(6)).toBe('')
+    expect(etiquetaEstrellas(2.5)).toBe('')
+    expect(etiquetaEstrellas(-1)).toBe('')
   })
 })

@@ -1,45 +1,31 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { MessageSquareText, PenLine, Reply, Trash2 } from 'lucide-react'
-import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
-import { EstrellasLectura } from '@/components/ui/estrellas-lectura'
-import { Field } from '@/components/ui/field'
-import { Textarea } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/ui/modal'
 import { Overlay } from '@/components/ui/overlay'
-import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
+import { FormularioRespuesta } from '@/components/resenas/formulario-respuesta'
+import { ResumenResenas } from '@/components/resenas/resumen-resenas'
 import { TarjetaResena } from '@/components/resenas/tarjeta-resena'
+import { ZonaAviso } from '@/components/resenas/zona-aviso'
 import { fechaResena } from '@/lib/resenas/acciones'
-import { MENSAJE_MAXIMO, formatearPromedio, revisarRespuesta } from '@/lib/resenas/resenas'
 import type { ResenaGestion } from '@/lib/resenas/mapeo'
 import { eliminarResena, quitarRespuestaAdmin, responderComoAdmin } from '../../resenas-actions'
-import estilos from './resenas-admin.module.css'
+import estilos from '@/components/resenas/resenas.module.css'
 
 /*
   LAS RESEÑAS EN LA FICHA DEL COMERCIO  ·  moderación del super administrador
   ---------------------------------------------------------------------------
-  Misma pieza que la caja del comercio (`ResenasComercio`) pero con el nombre
-  completo, la respuesta del comercio SOLO LECTURA, la de ORUM editable y un
-  «Eliminar» que borra para siempre (por eso pasa por una confirmación).
-  El formulario va en un overlay con `useValidacion` y se envía con
-  `onSubmit` + `key` por apertura, como el del comercio: no perder lo escrito
-  si el servidor rechaza.
+  Misma pieza que la caja del comercio (`ResenasComercio`): desde el
+  29/10/2026 las dos pintan con `components/resenas/` (encabezado, reseña,
+  aviso y formulario de respuesta) y su hoja única. Aquí, con el nombre
+  completo, la respuesta del comercio SOLO LECTURA, la de ORUM editable y
+  un «Eliminar» que borra para siempre (por eso pasa por una confirmación).
 */
 
 const FORMULARIO_ID = 'formulario-respuesta-orum'
-
-const REGLAS = {
-  respuesta: [
-    (v: string) => {
-      const r = revisarRespuesta(v)
-      return r.ok ? null : r.error
-    },
-  ],
-}
-const ETIQUETAS: Record<string, string> = { respuesta: 'Respuesta de ORUM' }
 
 type Props = {
   comercioId: number
@@ -121,30 +107,10 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
   }
 
   return (
-    <div>
-      <header className={estilos.cabecera}>
-        <h2 id="titulo-resenas" className={estilos.titulo}>
-          Reseñas
-        </h2>
-        {total > 0 && (
-          <p className={estilos.resumen}>
-            <EstrellasLectura valor={promedio} tamano="md" />
-            <span className={estilos.promedio} aria-hidden="true">
-              {formatearPromedio(promedio)}
-            </span>
-            <span className={estilos.conteo}>
-              {total === 1 ? '1 reseña' : `${total} reseñas`}
-            </span>
-          </p>
-        )}
-      </header>
+    <div className={estilos.mia}>
+      <ResumenResenas id="titulo-resenas" titulo="Reseñas de los socios" total={total} promedio={promedio} />
 
-      <div ref={zonaRef} tabIndex={-1} className={estilos.zona}>
-        <p className={estilos.aviso} role="status">
-          {aviso}
-        </p>
-        {errorAccion && <Alert tone="danger">{errorAccion}</Alert>}
-      </div>
+      <ZonaAviso aviso={aviso} error={errorAccion} zonaRef={zonaRef} />
 
       {resenas.length > 0 ? (
         <>
@@ -159,7 +125,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
                   respuestaComercio={r.respuestaComercio}
                   respuestaAdmin={r.respuestaAdmin}
                   acciones={
-                    <div className={estilos.acciones}>
+                    <>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -190,7 +156,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
                       >
                         Eliminar
                       </Button>
-                    </div>
+                    </>
                   }
                 />
               </li>
@@ -226,8 +192,13 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
         {activa && (
           <FormularioRespuesta
             key={vez}
-            comercioId={comercioId}
+            formId={FORMULARIO_ID}
+            accion={responderComoAdmin}
+            ocultos={{ resena_id: activa.id, comercio_id: comercioId }}
             resena={activa}
+            etiqueta="Respuesta de ORUM"
+            placeholder="Aclara, agradece o explica qué hará ORUM."
+            inicial={activa.respuestaAdmin}
             onGuardada={alGuardar}
             onPendiente={setGuardando}
           />
@@ -267,77 +238,5 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
         loading={ocupadaId !== null && porEliminar !== null && ocupadaId === porEliminar.id}
       />
     </div>
-  )
-}
-
-function FormularioRespuesta({
-  comercioId,
-  resena,
-  onGuardada,
-  onPendiente,
-}: {
-  comercioId: number
-  resena: ResenaGestion
-  onGuardada: () => void
-  onPendiente: (p: boolean) => void
-}) {
-  const v = useValidacion(REGLAS)
-  const [error, setError] = useState<string | null>(null)
-  const [largo, setLargo] = useState(resena.respuestaAdmin?.length ?? 0)
-  const [, iniciar] = useTransition()
-
-  function alEnviar(e: FormEvent<HTMLFormElement>) {
-    v.propsFormulario.onSubmit(e)
-    if (e.defaultPrevented) return
-    e.preventDefault()
-
-    const datos = new FormData(e.currentTarget)
-    setError(null)
-    onPendiente(true)
-    iniciar(async () => {
-      try {
-        const r = await responderComoAdmin({}, datos)
-        if (r.ok) onGuardada()
-        else setError(r.error ?? 'No pudimos guardar la respuesta. Inténtalo de nuevo.')
-      } catch {
-        setError('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.')
-      } finally {
-        onPendiente(false)
-      }
-    })
-  }
-
-  return (
-    <form
-      id={FORMULARIO_ID}
-      className={estilos.formulario}
-      {...v.propsFormulario}
-      onSubmit={alEnviar}
-    >
-      {error && <Alert tone="danger">{error}</Alert>}
-      <ResumenErrores errores={v.errores} etiquetas={ETIQUETAS} ir={v.ir} />
-
-      <input type="hidden" name="resena_id" value={resena.id} />
-      <input type="hidden" name="comercio_id" value={comercioId} />
-
-      <blockquote className={estilos.cita}>
-        <EstrellasLectura valor={resena.estrellas} />
-        {resena.mensaje && <p>{resena.mensaje}</p>}
-      </blockquote>
-
-      <Field
-        label="Respuesta de ORUM"
-        help={`${largo} de ${MENSAJE_MAXIMO} caracteres. Sin enlaces.`}
-        error={v.error('respuesta')}
-      >
-        <Textarea
-          name="respuesta"
-          rows={5}
-          defaultValue={resena.respuestaAdmin ?? ''}
-          placeholder="Aclara, agradece o explica qué hará ORUM."
-          onChange={(e) => setLargo(e.target.value.length)}
-        />
-      </Field>
-    </form>
   )
 }

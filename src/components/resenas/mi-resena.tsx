@@ -1,27 +1,40 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { PenLine, Star, Trash2 } from 'lucide-react'
+import { PenLine, Trash2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { EstrellasAccion } from '@/components/ui/estrellas'
+import { AdornoEstrella } from '@/components/ui/marca/marca'
 import { Modal } from '@/components/ui/modal'
 import { Overlay } from '@/components/ui/overlay'
 import { borrarMiResena } from '@/app/miembros/(portal)/comercios/resenas-actions'
 import { FORMULARIO_RESENA_ID, FormularioResena } from './formulario-resena'
 import { TarjetaResena } from './tarjeta-resena'
-import estilos from './seccion-resenas.module.css'
+import { ZonaAviso } from './zona-aviso'
+import estilos from './resenas.module.css'
 
 /*
-  LO DEL SOCIO EN LA SECCIÓN DE RESEÑAS  ·  cliente
+  LO DEL SOCIO EN LA SECCIÓN DE RESEÑAS  ·  cliente (rediseño 29/10/2026)
   ---------------------------------------------------------------------------
-  El botón «Escribir reseña» / «Editar mi reseña» (solo si `puedeResenar`),
-  la tarjeta propia destacada con «Borrar», las dos ventanas y una región
-  `role="status"` que dice en voz alta (y a la vista) qué pasó: la ventana se
-  cierra al guardar y, sin ese aviso, un lector de pantalla no se enteraría
-  de que la reseña quedó publicada.
+  Tres caras, siempre en una tarjeta blanca con su sombra (nunca el crema):
+
+    · Puede calificar y aún no lo hizo → «¿Cómo te fue en Café X?» con las
+      cinco estrellas A LA VISTA. Tocar una abre la ventana con esa nota ya
+      puesta: el gesto de calificar es el mismo que el de empezar, un clic
+      menos que el botón «Escribir reseña» de antes.
+    · Ya la escribió → «Tu reseña» con «Editar» y «Borrar» en su cabecera y
+      la reseña debajo, con el mismo aspecto que las de los demás.
+    · No puede calificar (sin compra o sin membresía vigente) y no tiene
+      reseña → una línea discreta que dice cuándo podrá.
 
   «Borrar» se ofrece aunque `puedeResenar` sea falso: el socio con la
   membresía vencida puede quitar la suya (spec).
+
+  Un `role="status"` (`ZonaAviso`) dice en voz alta y a la vista qué pasó:
+  la ventana se cierra al guardar y, sin ese aviso, un lector de pantalla no
+  se enteraría. Tras borrar, el botón pulsado ya no existe: el foco va a esa
+  zona cuando la confirmación YA cerró (`enfocarTrasCerrar`).
 
   ── Por qué la confirmación no lleva `title` ────────────────────────────────
   `Modal` nombra su título con un id fijo (`modal-titulo`) y las dos ventanas
@@ -43,12 +56,16 @@ type Props = {
   comercioNombre?: string
   puedeResenar: boolean
   resena: ResenaPropia | null
+  /** Nadie ha reseñado aún: la invitación lo dice. */
+  primera?: boolean
 }
 
-export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: Props) {
+export function MiResena({ comercioId, comercioNombre, puedeResenar, resena, primera = false }: Props) {
   const [abierto, setAbierto] = useState(false)
   /** Cada apertura monta el formulario de nuevo: arranca de lo guardado. */
   const [vez, setVez] = useState(0)
+  /** La nota que se tocó en la invitación (reseña nueva). */
+  const [notaInicial, setNotaInicial] = useState<number | null>(null)
   const [guardando, setGuardando] = useState(false)
 
   const [confirmando, setConfirmando] = useState(false)
@@ -61,8 +78,9 @@ export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: P
 
   const editando = resena !== null
 
-  function abrir() {
+  function abrir(nota: number | null = null) {
     setAviso('')
+    setNotaInicial(nota)
     setVez((n) => n + 1)
     setAbierto(true)
   }
@@ -75,8 +93,7 @@ export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: P
   function enfocarTrasCerrar() {
     if (!enfocarAlCerrar.current) return
     enfocarAlCerrar.current = false
-    const zona = zonaRef.current
-    ;(zona?.querySelector<HTMLElement>('[data-resenar]') ?? zona)?.focus()
+    zonaRef.current?.focus()
   }
 
   function borrar() {
@@ -91,10 +108,6 @@ export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: P
           setErrorBorrar(r.error)
           return
         }
-        /* El botón «Borrar» desaparece con la tarjeta y el navegador, al
-           cerrar la ventana, devolvería el foco a un botón que ya no está.
-           Se lleva al botón de escribir (o a esta zona) cuando la ventana
-           YA cerró: ver `enfocarTrasCerrar`. */
         enfocarAlCerrar.current = true
         setConfirmando(false)
         setAviso('Borraste tu reseña.')
@@ -104,47 +117,53 @@ export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: P
     })
   }
 
-  if (!puedeResenar && !resena && !aviso) return null
-
   return (
-    <div className={estilos.mia} ref={zonaRef} tabIndex={-1}>
-      {/* Siempre montado, también el `role="status"`: una región viva que
-          nace ya con su texto no se anuncia. Vacío, el CSS lo saca del flujo
-          sin quitarlo del árbol de accesibilidad. */}
-      <div className={estilos.acciones}>
-        {puedeResenar && (
-          <Button
-            data-resenar=""
-            variant={editando ? 'secondary' : 'primary'}
-            icon={editando ? <PenLine size={16} /> : <Star size={16} />}
-            onClick={abrir}
-          >
-            {editando ? 'Editar mi reseña' : 'Escribir reseña'}
-          </Button>
-        )}
-        <p className={estilos.aviso} role="status">
-          {aviso}
-        </p>
-      </div>
+    <div className={estilos.mia}>
+      {/* Siempre montada: ver `ZonaAviso`. */}
+      <ZonaAviso aviso={aviso} zonaRef={zonaRef} />
 
-      {resena && (
-        <div className={estilos.propia}>
-          <div className={estilos.propiaCabeza}>
-            <p className={estilos.propiaEtiqueta}>Tu reseña</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Trash2 size={15} />}
-              onClick={() => {
-                setErrorBorrar(null)
-                setConfirmando(true)
-              }}
-            >
-              Borrar
-            </Button>
+      {resena ? (
+        <div className={estilos.panelSocio}>
+          <div className={estilos.panelCabeza}>
+            <p className={estilos.panelEtiqueta}>
+              <AdornoEstrella />
+              Tu reseña
+            </p>
+            <div className={estilos.panelAcciones}>
+              {puedeResenar && (
+                <Button variant="ghost" size="sm" icon={<PenLine size={15} />} onClick={() => abrir()}>
+                  Editar
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Trash2 size={15} />}
+                onClick={() => {
+                  setErrorBorrar(null)
+                  setConfirmando(true)
+                }}
+              >
+                Borrar
+              </Button>
+            </div>
           </div>
           <TarjetaResena autor="Tú" {...resena} />
         </div>
+      ) : puedeResenar ? (
+        <div className={estilos.panelSocio}>
+          <p className={estilos.invitarPregunta}>
+            {comercioNombre ? `¿Cómo te fue en ${comercioNombre}?` : '¿Cómo te fue?'}
+          </p>
+          <EstrellasAccion onElegir={(n) => abrir(n)} />
+          <p className={estilos.invitarAyuda}>
+            {primera
+              ? 'Toca una estrella y sé el primero en contarlo.'
+              : 'Toca una estrella para calificar. Tu opinión ayuda a otros socios.'}
+          </p>
+        </div>
+      ) : (
+        <p className={estilos.nota}>Podrás calificar este comercio cuando uses tu beneficio aquí.</p>
       )}
 
       {puedeResenar && (
@@ -173,7 +192,13 @@ export function MiResena({ comercioId, comercioNombre, puedeResenar, resena }: P
           <FormularioResena
             key={vez}
             comercioId={comercioId}
-            inicial={resena ? { estrellas: resena.estrellas, mensaje: resena.mensaje } : null}
+            inicial={
+              resena
+                ? { estrellas: resena.estrellas, mensaje: resena.mensaje }
+                : notaInicial
+                  ? { estrellas: notaInicial, mensaje: null }
+                  : null
+            }
             onGuardada={alGuardar}
             onPendiente={setGuardando}
           />

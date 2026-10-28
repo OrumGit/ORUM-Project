@@ -1,49 +1,33 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { MessageSquareText, PenLine, Reply, Trash2 } from 'lucide-react'
-import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
-import { EstrellasLectura } from '@/components/ui/estrellas-lectura'
-import { Field } from '@/components/ui/field'
-import { Textarea } from '@/components/ui/input'
 import { Overlay } from '@/components/ui/overlay'
-import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
+import { FormularioRespuesta } from '@/components/resenas/formulario-respuesta'
+import { ResumenResenas } from '@/components/resenas/resumen-resenas'
 import { TarjetaResena } from '@/components/resenas/tarjeta-resena'
+import { ZonaAviso } from '@/components/resenas/zona-aviso'
 import { fechaResena } from '@/lib/resenas/acciones'
-import { MENSAJE_MAXIMO, formatearPromedio, revisarRespuesta } from '@/lib/resenas/resenas'
 import type { ResenaGestion } from '@/lib/resenas/mapeo'
 import { quitarMiRespuesta, responderResena } from '../resenas-actions'
 import verificar from './verificar.module.css'
-import estilos from './resenas-comercio.module.css'
+import estilos from '@/components/resenas/resenas.module.css'
 
 /*
   LAS RESEÑAS EN LA CAJA  ·  el comercio las lee y responde
   ---------------------------------------------------------------------------
-  Una tarjeta más de la página (`.tarjeta` de verificar.module.css). Reutiliza
-  `TarjetaResena` del socio: aquí con el nombre COMPLETO del autor, sin
-  «tuya», y con los controles de respuesta en `acciones`. No hay botón de
-  borrar la reseña: el comercio no puede.
-
-  El formulario va en un overlay, con las reglas del servidor
-  (`revisarRespuesta`) envueltas para `useValidacion`. Se envía con `onSubmit`
-  y no con `<form action>`, igual que el del socio: React resetearía el
-  formulario tras la acción y el comercio perdería lo escrito si falla. Se
-  monta de nuevo en cada apertura (`key`).
+  Una tarjeta más de la página (`.tarjeta` de verificar.module.css). Desde
+  el 29/10/2026 todo lo que pinta sale de `components/resenas/` —el
+  encabezado (`ResumenResenas`), cada reseña (`TarjetaResena`, aquí con el
+  nombre COMPLETO del autor y los controles de respuesta), el aviso
+  (`ZonaAviso`) y el formulario (`FormularioRespuesta`)—, el mismo que usa
+  el panel. Aquí queda solo lo que es del comercio: qué acciones llama y
+  qué dice. No hay botón de borrar la reseña: el comercio no puede.
 */
 
 const FORMULARIO_ID = 'formulario-respuesta'
-
-const REGLAS = {
-  respuesta: [
-    (v: string) => {
-      const r = revisarRespuesta(v)
-      return r.ok ? null : r.error
-    },
-  ],
-}
-const ETIQUETAS: Record<string, string> = { respuesta: 'Tu respuesta' }
 
 type Props = {
   total: number
@@ -116,29 +100,9 @@ export function ResenasComercio({ total, promedio, resenas }: Props) {
 
   return (
     <section className={verificar.tarjeta} aria-labelledby="titulo-resenas">
-      <header className={estilos.cabecera}>
-        <h2 id="titulo-resenas" className={estilos.titulo}>
-          Reseñas de tus clientes
-        </h2>
-        {total > 0 && (
-          <p className={estilos.resumen}>
-            <EstrellasLectura valor={promedio} tamano="md" />
-            <span className={estilos.promedio} aria-hidden="true">
-              {formatearPromedio(promedio)}
-            </span>
-            <span className={estilos.conteo}>
-              {total === 1 ? '1 reseña' : `${total} reseñas`}
-            </span>
-          </p>
-        )}
-      </header>
+      <ResumenResenas id="titulo-resenas" titulo="Reseñas de tus clientes" total={total} promedio={promedio} />
 
-      <div ref={zonaRef} tabIndex={-1} className={estilos.zona}>
-        <p className={estilos.aviso} role="status">
-          {aviso}
-        </p>
-        {errorQuitar && <Alert tone="danger">{errorQuitar}</Alert>}
-      </div>
+      <ZonaAviso aviso={aviso} error={errorQuitar} zonaRef={zonaRef} />
 
       {resenas.length > 0 ? (
         <>
@@ -153,7 +117,7 @@ export function ResenasComercio({ total, promedio, resenas }: Props) {
                   respuestaComercio={r.respuestaComercio}
                   respuestaAdmin={r.respuestaAdmin}
                   acciones={
-                    <div className={estilos.acciones}>
+                    <>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -174,14 +138,14 @@ export function ResenasComercio({ total, promedio, resenas }: Props) {
                           Quitar
                         </Button>
                       )}
-                    </div>
+                    </>
                   }
                 />
               </li>
             ))}
           </ul>
           {total > resenas.length && (
-            <p className={estilos.nota}>
+            <p className={estilos.pie}>
               Mostramos las {resenas.length} más recientes de {total}.
             </p>
           )}
@@ -215,81 +179,18 @@ export function ResenasComercio({ total, promedio, resenas }: Props) {
         {activa && (
           <FormularioRespuesta
             key={vez}
+            formId={FORMULARIO_ID}
+            accion={responderResena}
+            ocultos={{ resena_id: activa.id }}
             resena={activa}
+            etiqueta="Tu respuesta"
+            placeholder="Agradece, aclara o cuéntale cómo lo resolverás."
+            inicial={activa.respuestaComercio}
             onGuardada={alGuardar}
             onPendiente={setGuardando}
           />
         )}
       </Overlay>
     </section>
-  )
-}
-
-function FormularioRespuesta({
-  resena,
-  onGuardada,
-  onPendiente,
-}: {
-  resena: ResenaGestion
-  onGuardada: () => void
-  onPendiente: (p: boolean) => void
-}) {
-  const v = useValidacion(REGLAS)
-  const [error, setError] = useState<string | null>(null)
-  const [largo, setLargo] = useState(resena.respuestaComercio?.length ?? 0)
-  const [, iniciar] = useTransition()
-
-  function alEnviar(e: FormEvent<HTMLFormElement>) {
-    v.propsFormulario.onSubmit(e)
-    if (e.defaultPrevented) return
-    e.preventDefault()
-
-    const datos = new FormData(e.currentTarget)
-    setError(null)
-    onPendiente(true)
-    iniciar(async () => {
-      try {
-        const r = await responderResena({}, datos)
-        if (r.ok) onGuardada()
-        else setError(r.error ?? 'No pudimos guardar tu respuesta. Inténtalo de nuevo.')
-      } catch {
-        setError('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.')
-      } finally {
-        onPendiente(false)
-      }
-    })
-  }
-
-  return (
-    <form
-      id={FORMULARIO_ID}
-      className={estilos.formulario}
-      {...v.propsFormulario}
-      onSubmit={alEnviar}
-    >
-      {error && <Alert tone="danger">{error}</Alert>}
-      <ResumenErrores errores={v.errores} etiquetas={ETIQUETAS} ir={v.ir} />
-
-      <input type="hidden" name="resena_id" value={resena.id} />
-
-      <blockquote className={estilos.cita}>
-        <EstrellasLectura valor={resena.estrellas} />
-        {resena.mensaje && <p>{resena.mensaje}</p>}
-      </blockquote>
-
-      <Field
-        label="Tu respuesta"
-        help={`${largo} de ${MENSAJE_MAXIMO} caracteres. Sin enlaces.`}
-        error={v.error('respuesta')}
-      >
-        <Textarea
-          name="respuesta"
-          rows={5}
-          defaultValue={resena.respuestaComercio ?? ''}
-          placeholder="Agradece, aclara o cuéntale cómo lo resolverás."
-          onChange={(e) => setLargo(e.target.value.length)}
-        />
-      </Field>
-    </form>
   )
 }

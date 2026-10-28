@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/input'
 import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
 import { MENSAJE_MAXIMO, revisarEstrellas, revisarMensaje } from '@/lib/resenas/resenas'
 import { guardarResena } from '@/app/miembros/(portal)/comercios/resenas-actions'
-import estilos from './seccion-resenas.module.css'
+import estilos from './resenas.module.css'
 
 /*
   EL FORMULARIO DE LA RESEÑA  ·  va dentro de un overlay (`MiResena`)
