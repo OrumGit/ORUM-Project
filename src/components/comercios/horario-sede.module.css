@@ -1,93 +1,50 @@
 /* ==========================================================================
-   EL HORARIO DE ATENCIÓN DE UNA SEDE  ·  tercera versión (29/10/2026)
-   Un bloque con su título, el estado de ahora y la semana en dos columnas:
-   los días a la izquierda, los turnos a la derecha, uno por renglón.
+   EL HORARIO DE ATENCIÓN DE UNA SEDE  ·  cuarta versión (29/10/2026)
+   Una fila más de la sede, como la dirección y el teléfono: el reloj dorado
+   a la izquierda, el estado en una frase y la semana en dos columnas. Peso
+   normal en todo; solo la palabra del estado lleva color.
    ========================================================================== */
 
 .horario {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-1);
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-hundida);
-}
-
-/* «HORARIO DE ATENCIÓN»: el rótulo que faltaba. */
-.titulo {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   margin: 0;
-  font-size: var(--t-overline-size);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-2);
 }
 
+/* Mismo icono y misma alineación que la dirección y el teléfono. */
 .icono {
   flex-shrink: 0;
+  margin-top: calc((1lh - 15px) / 2);
   color: var(--brand);
 }
 
-/* --- El estado de ahora --------------------------------------------------------- */
-
-.estadoLinea {
+.cuerpo {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-/* Píldora sin sombra: punto + texto, con un tinte de SU color (no el crema,
-   que el cliente no quiso en la ficha). Lleno = abierto; hueco = cerrado o
-   almorzando. El texto lo dice igual: el color nunca va solo. */
+/* --- El estado: una frase ----------------------------------------------------- */
+
 .estado {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 2px var(--space-3);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-  font-size: var(--t-callout-size);
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
+  margin: 0;
+  color: var(--text-2);
 }
 
-.estado[data-tipo='abierto'] {
-  background: color-mix(in srgb, var(--success) 12%, transparent);
-}
-
-.estado[data-tipo='almuerzo'] {
-  background: color-mix(in srgb, var(--warning) 14%, transparent);
-}
-
-.punto {
-  flex-shrink: 0;
-  box-sizing: border-box;
-  width: 9px;
-  height: 9px;
-  border: 1px solid currentColor;
-  border-radius: var(--radius-full);
+/* La palabra lleva el color; el texto la dice igual. */
+.palabra {
+  font-weight: 600;
   color: var(--danger);
 }
 
-.estado[data-tipo='abierto'] .punto {
+.palabra[data-tipo='abierto'] {
   color: var(--success);
-  background: currentColor;
 }
 
-.estado[data-tipo='almuerzo'] .punto {
+.palabra[data-tipo='almuerzo'] {
   color: var(--warning);
-}
-
-.detalle {
-  font-size: var(--t-callout-size);
-  color: var(--text-2);
 }
 
 /* --- La semana ------------------------------------------------------------------ */
@@ -95,6 +52,7 @@
 .semana {
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 2px var(--space-5);
   margin: 0;
 }
 
@@ -102,83 +60,44 @@
   display: contents;
 }
 
-.dias,
-.horas {
-  padding-block: var(--space-2);
-}
-
-/* Entre filas, el filo fino de las filas. */
-.fila + .fila .dias,
-.fila + .fila .horas {
-  border-top: 1px solid var(--border-subtle);
-}
-
 .dias {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  padding-right: var(--space-4);
-  font-size: var(--t-callout-size);
-  font-weight: 600;
-  color: var(--text);
-}
-
-/* «HOY»: una etiqueta, no solo más negrita. */
-.hoy {
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--text);
-  font-size: var(--t-caption-size);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--surface);
+  color: var(--text-2);
 }
 
 .horas {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   margin: 0;
-  font-size: var(--t-callout-size);
-  line-height: 1.45;
-}
-
-.turno {
-  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
 .pausa {
-  font-size: var(--t-footnote-size);
-  color: var(--text-2);
-}
-
-.cerrado {
   color: var(--text-3);
 }
 
-.fila[data-hoy] .dias,
-.fila[data-hoy] .turno {
-  font-weight: 800;
+.hoy {
+  color: var(--text-3);
 }
 
-/* Estrecho: los días encima de sus horas, a todo lo ancho. */
-@media (max-width: 420px) {
+/* Con varias filas y ya sabido qué día es: hoy en tinta plena, el resto un
+   paso más claro. Sin negrita. */
+.semana[data-marca-hoy] .fila:not([data-hoy]) .horas {
+  color: var(--text-2);
+}
+
+.fila[data-hoy] .dias {
+  color: var(--text);
+}
+
+/* Estrecho: los días encima de sus horas. */
+@media (max-width: 360px) {
   .semana {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dias {
-    padding-bottom: 0;
-  }
-
-  .fila + .fila .horas {
-    border-top: 0;
+    row-gap: 0;
   }
 
   .horas {
-    padding-top: var(--space-1);
+    margin-bottom: var(--space-1);
   }
 }

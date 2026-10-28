@@ -18,43 +18,46 @@ import { useInstanteAlMinuto } from './use-minuto'
 import estilos from './horario-sede.module.css'
 
 /*
-  EL HORARIO DE ATENCIÓN DE UNA SEDE  ·  tercera versión (29/10/2026)
+  EL HORARIO DE ATENCIÓN DE UNA SEDE  ·  cuarta versión (29/10/2026)
   ---------------------------------------------------------------------------
-  Un probador, mirando la anterior: «como usuario, no lo entiendo». Tenía
-  el reloj sin título, una línea «Hoy» que repetía la tabla, los días en
-  corto («Lun a sáb») y las horas que compartían «a. m.» («8:00 – 11:00
-  a. m. y 3:30 – 10:00 p. m.»): había que descifrarlo. Ahora se lee solo:
+  La tercera (título en versales, píldora roja con un círculo, «HOY» en
+  negro y todo en negrita) no gustó: «todo muy exagerado; quiero algo
+  minimalista y que se entienda a la primera». Ahora es una fila más de la
+  sede, como la dirección y el teléfono, con su reloj dorado:
 
-    HORARIO DE ATENCIÓN                         ← su título, con el reloj
-    [● Abierto ahora]  Cierra a las 11:00 a. m. para almorzar
-    Lunes a sábado  HOY   8:00 a. m. – 11:00 a. m.
-                          3:30 p. m. – 10:00 p. m.
-                          Cerrado por almuerzo de 11:00 a. m. a 3:30 p. m.
-    Domingo               …
+    🕘 Cerrado ahora · abre hoy a las 6:00 p. m.
+       Todos los días        6:00 p. m. – 9:00 p. m.
 
-  Los días enteros, las horas completas, un turno por renglón y el
-  almuerzo dicho con palabras; hoy, marcado con su etiqueta. La semana se ve
-  entera, sin plegar: son pocas filas y es justo lo que se viene a mirar.
+  Peso normal en todo. Lo único con color es la palabra del estado, en SU
+  color de texto (verde, ámbar, rojo; los tres pasan AA sobre blanco) y
+  diciendo el estado con palabras: el color nunca va solo. Sin píldora, sin
+  punto, sin recuadro, sin título. Con varias filas, la de hoy va en tinta
+  plena con un «hoy» discreto y las demás un paso más claras; con una sola
+  fila no hace falta marcar nada. Se conserva lo que la tercera arregló:
+  los días enteros, las horas completas, un turno por renglón y el almuerzo
+  dicho con palabras. **No vuelvas a la píldora, al «HOY» negro ni a la
+  negrita.**
 
   De CLIENTE a propósito: las fichas salen de caché y lo de «ahora» se
-  quedaría viejo. En el servidor se pinta la semana; el estado y «Hoy»
+  quedaría viejo. En el servidor se pinta la semana; el estado y «hoy»
   aparecen al montar, sin desajuste (`useInstanteAlMinuto`).
 */
 
 function Jornada({ fila }: { fila: DiaHorario }) {
   const j = jornadaLegible(fila)
-  if (j.cerrado) return <span className={estilos.cerrado}>Cerrado</span>
+  if (j.cerrado) return <span>Cerrado</span>
   return (
     <>
       {j.turnos.map((t) => (
-        <span key={t} className={estilos.turno}>
-          {sinCortarHoras(t)}
-        </span>
+        <span key={t}>{sinCortarHoras(t)}</span>
       ))}
       {j.pausa && <span className={estilos.pausa}>{sinCortarHoras(j.pausa)}</span>}
     </>
   )
 }
+
+/** «Abre hoy…» → «abre hoy…»: sigue a «Cerrado ahora ·» en la misma frase. */
+const enMinuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1)
 
 export function HorarioSede({ horario }: { horario: HorarioSucursal }) {
   const instante = useInstanteAlMinuto()
@@ -67,51 +70,46 @@ export function HorarioSede({ horario }: { horario: HorarioSucursal }) {
   const hoy = instante ? ahoraEnBogota(instante).fecha : null
   const hoyEsFestivo = hoy !== null && festivos !== null && esFestivoColombia(hoy)
   const diaHoy = hoy !== null ? diaDeSemanaISO(hoy) : null
+  // Con una sola fila, «hoy» no distingue nada.
+  const marcarHoy = grupos.length + (festivos ? 1 : 0) > 1
+
+  const filas = [
+    ...grupos.map((g) => ({
+      clave: String(g.dias[0]),
+      dias: nombreDias(g.dias),
+      fila: g.fila,
+      esHoy: !hoyEsFestivo && diaHoy !== null && g.dias.includes(diaHoy),
+    })),
+    ...(festivos ? [{ clave: 'festivos', dias: 'Festivos', fila: festivos, esHoy: hoyEsFestivo }] : []),
+  ]
 
   return (
     <section className={estilos.horario} aria-label="Horario de atención">
-      <p className={estilos.titulo}>
-        <Clock size={15} aria-hidden="true" className={estilos.icono} />
-        Horario de atención
-      </p>
+      <Clock size={15} aria-hidden="true" className={estilos.icono} />
+      <div className={estilos.cuerpo}>
+        {partes && estado && (
+          <p className={estilos.estado}>
+            <span className={estilos.palabra} data-tipo={estado.tipo}>
+              {partes.titulo}
+            </span>
+            {partes.detalle && <> · {sinCortarHoras(enMinuscula(partes.detalle))}</>}
+          </p>
+        )}
 
-      {partes && estado && (
-        <p className={estilos.estadoLinea}>
-          <span className={estilos.estado} data-tipo={estado.tipo}>
-            <span className={estilos.punto} aria-hidden="true" />
-            {partes.titulo}
-          </span>
-          {partes.detalle && <span className={estilos.detalle}>{sinCortarHoras(partes.detalle)}</span>}
-        </p>
-      )}
-
-      <dl className={estilos.semana}>
-        {grupos.map((g) => {
-          const esHoy = !hoyEsFestivo && diaHoy !== null && g.dias.includes(diaHoy)
-          return (
-            <div key={g.dias[0]} className={estilos.fila} data-hoy={esHoy || undefined}>
+        <dl className={estilos.semana} data-marca-hoy={(marcarHoy && hoy !== null) || undefined}>
+          {filas.map((f) => (
+            <div key={f.clave} className={estilos.fila} data-hoy={(marcarHoy && f.esHoy) || undefined}>
               <dt className={estilos.dias}>
-                {nombreDias(g.dias)}
-                {esHoy && <span className={estilos.hoy}>Hoy</span>}
+                {f.dias}
+                {marcarHoy && f.esHoy && <span className={estilos.hoy}> · hoy</span>}
               </dt>
               <dd className={estilos.horas}>
-                <Jornada fila={g.fila} />
+                <Jornada fila={f.fila} />
               </dd>
             </div>
-          )
-        })}
-        {festivos && (
-          <div className={estilos.fila} data-hoy={hoyEsFestivo || undefined}>
-            <dt className={estilos.dias}>
-              Festivos
-              {hoyEsFestivo && <span className={estilos.hoy}>Hoy</span>}
-            </dt>
-            <dd className={estilos.horas}>
-              <Jornada fila={festivos} />
-            </dd>
-          </div>
-        )}
-      </dl>
+          ))}
+        </dl>
+      </div>
     </section>
   )
 }

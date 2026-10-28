@@ -1099,20 +1099,20 @@ función `reemplazar_horario_sucursal` (`service_role`), que además toca
   quedaría viejo. `useInstanteAlMinuto` (`components/comercios/use-minuto.ts`,
   `useSyncExternalStore` con `getServerSnapshot` en `null`): el servidor
   pinta la semana y el navegador añade el estado y el día de hoy. Punto
-  lleno/hueco **y** texto, nunca color solo. **Tercera versión, 29/10/2026**
-  (un probador, con la del 28/10: «como usuario, no lo entiendo»; esa tenía
-  el reloj sin título, una línea «Hoy» que repetía la tabla, los días en
-  corto y las horas compartiendo «a. m.»). Ahora es un bloque hundido con su
-  TÍTULO «Horario de atención»; el estado en una píldora con un tinte de SU
-  color (verde abierto, ámbar almuerzo, rojo cerrado; NO el crema) y al lado
-  lo que viene (`partesEstado`: «Cierra a las 11:00 a. m. para almorzar»,
-  «Abre de nuevo…», «Abre mañana…»); y la semana ENTERA, sin plegar, en dos
-  columnas: los días con su nombre completo (`nombreDias`: «Lunes a
-  sábado») y una etiqueta «HOY», y a la derecha un TURNO por renglón con
-  las dos horas completas (`jornadaLegible`, `rangoCompleto`: «8:00 a. m. –
-  11:00 a. m.») y el almuerzo dicho con palabras («Cerrado por almuerzo de
-  11:00 a. m. a 3:30 p. m.»). **No vuelvas a abreviar días ni a compartir
-  «a. m.» en lo que lee el socio.** Todo texto con horas se pinta con
+  lleno/hueco **y** texto, nunca color solo. **Cuarta versión, 29/10/2026,
+  MINIMALISTA** («todo muy exagerado, con tanta negrita, y ese círculo rojo
+  se ve muy feo; algo minimalista que se entienda a la primera»). Es una
+  fila más de la sede, como la dirección y el teléfono: el reloj dorado y
+  una frase, «Cerrado ahora · abre hoy a las 6:00 p. m.», donde SOLO la
+  palabra del estado lleva color (de texto: verde, ámbar o rojo, los tres
+  AA sobre blanco) y peso 600; debajo, la semana en dos columnas, todo en
+  peso normal. Con varias filas, la de hoy en tinta plena con «· hoy»
+  discreto y el resto un paso más claro; con una sola, nada. **No vuelvas
+  a la píldora con punto, al «HOY» negro, al título en versales, al
+  recuadro hundido ni a la negrita.** De la tercera se conserva: los días
+  con su nombre completo (`nombreDias`), las horas completas, un turno por
+  renglón (`jornadaLegible`, `rangoCompleto`) y el almuerzo dicho con
+  palabras. Todo texto con horas se pinta con
   `sinCortarHoras` (no parte «a. m.» ni un rango).
 - **La sede, una fila por dato** (28/10/2026): dirección, teléfono y horario,
   cada uno con su icono DORADO a la izquierda y el texto en TINTA. **El
