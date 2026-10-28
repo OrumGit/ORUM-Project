@@ -3,7 +3,6 @@
 import { leerPesos } from '@/lib/validacion/reglas'
 import { mensajeDeError } from '@/lib/shared/errores'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getPerfilActual } from '@/lib/auth/auth'
 
@@ -41,28 +40,6 @@ function leerCampos(formData: FormData):
   }
 }
 
-export async function crearPlan(_prev: PlanState, formData: FormData): Promise<PlanState> {
-  const actorId = await exigirSuperAdmin()
-  if (!actorId) return { error: 'No tienes permiso para realizar esta acción.' }
-
-  const campos = leerCampos(formData)
-  if (!campos.ok) return { error: campos.error }
-
-  const admin = createAdminClient()
-  const { error } = await admin.from('planes_membresia').insert({
-    updated_by: actorId,
-    nombre: campos.nombre,
-    descripcion: campos.descripcion,
-    precio: campos.precio,
-    duracion_meses: campos.duracion,
-    activo: true,
-  })
-  if (error) return { error: mensajeDeError('No se pudo crear el plan', error) }
-
-  revalidatePath('/admin/planes')
-  return { ok: true }
-}
-
 export async function editarPlan(_prev: PlanState, formData: FormData): Promise<PlanState> {
   const actorId = await exigirSuperAdmin()
   if (!actorId) return { error: 'No tienes permiso para realizar esta acción.' }
@@ -88,20 +65,4 @@ export async function editarPlan(_prev: PlanState, formData: FormData): Promise<
 
   revalidatePath('/admin/planes')
   return { ok: true }
-}
-
-/** Activa o desactiva un plan (planes_membresia.activo). */
-export async function cambiarEstadoPlan(formData: FormData): Promise<void> {
-  const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
-
-  const id = Number(formData.get('id'))
-  const activar = String(formData.get('activar') ?? '') === 'true'
-  if (!Number.isInteger(id) || id < 1) redirect('/admin/planes')
-
-  const admin = createAdminClient()
-  await admin.from('planes_membresia').update({ updated_by: actorId, activo: activar }).eq('id', id)
-
-  revalidatePath('/admin/planes')
-  redirect('/admin/planes')
 }

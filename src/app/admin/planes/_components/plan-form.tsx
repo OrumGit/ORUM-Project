@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { CreditCard, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -10,7 +10,7 @@ import { Stack } from '@/components/ui/layout'
 import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
 import { entero, largo, obligatorio, precio } from '@/lib/validacion/reglas'
 import { useCerrarCuando, useCerrarOverlay } from '@/components/shell/overlay-ruta'
-import { crearPlan, editarPlan, type PlanState } from '../actions'
+import { editarPlan, type PlanState } from '../actions'
 import styles from '@/styles/formulario.module.css'
 
 type PlanInicial = {
@@ -37,12 +37,9 @@ const ETIQUETAS: Record<string, string> = {
   duracion_meses: 'Duración',
 }
 
-export function PlanForm({ plan }: { plan?: PlanInicial }) {
-  const editando = Boolean(plan)
-  const [state, formAction, pending] = useActionState(
-    editando ? editarPlan : crearPlan,
-    estadoInicial,
-  )
+/* Solo edita: crear planes se retiró el 29/10/2026. */
+export function PlanForm({ plan }: { plan: PlanInicial }) {
+  const [state, formAction, pending] = useActionState(editarPlan, estadoInicial)
   const cerrar = useCerrarOverlay()
   useCerrarCuando(state.ok)
   const v = useValidacion(REGLAS)
@@ -99,9 +96,9 @@ export function PlanForm({ plan }: { plan?: PlanInicial }) {
           <Button
             type="submit"
             loading={pending}
-            icon={editando ? <Save size={16} /> : <CreditCard size={16} />}
+            icon={<Save size={16} />}
           >
-            {editando ? 'Guardar cambios' : 'Crear plan'}
+            Guardar cambios
           </Button>
           <Button type="button" variant="secondary" onClick={cerrar}>
             Cancelar

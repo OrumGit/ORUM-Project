@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, CreditCard, Megaphone, RefreshCw, Store, Tag, UserPlus } from 'lucide-react'
+import { ArrowRight, Megaphone, RefreshCw, Store, Tag, UserPlus } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Cifra } from '@/components/ui/cifra'
@@ -86,13 +86,6 @@ const CREAR = [
     nota: 'Para los socios',
     icono: Megaphone,
     tono: 'dorado',
-  },
-  {
-    href: '/admin/planes/nuevo',
-    nombre: 'Plan',
-    nota: 'De membresía',
-    icono: CreditCard,
-    tono: 'verde',
   },
 ] as const
 

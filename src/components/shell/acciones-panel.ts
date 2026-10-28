@@ -89,13 +89,6 @@ const ACCIONES: AccionPanel[] = [
     claves: 'precios',
   },
   {
-    id: 'nuevo-plan',
-    label: 'Nuevo plan de membresía',
-    icon: CreditCard,
-    href: '/admin/planes/nuevo',
-    soloSuperAdmin: true,
-  },
-  {
     id: 'usuarios',
     label: 'Ver usuarios del panel',
     icon: UserCog,

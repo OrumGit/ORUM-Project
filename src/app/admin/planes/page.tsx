@@ -1,14 +1,11 @@
-import { CreditCard, MoreHorizontal, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { AccionEstado } from '@/components/ui/accion-estado'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { PageHeader } from '@/components/ui/layout'
-import { DropdownMenu, MenuItem } from '@/components/ui/menu'
-import { cambiarEstadoPlan } from './actions'
 
 export const metadata = { title: 'Planes · ORUM' }
 
@@ -83,14 +80,13 @@ export default async function PlanesPage() {
 
   return (
     <>
+      {/* Sin «Crear plan» ni «Retirar» (29/10/2026, encargo del propietario:
+          «quitar la funcionalidad de añadir o quitar planes de membresía»).
+          Los planes son los que hay; aquí solo se ajusta su precio, su
+          duración o su descripción. */}
       <PageHeader
         title="Planes de membresía"
-        description="Solo los planes a la venta pueden asignarse a un miembro nuevo o a una renovación."
-        actions={
-          <Button href="/admin/planes/nuevo" icon={<CreditCard size={16} />}>
-            Crear plan
-          </Button>
-        }
+        description="Los planes con los que se registran y renuevan las membresías. Puedes ajustar su precio, su duración y su descripción."
       />
 
       <DataList
@@ -102,41 +98,19 @@ export default async function PlanesPage() {
         empty={
           <EmptyState
             title="Aún no hay planes"
-            description="Crea el primero: sin un plan a la venta no se pueden registrar membresías."
-            actions={
-              <Button href="/admin/planes/nuevo" icon={<CreditCard size={16} />}>
-                Crear plan
-              </Button>
-            }
+            description="Sin un plan a la venta no se pueden registrar membresías. Escríbele al equipo técnico."
           />
         }
         actions={(p) => (
-          <>
-            <AccionEstado
-              activo={p.activo}
-              accion={cambiarEstadoPlan}
-              campos={{ id: p.id }}
-              etiquetaDesactivar="Retirar"
-              etiquetaActivar="Poner a la venta"
-            />
-
-            <DropdownMenu
-              trigger={
-                <Button
-                  iconOnly
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`Acciones de ${p.nombre}`}
-                >
-                  <MoreHorizontal size={16} />
-                </Button>
-              }
-            >
-              <MenuItem href={`/admin/planes/${p.id}/editar`} icon={<Pencil size={16} />}>
-                Editar plan
-              </MenuItem>
-            </DropdownMenu>
-          </>
+          <Button
+            href={`/admin/planes/${p.id}/editar`}
+            variant="ghost"
+            size="sm"
+            icon={<Pencil size={15} />}
+            aria-label={`Editar ${p.nombre}`}
+          >
+            Editar
+          </Button>
         )}
       />
     </>
