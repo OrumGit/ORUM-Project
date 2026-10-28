@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   aplicaAhora,
+  cuandoUsarlo,
+  textoDisponibilidad,
   diasDeFranjas,
   estadoPromocion,
   leerFranjasDelFormulario,
@@ -145,5 +147,33 @@ describe('el texto', () => {
       'Sáb y dom · 8:00 – 9:00 a. m. y 7:00 – 8:00 p. m.',
     ])
     expect(lineasFranjas(null)).toEqual([])
+  })
+})
+
+describe('para el socio: cuándo usarlo y si puede ahora', () => {
+  it('un renglón por grupo de días, entero y con horas completas', () => {
+    expect(cuandoUsarlo([2, 3, 6, 7], CORAJE)).toEqual([
+      { dias: 'Martes y miércoles', horas: ['8:00 a. m. – 9:30 a. m.', '6:00 p. m. – 7:00 p. m.'] },
+      { dias: 'Sábado y domingo', horas: ['8:00 a. m. – 9:00 a. m.', '7:00 p. m. – 8:00 p. m.'] },
+    ])
+  })
+
+  it('sin horas: todo el día, en sus días o todos', () => {
+    expect(cuandoUsarlo([2, 3, 4], null)).toEqual([{ dias: 'Martes a jueves', horas: ['Todo el día'] }])
+    expect(cuandoUsarlo(null, null)).toEqual([{ dias: 'Todos los días', horas: ['Todo el día'] }])
+  })
+
+  it('una franja de 00:00 a 23:59 se lee «todo el día»', () => {
+    expect(cuandoUsarlo(null, [{ dias: [6, 7], desde: '00:00', hasta: '23:59' }])).toEqual([
+      { dias: 'Sábado y domingo', horas: ['Todo el día'] },
+    ])
+  })
+
+  it('el estado en palabras de socio', () => {
+    expect(textoDisponibilidad({ tipo: 'aplica', hasta: '09:30' })).toBe('Puedes usarlo ahora, hasta las 9:30 a. m.')
+    expect(textoDisponibilidad({ tipo: 'aplica', hasta: null })).toBe('Puedes usarlo hoy')
+    expect(textoDisponibilidad({ tipo: 'aplica', hasta: '23:59' })).toBe('Puedes usarlo hoy')
+    expect(textoDisponibilidad({ tipo: 'mas_tarde', desde: '18:00' })).toBe('Hoy podrás usarlo desde las 6:00 p. m.')
+    expect(textoDisponibilidad({ tipo: 'hoy_no' })).toBe('Hoy no está disponible')
   })
 })

@@ -4,7 +4,7 @@ import { BeneficiosSocio, type BeneficioSocio } from '@/components/comercios/ben
 import fichaEstilos from '@/components/comercios/ficha-comercio.module.css'
 import { AdornoEstrella } from '@/components/ui/marca/marca'
 import { PromocionForm } from '@/app/admin/comercios/[id]/promociones/_components/promocion-form'
-import { lineasFranjas, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
+import { cuandoUsarlo, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
 import type { DiaHorario } from '@/lib/comercios/horario'
 import portal from '@/app/miembros/(portal)/portal.module.css'
 import estilos from '../horarios/horarios.module.css'
@@ -49,7 +49,7 @@ const BENEFICIOS: BeneficioSocio[] = [
     valor: '10% de descuento',
     asunto: 'Toda la carta',
     descripcion: null,
-    cuando: lineasFranjas(FRANJAS),
+    cuando: cuandoUsarlo([2, 3, 6, 7], FRANJAS),
     dias: [2, 3, 6, 7],
     franjas: FRANJAS,
     restricciones:
@@ -61,7 +61,7 @@ const BENEFICIOS: BeneficioSocio[] = [
     valor: '10% de descuento',
     asunto: 'Brunch',
     descripcion: null,
-    cuando: ['De martes a jueves'],
+    cuando: cuandoUsarlo([2, 3, 4], null),
     dias: [2, 3, 4],
     franjas: null,
     restricciones: 'Incluye a todos los integrantes de la mesa.',
@@ -72,7 +72,7 @@ const BENEFICIOS: BeneficioSocio[] = [
     valor: 'Regalo',
     asunto: 'Bebida GRATIS',
     descripcion: 'Por cada desayuno consumido te obsequiamos tu bebida.',
-    cuando: ['De lunes a sábado'],
+    cuando: cuandoUsarlo([1, 2, 3, 4, 5, 6], null),
     dias: [1, 2, 3, 4, 5, 6],
     franjas: null,
     restricciones: 'Aplica en todas las bebidas de la carta. Solo para la persona que tiene la membresía.',

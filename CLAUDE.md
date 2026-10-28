@@ -1099,17 +1099,21 @@ función `reemplazar_horario_sucursal` (`service_role`), que además toca
   quedaría viejo. `useInstanteAlMinuto` (`components/comercios/use-minuto.ts`,
   `useSyncExternalStore` con `getServerSnapshot` en `null`): el servidor
   pinta la semana y el navegador añade el estado y el día de hoy. Punto
-  lleno/hueco **y** texto, nunca color solo. **Rediseño del 28/10/2026**
-  («que se evidencie en qué momento está abierto; si van a almorzar, en esos
-  momentos está cerrado; que se entienda mejor»): en la fila del reloj, el
-  estado en una píldora con un tinte de SU color (verde abierto, ámbar
-  almuerzo; NO el crema) y al lado lo que viene (`partesEstado`: «Cierra por
-  almuerzo a las 11:00 a. m.», «Reabre…», «Abre mañana…»); debajo, HOY con
-  sus horas ABIERTAS en tramos (`textoTramos`: «8:00 – 11:00 a. m. y 3:30 –
-  10:00 p. m.»: el hueco del almuerzo se ve sin leer «almuerzo»); y la semana
-  plegada en «Ver horario de la semana» (`<details>`, dos columnas, hoy en
-  negrita). Todo texto con horas se pinta con `sinCortarHoras` (no parte
-  «a. m.» ni un rango).
+  lleno/hueco **y** texto, nunca color solo. **Tercera versión, 29/10/2026**
+  (un probador, con la del 28/10: «como usuario, no lo entiendo»; esa tenía
+  el reloj sin título, una línea «Hoy» que repetía la tabla, los días en
+  corto y las horas compartiendo «a. m.»). Ahora es un bloque hundido con su
+  TÍTULO «Horario de atención»; el estado en una píldora con un tinte de SU
+  color (verde abierto, ámbar almuerzo, rojo cerrado; NO el crema) y al lado
+  lo que viene (`partesEstado`: «Cierra a las 11:00 a. m. para almorzar»,
+  «Abre de nuevo…», «Abre mañana…»); y la semana ENTERA, sin plegar, en dos
+  columnas: los días con su nombre completo (`nombreDias`: «Lunes a
+  sábado») y una etiqueta «HOY», y a la derecha un TURNO por renglón con
+  las dos horas completas (`jornadaLegible`, `rangoCompleto`: «8:00 a. m. –
+  11:00 a. m.») y el almuerzo dicho con palabras («Cerrado por almuerzo de
+  11:00 a. m. a 3:30 p. m.»). **No vuelvas a abreviar días ni a compartir
+  «a. m.» en lo que lee el socio.** Todo texto con horas se pinta con
+  `sinCortarHoras` (no parte «a. m.» ni un rango).
 - **La sede, una fila por dato** (28/10/2026): dirección, teléfono y horario,
   cada uno con su icono DORADO a la izquierda y el texto en TINTA. **El
   teléfono va como la dirección** —enlace en tinta con el subrayado fino,
@@ -1137,10 +1141,18 @@ el cierre» es 23:59), hasta `MAX_FRANJAS` (6) y sin cruzarse el mismo día.
   guarda como la UNIÓN de sus días: lo que ya sabía de días sigue diciendo la
   verdad.
 - **Se edita en el panel** (`EditorFranjas`, en `PromocionForm`, bloque
-  «Cuándo aplica»): apagado «Solo en ciertos horarios», las casillas de días
-  de siempre; encendido, una franja por fila con sus días en píldoras y sus
-  dos horas, «Añadir franja» y, debajo, «Así lo verá el socio». Viaja en el
-  campo oculto `franjas_horarias` (JSON).
+  «¿Cuándo se puede usar?», segunda versión del 29/10/2026: la primera
+  escondía los días tras un interruptor y hablaba de «franjas», y no se
+  entendía). Dos opciones: «Todos los días, a cualquier hora» o «Solo
+  algunos días u horas». En la segunda, GRUPOS: unos días (píldoras) con
+  «Todo el día» o «Solo en estas horas» («De [08:00] a [09:30]», «Añadir
+  otra hora para estos días»), y «Añadir otros días con otro horario».
+  Debajo, «Así lo verá el socio». Lo que viaja: nada (siempre); solo días →
+  las casillas `dias_semana`; con horas → el JSON `franjas_horarias`, donde
+  un grupo «todo el día» va como 00:00–23:59 (`esTodoElDia`, que todas las
+  vistas leen como «Todo el día»). Los `name` de sus radios salen de
+  `useId()`: con las `clave` de las filas, el HTML del servidor y el del
+  navegador no coincidían.
 - **Se cumple tres veces**: la caja apaga la promoción que no toca AHORA y
   dice por qué (`ahoraTexto`), la acción de la venta la rechaza
   (`aplicaAhora`) y `fn_validar_venta` también (la migración lo añade).
@@ -1158,9 +1170,14 @@ estrella de ORUM. Cada beneficio: su icono por tipo en un aro dorado; el
 TITULAR subrayado con un trazo de marcador dorado bajo el texto
 (`asuntoDelTitulo`, `lib/comercios/titulo-beneficio.ts`: el valor en negrita
 y, tras «·», en qué, quitando el valor si el título lo repite); la
-descripción; CUÁNDO (días o franjas) con su estado de ahora en una píldora
-(de cliente, `useInstanteAlMinuto`); y las condiciones en letra pequeña con
-su icono. Entre beneficios, un filo fino. El título de una promoción se
+descripción; «CUÁNDO PUEDES USARLO» (29/10/2026: un recuadro hundido con su
+rótulo, los días con su nombre completo y las horas completas, una por
+renglón —`cuandoUsarlo`—, y debajo si se puede AHORA en palabras de socio
+—`textoDisponibilidad`: «Puedes usarlo ahora, hasta las 9:30 a. m.», «Hoy
+podrás usarlo desde las 6:00 p. m.», «Hoy no está disponible»—, de cliente,
+`useInstanteAlMinuto`); y las condiciones en letra pequeña con su icono. La
+caja del comercio sigue con el texto corto del cajero
+(`textoEstadoPromocion`). Entre beneficios, un filo fino. El título de una promoción se
 escribe CORTO («Brunch»): lo pide la ayuda del formulario. Vista previa con
 datos falsos (Coraje, el caso que lo pidió) y el editor de franjas:
 `/dev/beneficios`.

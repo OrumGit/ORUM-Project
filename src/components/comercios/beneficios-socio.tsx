@@ -5,8 +5,9 @@ import type { ReactNode } from 'react'
 import { sinCortarHoras } from '@/lib/comercios/horario'
 import {
   estadoPromocion,
-  textoEstadoPromocion,
+  textoDisponibilidad,
   type FranjaPromocion,
+  type GrupoUso,
 } from '@/lib/comercios/franjas-promocion'
 import type { TipoBeneficioCodigo } from '@/lib/supabase/database.types'
 import { useInstanteAlMinuto } from './use-minuto'
@@ -25,10 +26,13 @@ import estilos from './beneficios-socio.module.css'
     · el TITULAR, subrayado con un trazo de marcador dorado: el valor en
       negrita y, tras «·», en qué (`asuntoDelTitulo`);
     · la descripción, si la hay;
-    · CUÁNDO: los días y las franjas («Mar y mié · 8:00 – 9:30 a. m. y …»)
-      y, al lado, el estado de AHORA en una píldora («Aplica ahora · hasta
-      las 9:30 a. m.», «Hoy aplica desde las 6:00 p. m.», «Hoy no aplica»)
-      con su punto —lleno si aplica, hueco si no—: el color nunca va solo;
+    · «CUÁNDO PUEDES USARLO» (29/10/2026, tras «no lo entiendo»): un
+      recuadro con su rótulo, un renglón por grupo de días con los días
+      ENTEROS y las horas COMPLETAS («Martes y miércoles · 8:00 a. m. –
+      9:30 a. m. · 6:00 p. m. – 7:00 p. m.»), y debajo si puede usarlo
+      AHORA («Puedes usarlo ahora, hasta las 9:30 a. m.», «Hoy podrás
+      usarlo desde las 6:00 p. m.», «Hoy no está disponible») con su punto
+      —lleno si puede, hueco si no—: el color nunca va solo;
     · las condiciones y restricciones, en letra pequeña con su icono.
 
   De cliente solo por el estado de «ahora» (`useInstanteAlMinuto`): el resto
@@ -43,8 +47,8 @@ export type BeneficioSocio = {
   /** «Brunch», «Bebida GRATIS»; vacío si el título no añade nada. */
   asunto: string
   descripcion: string | null
-  /** Cuándo vale, en líneas; vacío = todos los días, todo el día. */
-  cuando: string[]
+  /** Cuándo se puede usar: un grupo de días con sus horas (`cuandoUsarlo`). */
+  cuando: GrupoUso[]
   dias: number[] | null
   franjas: FranjaPromocion[] | null
   restricciones: string | null
@@ -90,23 +94,27 @@ export function BeneficiosSocio({ beneficios }: { beneficios: BeneficioSocio[] }
 
               {b.descripcion && <p className={estilos.descripcion}>{b.descripcion}</p>}
 
-              <div className={estilos.meta}>
-                <p className={estilos.cuando}>
-                  <CalendarClock size={15} aria-hidden="true" className={estilos.cuandoIcono} />
-                  <span>
-                    {b.cuando.length > 0
-                      ? b.cuando.map((linea) => (
-                          <span key={linea} className={estilos.cuandoLinea}>
-                            {sinCortarHoras(linea)}
-                          </span>
-                        ))
-                      : 'Todos los días, todo el día'}
-                  </span>
+              <div className={estilos.uso}>
+                <p className={estilos.usoRotulo}>
+                  <CalendarClock size={14} aria-hidden="true" className={estilos.cuandoIcono} />
+                  Cuándo puedes usarlo
                 </p>
+                <dl className={estilos.usoLista}>
+                  {b.cuando.map((g) => (
+                    <div key={g.dias} className={estilos.usoFila}>
+                      <dt className={estilos.usoDias}>{g.dias}</dt>
+                      <dd className={estilos.usoHoras}>
+                        {g.horas.map((h) => (
+                          <span key={h}>{sinCortarHoras(h)}</span>
+                        ))}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
                 {estado && (
                   <p className={estilos.estado} data-tipo={estado.tipo}>
                     <span className={estilos.punto} aria-hidden="true" />
-                    {sinCortarHoras(textoEstadoPromocion(estado))}
+                    {sinCortarHoras(textoDisponibilidad(estado))}
                   </p>
                 )}
               </div>

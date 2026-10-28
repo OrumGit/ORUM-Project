@@ -4,9 +4,8 @@ import { requireMiembroVigente } from '@/lib/miembros/requerir-miembro'
 import { resolverVolverAlCatalogo } from '@/lib/miembros/volver-catalogo'
 import { createClient } from '@/lib/supabase/server'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
-import { textoDias } from '@/lib/comercios/dias-promocion'
 import { formatearBeneficio } from '@/lib/comercios/beneficios-formato'
-import { lineasFranjas, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
+import { cuandoUsarlo, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
 import { asuntoDelTitulo } from '@/lib/comercios/titulo-beneficio'
 import { BeneficiosSocio, type BeneficioSocio } from '@/components/comercios/beneficios-socio'
 import { AdornoEstrella } from '@/components/ui/marca/marca'
@@ -227,7 +226,6 @@ export default async function FichaComercioPage({
       if (!tipoCodigo) return []
       const valor = formatearBeneficio(tipoCodigo, p.valor)
       const franjas = normalizarFranjas(p.franjas_horarias)
-      const dias = textoDias(p.dias_semana)
       return [
         {
           id: p.id,
@@ -236,9 +234,9 @@ export default async function FichaComercioPage({
           valor,
           asunto: asuntoDelTitulo(valor, p.titulo),
           descripcion: p.descripcion,
-          // CUÁNDO, lo que el socio necesita saber antes de ir: las franjas
-          // con sus días y horas, o solo los días («De martes a jueves»).
-          cuando: franjas ? lineasFranjas(franjas) : dias ? [dias] : [],
+          // CUÁNDO, lo que el socio necesita saber antes de ir: los días
+          // enteros con sus horas completas (o «Todo el día»).
+          cuando: cuandoUsarlo(p.dias_semana, franjas),
           dias: p.dias_semana,
           franjas,
           restricciones: p.restricciones,

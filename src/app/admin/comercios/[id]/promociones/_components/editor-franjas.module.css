@@ -1,11 +1,16 @@
 /* ==========================================================================
-   EDITOR DE FRANJAS DE UNA PROMOCIÓN
-   Cada franja es un bloque hundido (no una tarjeta: no se levanta; sin el
-   crema, que el cliente no quiso en la ficha), con sus
-   días como píldoras que se marcan y sus dos horas.
+   ¿CUÁNDO SE PUEDE USAR EL BENEFICIO?  ·  editor del panel (29/10/2026)
+   Dos opciones; con «Solo algunos días u horas», grupos de días con su
+   horario. Cada grupo es un bloque hundido (no se levanta; sin el crema).
    ========================================================================== */
 
-.franjas {
+.modos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.grupos {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -14,10 +19,10 @@
   list-style: none;
 }
 
-.franja {
+.grupo {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4) var(--space-4);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-hundida);
@@ -30,22 +35,16 @@
   min-height: var(--space-7);
 }
 
-.numero {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.rotulo {
   font-size: var(--t-footnote-size);
   font-weight: 700;
   color: var(--text-2);
 }
 
-.numero svg {
-  color: var(--brand);
-}
-
 /* Quitar: discreto, con su área de toque completa. */
 .quitar {
   position: relative;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   width: 32px;
@@ -89,6 +88,7 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
 .dia {
@@ -128,19 +128,62 @@
 
 /* --- Las horas ---------------------------------------------------------------- */
 
-.horas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+.horasModo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
 }
 
-.hora {
+.rangos {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--t-footnote-size);
-  font-weight: 600;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+/* «De [08:00] a [09:30] ×»: se lee como una frase. */
+.rango {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.de {
+  font-size: var(--t-callout-size);
   color: var(--text-2);
+}
+
+/* «Añadir otra hora»: un enlace con su icono, no otro botón grande. */
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--t-footnote-size);
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .enlace:hover {
+    text-decoration-color: var(--brand);
+  }
+}
+
+.enlace:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* --- Lo que dice y lo que verá el socio --------------------------------------- */
@@ -155,13 +198,17 @@
 .vista {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-hundida);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 .vistaRotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--t-overline-size);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -169,8 +216,28 @@
   color: var(--text-3);
 }
 
-.vistaLinea {
+.vistaRotulo svg {
+  color: var(--brand);
+}
+
+.vistaLista {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
   font-size: var(--t-footnote-size);
-  font-weight: 600;
+}
+
+.vistaFila {
+  display: contents;
+}
+
+.vistaFila dt {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.vistaFila dd {
+  margin: 0;
   color: var(--text);
 }

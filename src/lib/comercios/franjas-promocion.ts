@@ -16,7 +16,7 @@
  * «hasta el cierre» se escribe 23:59.
  */
 import { DIAS_SEMANA, diaDeSemanaISO, normalizarDias, textoDias } from './dias-promocion'
-import { ahoraEnBogota, formatearHora, normalizarHora, textoRango } from './horario'
+import { ahoraEnBogota, formatearHora, nombreDias, normalizarHora, rangoCompleto, textoRango } from './horario'
 
 export type FranjaPromocion = { dias: number[]; desde: string; hasta: string }
 export type FranjasPromocion = FranjaPromocion[] | null
@@ -69,11 +69,10 @@ export function normalizarFranjas(crudo: unknown): FranjasPromocion {
 export function validarFranjas(franjas: FranjasPromocion): string | null {
   if (!franjas) return null
   if (franjas.length > MAX_FRANJAS) return `Una promoción admite como máximo ${MAX_FRANJAS} franjas horarias.`
-  for (const [i, f] of franjas.entries()) {
-    const n = franjas.length > 1 ? ` ${i + 1}` : ''
-    if (f.dias.length === 0) return `Marca al menos un día en la franja${n}.`
+  for (const f of franjas) {
+    if (f.dias.length === 0) return 'Marca al menos un día en cada horario.'
     if (aMinutos(f.hasta) <= aMinutos(f.desde)) {
-      return `En la franja${n}, la hora de fin debe ser después de la de inicio (para «hasta el cierre», usa 11:59 p. m.).`
+      return `La hora final debe ser después de la inicial (${formatearHora(f.desde)} a ${formatearHora(f.hasta)}). Para «hasta el cierre», usa 11:59 p. m.`
     }
   }
   // Dos franjas del mismo día que se pisan confunden al socio y al cajero.
@@ -83,7 +82,9 @@ export function validarFranjas(franjas: FranjasPromocion): string | null {
       const b = franjas[j]
       const comparten = a.dias.some((d) => b.dias.includes(d))
       const sePisan = aMinutos(a.desde) < aMinutos(b.hasta) && aMinutos(b.desde) < aMinutos(a.hasta)
-      if (comparten && sePisan) return `Las franjas ${i + 1} y ${j + 1} se cruzan el mismo día. Únelas en una.`
+      if (comparten && sePisan) {
+        return `Dos horarios se cruzan el mismo día (${formatearHora(a.desde)} a ${formatearHora(a.hasta)} y ${formatearHora(b.desde)} a ${formatearHora(b.hasta)}). Únelos en uno.`
+      }
     }
   }
   return null
@@ -174,7 +175,9 @@ export function lineasFranjas(franjas: FranjasPromocion | undefined): string[] {
     grupos.set(clave, [...(grupos.get(clave) ?? []), f])
   }
   return [...grupos.values()].map((lista) => {
-    const rangos = lista.sort((a, b) => a.desde.localeCompare(b.desde)).map((f) => textoRango(f.desde, f.hasta))
+    const rangos = lista
+      .sort((a, b) => a.desde.localeCompare(b.desde))
+      .map((f) => (esTodoElDia(f) ? 'todo el día' : textoRango(f.desde, f.hasta)))
     const unidos = rangos.length === 1 ? rangos[0] : `${rangos.slice(0, -1).join(', ')} y ${rangos[rangos.length - 1]}`
     return `${textoDiasCorto(lista[0].dias)} · ${unidos}`
   })
@@ -198,7 +201,52 @@ function aLas(hhmm: string): string {
   return `${Number(hhmm.slice(0, 2)) % 12 === 1 ? 'a la' : 'a las'} ${formatearHora(hhmm)}`
 }
 
-/** La línea de estado para el socio y el cajero. */
+/** Una franja de 00:00 a 23:59 es «todo el día» (así la guarda el editor). */
+export const esTodoElDia = (f: { desde: string; hasta: string }) => f.desde === '00:00' && f.hasta === '23:59'
+
+export type GrupoUso = { dias: string; horas: string[] }
+
+/**
+ * CUÁNDO SE PUEDE USAR, para que el socio lo lea sin descifrar (29/10/2026):
+ * un renglón por grupo de días, con los días ENTEROS y las horas COMPLETAS.
+ *   [{ dias: 'Martes y miércoles', horas: ['8:00 a. m. – 9:30 a. m.', '6:00 p. m. – 7:00 p. m.'] },
+ *    { dias: 'Sábado y domingo', horas: ['Todo el día'] }]
+ */
+export function cuandoUsarlo(
+  dias: number[] | null | undefined,
+  franjas: FranjasPromocion | undefined,
+): GrupoUso[] {
+  if (!franjas || franjas.length === 0) {
+    const lista = normalizarDias(dias)
+    return [{ dias: lista ? nombreDias(lista) : 'Todos los días', horas: ['Todo el día'] }]
+  }
+  const grupos = new Map<string, FranjaPromocion[]>()
+  for (const f of franjas) {
+    const clave = f.dias.join(',')
+    grupos.set(clave, [...(grupos.get(clave) ?? []), f])
+  }
+  return [...grupos.values()]
+    .sort((a, b) => a[0].dias[0] - b[0].dias[0])
+    .map((lista) => ({
+      dias: nombreDias(lista[0].dias),
+      horas: lista
+        .sort((a, b) => a.desde.localeCompare(b.desde))
+        .map((f) => (esTodoElDia(f) ? 'Todo el día' : rangoCompleto(f.desde, f.hasta))),
+    }))
+}
+
+/** Lo que ve el SOCIO sobre si puede usarlo ahora, en palabras de socio. */
+export function textoDisponibilidad(estado: EstadoPromocion): string {
+  if (estado.tipo === 'aplica') {
+    return estado.hasta && estado.hasta !== '23:59'
+      ? `Puedes usarlo ahora, hasta ${aLas(estado.hasta).replace(/^a /, '')}`
+      : 'Puedes usarlo hoy'
+  }
+  if (estado.tipo === 'mas_tarde') return `Hoy podrás usarlo desde ${aLas(estado.desde).replace(/^a /, '')}`
+  return 'Hoy no está disponible'
+}
+
+/** La línea de estado para el cajero. */
 export function textoEstadoPromocion(estado: EstadoPromocion): string {
   if (estado.tipo === 'aplica') return estado.hasta ? `Aplica ahora · hasta ${aLas(estado.hasta).replace(/^a /, '')}` : 'Aplica hoy'
   if (estado.tipo === 'mas_tarde') return `Hoy aplica desde ${aLas(estado.desde).replace(/^a /, '')}`

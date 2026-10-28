@@ -92,34 +92,70 @@
   color: var(--text-2);
 }
 
-/* --- Cuándo aplica y el estado de ahora --------------------------------------- */
+/* --- Cuándo puedes usarlo ---------------------------------------------------------
+   Un recuadro hundido con su rótulo: los días enteros a la izquierda y las
+   horas completas a la derecha, una por renglón; debajo, si se puede ahora. */
 
-.meta {
+.uso {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-2) var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hundida);
 }
 
-.cuando {
+.usoRotulo {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-2);
   margin: 0;
-  font-size: var(--t-footnote-size);
-  line-height: 1.5;
-  font-weight: 600;
-  color: var(--text);
+  font-size: var(--t-caption-size);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
 }
 
 .cuandoIcono {
   flex-shrink: 0;
-  margin-top: calc((1lh - 15px) / 2);
   color: var(--brand);
 }
 
-.cuandoLinea {
-  display: block;
+.usoLista {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+}
+
+.usoFila {
+  display: contents;
+}
+
+.usoDias {
+  font-size: var(--t-footnote-size);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.usoHoras {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text);
+}
+
+@media (max-width: 420px) {
+  .usoLista {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .usoHoras {
+    margin-bottom: var(--space-2);
+  }
 }
 
 /* Píldora sin sombra (no se levanta): punto + texto. Lleno si aplica, hueco
@@ -133,6 +169,7 @@
   border-radius: var(--radius-full);
   /* Un tinte de SU color, no el crema (el cliente no lo quiso en la ficha). */
   background: color-mix(in srgb, var(--text) 6%, transparent);
+  align-self: flex-start;
   font-size: var(--t-caption-size);
   font-weight: 700;
   color: var(--text);

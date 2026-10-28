@@ -288,6 +288,51 @@ export function textoTramos(fila: DiaHorario): string {
   return `${textoRango(fila.abre, fila.almuerzoDesde)} y ${textoRango(fila.almuerzoHasta, fila.cierra)}`
 }
 
+/* --------------------- para LEER: sin abreviar, sin restar -------------------
+   29/10/2026, un probador: «no lo entiendo». Los días en corto («Lun a
+   sáb»), las horas que comparten «a. m.» («8:00 – 11:00 a. m.») y el almuerzo
+   escondido entre dos tramos obligaban a descifrar. Para la ficha, todo se
+   dice entero. */
+
+/** «Lunes a sábado», «Sábado y domingo», «Lunes, miércoles y viernes», «Domingo», «Todos los días». */
+export function nombreDias(dias: readonly number[]): string {
+  const lista = [...new Set(dias)].filter((d) => d >= 1 && d <= 7).sort((a, b) => a - b)
+  if (lista.length === 0) return ''
+  if (lista.length === 7) return 'Todos los días'
+  const largo = (n: number) => DIAS_SEMANA[n - 1].largo
+  const seguidos = lista.every((d, i) => i === 0 || d === lista[i - 1] + 1)
+  let texto: string
+  if (lista.length === 1) texto = largo(lista[0])
+  else if (seguidos && lista.length >= 3) texto = `${largo(lista[0])} a ${largo(lista[lista.length - 1])}`
+  else texto = `${lista.slice(0, -1).map(largo).join(', ')} y ${largo(lista[lista.length - 1])}`
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
+/** «8:00 a. m. – 11:00 a. m.»: las dos horas completas, sin compartir «a. m.». */
+export function rangoCompleto(desde: string, hasta: string): string {
+  return `${formatearHora(desde)} – ${formatearHora(hasta)}`
+}
+
+/**
+ * Una jornada para leer: si está cerrado, los TURNOS en que está abierto
+ * (uno, o dos con el almuerzo en medio) y la pausa dicha con palabras.
+ */
+export function jornadaLegible(fila: DiaHorario): {
+  cerrado: boolean
+  turnos: string[]
+  pausa: string | null
+} {
+  if (fila.abre === null || fila.cierra === null) return { cerrado: true, turnos: [], pausa: null }
+  if (fila.almuerzoDesde === null || fila.almuerzoHasta === null) {
+    return { cerrado: false, turnos: [rangoCompleto(fila.abre, fila.cierra)], pausa: null }
+  }
+  return {
+    cerrado: false,
+    turnos: [rangoCompleto(fila.abre, fila.almuerzoDesde), rangoCompleto(fila.almuerzoHasta, fila.cierra)],
+    pausa: `Cerrado por almuerzo de ${formatearHora(fila.almuerzoDesde)} a ${formatearHora(fila.almuerzoHasta)}`,
+  }
+}
+
 /** «Lun a sáb», «Sáb y dom», «Dom»: los días de un grupo, en corto. */
 export function etiquetaDias(dias: readonly number[]): string {
   const corto = (n: number) => DIAS_SEMANA[n - 1].corto
@@ -314,17 +359,17 @@ export function partesEstado(estado: EstadoHorario): { titulo: string; detalle: 
       titulo: 'Abierto ahora',
       detalle:
         p.accion === 'almuerzo'
-          ? `Cierra por almuerzo ${aLas(p.hora)}`
+          ? `Cierra ${aLas(p.hora)} para almorzar`
           : `Cierra${cuando} ${aLas(p.hora)}`,
     }
   }
   if (estado.tipo === 'almuerzo') {
-    return { titulo: 'Cerrado por almuerzo', detalle: p ? `Reabre ${aLas(p.hora)}` : null }
+    return { titulo: 'Cerrado por almuerzo', detalle: p ? `Abre de nuevo ${aLas(p.hora)}` : null }
   }
-  if (!p) return { titulo: 'Cerrado', detalle: null }
+  if (!p) return { titulo: 'Cerrado ahora', detalle: null }
   const cuando =
     p.cuando === 'hoy' ? 'hoy' : p.cuando === 'manana' ? 'mañana' : `el ${DIAS_SEMANA[p.cuando - 1].largo}`
-  return { titulo: 'Cerrado', detalle: `Abre ${cuando} ${aLas(p.hora)}` }
+  return { titulo: 'Cerrado ahora', detalle: `Abre ${cuando} ${aLas(p.hora)}` }
 }
 
 /** 'Lun–vie · 9:00 a. m. – 6:00 p. m.' */

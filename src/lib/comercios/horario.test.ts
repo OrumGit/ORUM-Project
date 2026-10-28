@@ -6,6 +6,8 @@ import {
   estadoAhora,
   etiquetaDias,
   formatearHora,
+  jornadaLegible,
+  nombreDias,
   normalizarHora,
   partesEstado,
   resumenHorario,
@@ -286,18 +288,18 @@ describe('la ficha nueva: tramos, días y estado en dos partes', () => {
   it('el estado en titular y detalle', () => {
     expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '10:00')))).toEqual({
       titulo: 'Abierto ahora',
-      detalle: 'Cierra por almuerzo a las 12:00 p. m.',
+      detalle: 'Cierra a las 12:00 p. m. para almorzar',
     })
     expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '12:30')))).toEqual({
       titulo: 'Cerrado por almuerzo',
-      detalle: 'Reabre a la 1:00 p. m.',
+      detalle: 'Abre de nuevo a la 1:00 p. m.',
     })
     expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '15:00')))).toEqual({
       titulo: 'Abierto ahora',
       detalle: 'Cierra a las 6:00 p. m.',
     })
     expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '19:00')))).toEqual({
-      titulo: 'Cerrado',
+      titulo: 'Cerrado ahora',
       detalle: 'Abre mañana a las 9:00 a. m.',
     })
     expect(partesEstado({ tipo: 'sin_horario', proximo: null })).toBeNull()
@@ -307,5 +309,29 @@ describe('la ficha nueva: tramos, días y estado en dos partes', () => {
 describe('sinCortarHoras', () => {
   it('pega «a. m.» a su hora y no parte un rango', () => {
     expect(sinCortarHoras('8:00 – 9:30 a. m. y 6:00 p. m.')).toBe('8:00\u00a0–\u00a09:30\u00a0a.\u00a0m. y 6:00\u00a0p.\u00a0m.')
+  })
+})
+
+describe('para leer, sin abreviar', () => {
+  it('los días enteros', () => {
+    expect(nombreDias([1, 2, 3, 4, 5, 6])).toBe('Lunes a sábado')
+    expect(nombreDias([6, 7])).toBe('Sábado y domingo')
+    expect(nombreDias([1, 3, 5])).toBe('Lunes, miércoles y viernes')
+    expect(nombreDias([7])).toBe('Domingo')
+    expect(nombreDias([1, 2, 3, 4, 5, 6, 7])).toBe('Todos los días')
+  })
+
+  it('los turnos con sus horas completas y el almuerzo dicho', () => {
+    expect(jornadaLegible(dia(1, '08:00', '22:00', ['11:00', '15:30']))).toEqual({
+      cerrado: false,
+      turnos: ['8:00 a. m. – 11:00 a. m.', '3:30 p. m. – 10:00 p. m.'],
+      pausa: 'Cerrado por almuerzo de 11:00 a. m. a 3:30 p. m.',
+    })
+    expect(jornadaLegible(dia(1, '09:00', '18:00'))).toEqual({
+      cerrado: false,
+      turnos: ['9:00 a. m. – 6:00 p. m.'],
+      pausa: null,
+    })
+    expect(jornadaLegible(dia(1, null, null)).cerrado).toBe(true)
   })
 })
