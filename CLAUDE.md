@@ -1570,18 +1570,28 @@ el archivo se MUEVE a una ruta de galería. Y por lo mismo, al subir una
 portada nueva se borra la anterior si vivía en otra ruta (también en las
 acciones del comercio).
 
-**El comercio también instala su portal** (04/10/2026). El layout monta
-`WhatsAppFlotante` y `AvisoInstalar`, y el pie lleva el icono de instalar,
-igual que el Portal de Miembros. Lo que cambia es QUÉ se instala: hay **dos
-aplicaciones** sobre el mismo sitio, cada una con su manifiesto.
-`app/manifest.ts` es la del socio (abre en `/miembros`);
-`app/manifest-comercios.webmanifest/route.ts` es la del comercio (abre en
-`/comercios`, `scope: '/comercios'`, `id` propio). `comercios/layout.tsx`
-—que no pinta nada— lo enlaza con `metadata.manifest` para el portal y sus
-dos pantallas de acceso. Sin eso, la app instalada desde la caja abriría en
-la puerta del socio en cada arranque. Los iconos y el color de arranque de
-los dos manifiestos salen de `lib/shared/manifiesto-app.ts`: si la paleta
-cambia, se mueven ahí una sola vez.
+**TRES aplicaciones instalables, una por portal con sesión** (29/10/2026,
+encargo del propietario: «descargar la aplicación en todos los portales
+excepto el inicial; comercios, usuarios y administrador, cada uno con su
+logo»). Todas llevan la «O» con la estrella del cliente, cada una en su
+color: **socio** dorada sobre BLANCO (abre en `/miembros`, `scope: '/'`),
+**comercio** dorada sobre NEGRO (`/comercios`) y **panel** plateada sobre
+NEGRO (`/admin`, la de antes abría en `/miembros`). Cada una tiene su
+manifiesto (`manifest-miembros|comercios|admin.webmanifest`, Route
+Handlers que salen de `lib/shared/manifiesto-app.ts`: nombres, colores,
+iconos, atajos) y su `id`, así que son aplicaciones distintas en el
+teléfono. Las enlaza el layout de cada portal y de su acceso
+(`miembros/layout.tsx` y `comercios/layout.tsx`, que no pintan nada;
+`admin/layout.tsx`; `login/page.tsx`), con su `apple-icon.png` en la misma
+carpeta (iOS). ⚠️ **Ya no existe `app/manifest.ts`**: lo enlazaba TODO el
+sitio, también la portada pública, que NO se instala; no lo vuelvas a
+crear. El socio conserva su `id` (`/miembros`): las instaladas siguen
+siendo la misma app. Los iconos (`public/icons/{socio,comercio,admin}-*`)
+son PNG opacos generados desde `marca/monograma.png` y
+`monograma-plata.png`; si cambia el monograma, se regeneran. Los botones:
+`AvisoInstalar` y el icono del pie en miembros y comercios; en el panel,
+el menú de la cuenta (escritorio) y la hoja «Más» (teléfono). Los
+`public/icons/orum-*` viejos ya no los usa ningún manifiesto.
 
 **La marca del cliente son imágenes, no texto.** Logotipo «ORUM» (plata,
 dorado, blanco, negro), monograma y estrella viven recortados en
@@ -2064,7 +2074,7 @@ existe antes. Con Node 20 el instalador falla con `No such built-in module`.
    control de entrada nuevo **pide `--border-control`, no `--border`**.
 8. ~~Tres copias a mano de la paleta seguían en los colores de la v4.~~
    **Cerrado desde la v5, y verificado que sigue cerrado en la v6**:
-   `manifest.ts` fija su color a propósito al del TEMA OSCURO (es lo que se ve
+   `manifest.ts` (hoy `lib/shared/manifiesto-app.ts`) fija su color a propósito al del TEMA OSCURO (es lo que se ve
    en la pantalla de arranque antes de resolver la preferencia real), que no
    cambió con la v6, así que no necesitó tocarse. Los iconos ya no son
    copias de la paleta: desde el 29/09/2026 son PNG del monograma DORADO del

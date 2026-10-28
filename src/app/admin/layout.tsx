@@ -1,11 +1,25 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { requireRol } from '@/lib/auth/auth'
 import { cerrarSesion } from '@/app/login/actions'
 import { AppShell } from '@/components/shell/app-shell'
 import { RouteProgress } from '@/components/shell/route-progress'
+import { RUTA_MANIFIESTO } from '@/lib/shared/manifiesto-app'
 
-export const metadata = {
+/*
+  El panel enlaza SU aplicación instalable (abre en `/admin`, la «O»
+  plateada sobre negro; ver `lib/shared/manifiesto-app.ts`). `appleWebApp`
+  va completo: los metadatos se fusionan por clave, sin mezclar por dentro.
+*/
+export const metadata: Metadata = {
   title: 'Panel · ORUM',
+  manifest: RUTA_MANIFIESTO.admin,
+  applicationName: 'ORUM Admin',
+  appleWebApp: {
+    capable: true,
+    title: 'ORUM Admin',
+    statusBarStyle: 'black-translucent',
+  },
 }
 
 /**

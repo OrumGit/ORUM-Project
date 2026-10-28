@@ -14,7 +14,7 @@ import estilos from './instalar-movil.module.css'
   una aplicación en el celular; un botón de descarga que detecte cuando está
   en móvil».
 
-  La base ya existía —manifiesto (`app/manifest.ts`, que abre en `/miembros`
+  La base ya existía —manifiesto (hoy `lib/shared/manifiesto-app.ts`, que abre en `/miembros`
   a pantalla completa), iconos y service worker— pero la invitación a
   instalar solo vivía en el panel de administración. Aquí están las dos
   entradas de los portales del cliente.

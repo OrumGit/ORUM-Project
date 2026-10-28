@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { RUTA_MANIFIESTO_COMERCIOS } from '@/lib/shared/manifiesto-app'
+import { RUTA_MANIFIESTO } from '@/lib/shared/manifiesto-app'
 
 /*
   LA RAÍZ DE `/comercios`  ·  solo metadatos (04/10/2026)
@@ -9,7 +9,8 @@ import { RUTA_MANIFIESTO_COMERCIOS } from '@/lib/shared/manifiesto-app'
   y sus dos pantallas de acceso— enlace el manifiesto de la aplicación del
   comercio en vez del del sitio. Así, instalar desde aquí crea una aplicación
   que abre en `/comercios` y no en la puerta del socio. El porqué entero está
-  en `app/manifest-comercios.webmanifest/route.ts`.
+  en `lib/shared/manifiesto-app.ts`; su icono de iOS es el
+  `apple-icon.png` de esta carpeta (la «O» dorada sobre negro).
 
   `appleWebApp` se repite COMPLETO: los metadatos se fusionan por clave, sin
   mezclar por dentro, así que poner solo `title` borraría `capable` y
@@ -17,7 +18,7 @@ import { RUTA_MANIFIESTO_COMERCIOS } from '@/lib/shared/manifiesto-app'
   icono al «Añadir a pantalla de inicio».
 */
 export const metadata: Metadata = {
-  manifest: RUTA_MANIFIESTO_COMERCIOS,
+  manifest: RUTA_MANIFIESTO.comercio,
   applicationName: 'ORUM Comercios',
   appleWebApp: {
     capable: true,

@@ -13,13 +13,13 @@ export const config = {
      * - favicon.ico y archivos de imagen
      * - dev/** (galería del sistema de diseño: solo existe en desarrollo, no
      *   lee datos y no tiene sesión que refrescar)
-     * - Artefactos de la PWA: sw.js, los dos manifiestos (el del socio y el
-     *   del comercio), offline, y los
+     * - Artefactos de la PWA: sw.js, los tres manifiestos (socio, comercio y
+     *   panel: `manifest-*.webmanifest`), offline, y los
      *   iconos generados (`apple-icon` no lleva extensión, así que la regla
      *   de imágenes de abajo no lo cubre). El navegador los pide sin sesión,
      *   y `offline` tiene que poder servirse justamente cuando no hay
      *   conexión con Supabase.
      */
-    '/((?!_next/static|_next/image|favicon.ico|dev/|sw\\.js|manifest\\.webmanifest|manifest-comercios\\.webmanifest|offline|apple-icon|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|dev/|sw\\.js|manifest-[a-z]+\\.webmanifest|offline|apple-icon|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

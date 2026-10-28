@@ -103,7 +103,7 @@ export const viewport: Viewport = {
   // cuatro tienen que moverse JUNTAS o la aplicación instalada arranca con los
   // colores de una dirección de arte retirada — que ya pasó una vez, al
   // cambiar a la v5, y hubo que corregir después:
-  //   · `src/app/manifest.ts` ..... background_color y theme_color → --w-0
+  //   · `src/lib/shared/manifiesto-app.ts` (los tres manifiestos) ..... colores de arranque
   //   · Los iconos (`src/app/icon.png`, `favicon.ico`, `apple-icon.png` y
   //     `public/icons/orum-*.png`) son desde el 29/09/2026 el monograma
   //     DORADO del cliente sin fondo, generados como imagen: no llevan
