@@ -25,7 +25,8 @@
   pide 8 y recomienda 15. Aquí son 12, y se dice abiertamente: con la lista
   de bloqueo, los derivados y la revisión de filtraciones, 12 corta los
   ataques reales sin echar atrás a un socio que escribe desde el teléfono.
-  Subirla a 15 es cambiar UNA constante.
+  El propietario lo eligió así (27/10/2026: «¿12 o 15? 12»). Subirla a 15 es
+  cambiar UNA constante.
 
   El tope de 72 BYTES no es capricho: Supabase guarda la contraseña con
   bcrypt, que solo mira los primeros 72 bytes. Una contraseña más larga se

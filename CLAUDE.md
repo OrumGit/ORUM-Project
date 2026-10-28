@@ -1631,8 +1631,9 @@ cuenta o restablecerla (`/activar-cuenta`, socios, comercios y personal) y
 «Cambiar contraseña» del panel.
 
 - **La política es pura y probada** (`lib/auth/contrasena-segura.ts`):
-  **12 caracteres o más** (NIST pide 15 sin segundo factor; subirlo es
-  cambiar `LONGITUD_MINIMA`), contados como los cuenta una persona; **SIN
+  **12 caracteres o más** (NIST pide 15 sin segundo factor; el propietario
+  ELIGIÓ 12 el 27/10/2026, con esa diferencia sobre la mesa: no lo subas sin
+  que lo pida; subirlo es cambiar `LONGITUD_MINIMA`), contados como los cuenta una persona; **SIN
   reglas de mezcla** —nada de «una mayúscula, un número y un símbolo»: NIST
   prohíbe exigirlas—; acepta espacios, tildes y emojis; tope de **72 bytes**
   porque bcrypt (Supabase) trunca en silencio a partir de ahí; y rechaza,
