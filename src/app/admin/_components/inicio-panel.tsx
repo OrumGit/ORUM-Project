@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { ArrowRight, Megaphone, RefreshCw, Store, Tag, UserPlus } from 'lucide-react'
+import { ArrowRight, Megaphone, MessageSquareWarning, RefreshCw, Store, Tag, UserPlus } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Cifra } from '@/components/ui/cifra'
+import { EstrellasLectura } from '@/components/ui/estrellas-lectura'
+import { textoPorRevisar } from '@/lib/resenas/moderacion'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import styles from '../inicio.module.css'
 
@@ -37,6 +39,12 @@ export type CifrasPanel = {
   vigentes: number
   porVencer: number
   comercios: number
+}
+
+/** La alerta de reseñas bajas por revisar (solo super administrador). */
+export type AlertaResenasPanel = {
+  total: number
+  recientes: { id: number; comercioNombre: string; estrellas: number; autor: string; mensaje: string | null }[]
 }
 
 export type VencimientoPanel = {
@@ -97,6 +105,7 @@ export function InicioPanel({
   cifras,
   vencen,
   actividad,
+  resenas = { total: 0, recientes: [] },
 }: {
   esSuperAdmin: boolean
   /** «Buenos días», según la hora del negocio. */
@@ -108,6 +117,8 @@ export function InicioPanel({
   cifras: CifrasPanel
   vencen: VencimientoPanel[]
   actividad: ActividadPanel[]
+  /** Reseñas de menos de 4 estrellas sin revisar (29/10/2026). */
+  resenas?: AlertaResenasPanel
 }) {
   const numero = (n: number) => n.toLocaleString('es-CO')
   const porcentaje = cifras.miembros > 0 ? Math.round((cifras.vigentes / cifras.miembros) * 100) : 0
@@ -131,6 +142,45 @@ export function InicioPanel({
           </Button>
         </div>
       </header>
+
+      {/* ── La alerta de reseñas bajas (29/10/2026) ──────────────────────
+          «Que aparezca una alerta cuando una reseña es menor a 4 estrellas,
+          para que se pueda validar». Arriba de todo: es lo que pide atención.
+          Sale solo si hay alguna por revisar; se va al marcarlas como
+          revisadas (o al responderlas como ORUM) en `/admin/resenas`. */}
+      {resenas.total > 0 && (
+        <section className={styles.alerta} aria-labelledby="titulo-alerta-resenas">
+          <div className={styles.alertaCabeza}>
+            <span className={styles.alertaIcono} aria-hidden="true">
+              <MessageSquareWarning size={20} />
+            </span>
+            <div className={styles.alertaTextos}>
+              <h2 id="titulo-alerta-resenas" className={styles.alertaTitulo}>
+                {textoPorRevisar(resenas.total)}
+              </h2>
+              <p className={styles.alertaNota}>
+                {resenas.total === 1 ? 'Tiene' : 'Tienen'} menos de 4 estrellas. Revísalas y, si hace falta,
+                responde como ORUM.
+              </p>
+            </div>
+            <Link href="/admin/resenas?ver=por_revisar" className={styles.enlace}>
+              Revisar
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
+          <ul className={styles.alertaLista}>
+            {resenas.recientes.map((r) => (
+              <li key={r.id} className={styles.alertaResena}>
+                <EstrellasLectura valor={r.estrellas} />
+                <span className={styles.alertaComercio}>{r.comercioNombre}</span>
+                <span className={styles.alertaMensaje}>
+                  {r.mensaje ? `«${r.mensaje}»` : 'Sin mensaje'} · {r.autor}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* ── Las cifras ─────────────────────────────────────────────────── */}
       <section aria-label="Estado del club" className={styles.cifras}>

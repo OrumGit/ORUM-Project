@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
-import { MessageSquareText, PenLine, Reply, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { CheckCheck, MessageSquareText, PenLine, Reply, Store, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
 import { ConfirmDialog } from '@/components/ui/modal'
@@ -11,8 +12,13 @@ import { ResumenResenas } from '@/components/resenas/resumen-resenas'
 import { TarjetaResena } from '@/components/resenas/tarjeta-resena'
 import { ZonaAviso } from '@/components/resenas/zona-aviso'
 import { fechaResena } from '@/lib/resenas/acciones'
-import type { ResenaGestion } from '@/lib/resenas/mapeo'
-import { eliminarResena, quitarRespuestaAdmin, responderComoAdmin } from '../../resenas-actions'
+import type { ResenaGestion, ResenaPanel } from '@/lib/resenas/mapeo'
+import {
+  eliminarResena,
+  marcarResenaRevisada,
+  quitarRespuestaAdmin,
+  responderComoAdmin,
+} from '../../resenas-actions'
 import estilos from '@/components/resenas/resenas.module.css'
 
 /*
@@ -23,25 +29,52 @@ import estilos from '@/components/resenas/resenas.module.css'
   aviso y formulario de respuesta) y su hoja única. Aquí, con el nombre
   completo, la respuesta del comercio SOLO LECTURA, la de ORUM editable y
   un «Eliminar» que borra para siempre (por eso pasa por una confirmación).
+
+  DOS SITIOS (29/10/2026): la pestaña «Reseñas» de la ficha de un comercio
+  (con su encabezado y su promedio) y el apartado `/admin/resenas`, con
+  TODAS: ahí cada reseña dice de qué comercio es (enlace a su ficha), si
+  está POR REVISAR (menos de 4 estrellas y sin revisar), y ofrece «Marcar
+  como revisada». Responder como ORUM también la da por revisada.
 */
 
 const FORMULARIO_ID = 'formulario-respuesta-orum'
 
+/** Una reseña de la lista: en el apartado trae su comercio y si está por revisar. */
+type Item = ResenaGestion & Partial<Pick<ResenaPanel, 'comercioId' | 'comercioNombre' | 'porRevisar'>>
+
 type Props = {
-  comercioId: number
-  total: number
-  promedio: number | null
-  resenas: ResenaGestion[]
+  /** Ficha de un comercio: su id. En el apartado, cada reseña trae el suyo. */
+  comercioId?: number
+  /** Encabezado con el promedio (ficha). En el apartado lo pone la página. */
+  resumen?: { total: number; promedio: number | null }
+  resenas: Item[]
+  /** Apartado: cada reseña dice de qué comercio es. */
+  conComercio?: boolean
+  /** Existe `revisada_at`: se ofrece «Marcar como revisada». */
+  conRevision?: boolean
+  /** Lo que se dice sin reseñas (cambia con la pestaña del apartado). */
+  vacio?: { titulo: string; descripcion: string }
 }
 
-export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
+export function ResenasAdmin({
+  comercioId,
+  resumen,
+  resenas,
+  conComercio = false,
+  conRevision = false,
+  vacio = {
+    titulo: 'Este comercio aún no tiene reseñas',
+    descripcion: 'Cuando un socio califique este comercio, lo verás aquí y podrás moderarlo.',
+  },
+}: Props) {
+  const comercioDe = (r: Item) => r.comercioId ?? comercioId ?? 0
   const [abierto, setAbierto] = useState(false)
-  const [activa, setActiva] = useState<ResenaGestion | null>(null)
+  const [activa, setActiva] = useState<Item | null>(null)
   const [vez, setVez] = useState(0)
   const [guardando, setGuardando] = useState(false)
 
   const [ocupadaId, setOcupadaId] = useState<number | null>(null)
-  const [porEliminar, setPorEliminar] = useState<ResenaGestion | null>(null)
+  const [porEliminar, setPorEliminar] = useState<Item | null>(null)
   const [, iniciar] = useTransition()
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
   const [aviso, setAviso] = useState('')
@@ -59,7 +92,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
     }
   }, [aviso])
 
-  function abrir(r: ResenaGestion) {
+  function abrir(r: Item) {
     setAviso('')
     setErrorAccion(null)
     setActiva(r)
@@ -77,7 +110,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
   }
 
   function ejecutar(
-    r: ResenaGestion,
+    r: Item,
     accion: typeof quitarRespuestaAdmin,
     exito: string,
     alTerminar?: () => void,
@@ -85,7 +118,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
   ) {
     const datos = new FormData()
     datos.set('resena_id', String(r.id))
-    datos.set('comercio_id', String(comercioId))
+    datos.set('comercio_id', String(comercioDe(r)))
     setAviso('')
     setErrorAccion(null)
     setOcupadaId(r.id)
@@ -108,7 +141,14 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
 
   return (
     <div className={estilos.mia}>
-      <ResumenResenas id="titulo-resenas" titulo="Reseñas de los socios" total={total} promedio={promedio} />
+      {resumen && (
+        <ResumenResenas
+          id="titulo-resenas"
+          titulo="Reseñas de los socios"
+          total={resumen.total}
+          promedio={resumen.promedio}
+        />
+      )}
 
       <ZonaAviso aviso={aviso} error={errorAccion} zonaRef={zonaRef} />
 
@@ -124,8 +164,37 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
                   fecha={fechaResena(r.creadaEn)}
                   respuestaComercio={r.respuestaComercio}
                   respuestaAdmin={r.respuestaAdmin}
+                  contexto={
+                    conComercio || r.porRevisar ? (
+                      <>
+                        {conComercio && r.comercioId && (
+                          <Link
+                            href={`/admin/comercios/${r.comercioId}?pestana=resenas`}
+                            className={estilos.contextoComercio}
+                          >
+                            <Store size={13} aria-hidden="true" />
+                            {r.comercioNombre}
+                          </Link>
+                        )}
+                        {r.porRevisar && <span className={estilos.porRevisar}>Por revisar</span>}
+                      </>
+                    ) : undefined
+                  }
                   acciones={
                     <>
+                      {conRevision && r.porRevisar && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<CheckCheck size={15} />}
+                          onClick={() =>
+                            ejecutar(r, marcarResenaRevisada, 'La reseña quedó marcada como revisada.')
+                          }
+                          loading={ocupadaId === r.id}
+                        >
+                          Marcar como revisada
+                        </Button>
+                      )}
                       <Button
                         variant="secondary"
                         size="sm"
@@ -166,8 +235,8 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
       ) : (
         <EmptyState
           icon={<MessageSquareText aria-hidden="true" />}
-          title="Este comercio aún no tiene reseñas"
-          description="Cuando un socio califique este comercio, lo verás aquí y podrás moderarlo."
+          title={vacio.titulo}
+          description={vacio.descripcion}
         />
       )}
 
@@ -194,7 +263,7 @@ export function ResenasAdmin({ comercioId, total, promedio, resenas }: Props) {
             key={vez}
             formId={FORMULARIO_ID}
             accion={responderComoAdmin}
-            ocultos={{ resena_id: activa.id, comercio_id: comercioId }}
+            ocultos={{ resena_id: activa.id, comercio_id: comercioDe(activa) }}
             resena={activa}
             etiqueta="Respuesta de ORUM"
             placeholder="Aclara, agradece o explica qué hará ORUM."

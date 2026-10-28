@@ -6,6 +6,7 @@
 */
 
 import type { ResenaVista } from './resenas'
+import { necesitaRevision } from './moderacion'
 
 /** Una reseña para la gestión (comercio y administración): autor completo y fechas de respuesta. */
 export type ResenaGestion = Omit<ResenaVista, 'autor'> & {
@@ -61,6 +62,32 @@ export function nombreCompleto(
     .replace(/\s+/g, ' ')
     .trim()
   return completo || 'Socio'
+}
+
+/** Una reseña en el apartado del panel: con su comercio y si está por revisar. */
+export type ResenaPanel = ResenaGestion & {
+  comercioId: number
+  comercioNombre: string
+  revisadaAt: string | null
+  porRevisar: boolean
+}
+
+export type FilaPanel = FilaGestion & {
+  comercio_id: number
+  comercios: { nombre: string } | null
+  revisada_at?: string | null
+}
+
+export function panelDeFila(fila: FilaPanel, conRevision: boolean): ResenaPanel {
+  const base = gestionDeFila(fila)
+  const revisadaAt = fila.revisada_at ?? null
+  return {
+    ...base,
+    comercioId: fila.comercio_id,
+    comercioNombre: fila.comercios?.nombre?.trim() || 'Comercio',
+    revisadaAt,
+    porRevisar: necesitaRevision({ estrellas: base.estrellas, revisadaAt, respuestaAdmin: base.respuestaAdmin }, conRevision),
+  }
 }
 
 export function gestionDeFila(fila: FilaGestion): ResenaGestion {

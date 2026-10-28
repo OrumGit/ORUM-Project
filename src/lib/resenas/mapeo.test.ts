@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   gestionDeFila,
   nombreCompleto,
+  panelDeFila,
   separarMiResena,
   vistaDeFilaRpc,
   type FilaRpcResena,
@@ -116,5 +117,42 @@ describe('separarMiResena', () => {
       const ids = [...r.otras.map((o) => o.id), r.miResena!.id]
       expect(new Set(ids).size).toBe(ids.length)
     }
+  })
+})
+
+describe('panelDeFila', () => {
+  const fila = {
+    id: 9,
+    comercio_id: 65,
+    comercios: { nombre: ' Dulces Momentos ' },
+    estrellas: 2,
+    mensaje: 'Tardaron mucho',
+    created_at: '2026-10-28T15:00:00Z',
+    respuesta_comercio: null,
+    respuesta_comercio_at: null,
+    respuesta_admin: null,
+    respuesta_admin_at: null,
+    revisada_at: null,
+    miembros: { nombres: 'Ana', apellidos: 'Ruiz' },
+  }
+
+  it('trae el comercio y dice si está por revisar', () => {
+    const r = panelDeFila(fila, true)
+    expect(r).toMatchObject({ comercioId: 65, comercioNombre: 'Dulces Momentos', autor: 'Ana Ruiz', porRevisar: true })
+  })
+
+  it('revisada, o de 4 estrellas o más, no está por revisar', () => {
+    expect(panelDeFila({ ...fila, revisada_at: '2026-10-29T10:00:00Z' }, true).porRevisar).toBe(false)
+    expect(panelDeFila({ ...fila, estrellas: 4 }, true).porRevisar).toBe(false)
+  })
+
+  it('sin la columna de revisión, cuenta la respuesta de ORUM', () => {
+    const sinColumna = { ...fila, revisada_at: undefined }
+    expect(panelDeFila(sinColumna, false).porRevisar).toBe(true)
+    expect(panelDeFila({ ...sinColumna, respuesta_admin: 'Lo vemos' }, false).porRevisar).toBe(false)
+  })
+
+  it('sin el comercio, un marcador neutro', () => {
+    expect(panelDeFila({ ...fila, comercios: null }, true).comercioNombre).toBe('Comercio')
   })
 })

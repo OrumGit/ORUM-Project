@@ -469,8 +469,7 @@ export default async function FichaComercioPage({
             <>
             <ResenasAdmin
               comercioId={comercio.id}
-              total={resenas.total}
-              promedio={resenas.promedio}
+              resumen={{ total: resenas.total, promedio: resenas.promedio }}
               resenas={resenas.resenas}
             />
             <Paginacion

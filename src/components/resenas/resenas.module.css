@@ -273,6 +273,63 @@
   text-wrap: pretty;
 }
 
+/* La línea de contexto del panel: el comercio (enlace a su ficha) y, si
+   hace falta, «Por revisar» con su punto. */
+.contexto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.contextoComercio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+.contextoComercio:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+@media (hover: hover) {
+  .contextoComercio:hover {
+    translate: 2px 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* «Por revisar»: punto lleno y texto, nunca el color solo. */
+.porRevisar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.porRevisar::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+
+.revisada {
+  font-size: var(--t-footnote-size);
+  color: var(--text-3);
+}
+
 /* Las respuestas cuelgan con un filo fino a la izquierda: una división
    dentro de la superficie, no el contorno de otra. */
 .respuesta {

@@ -57,14 +57,34 @@ export default async function DevResenasAdminPage({
   searchParams: Promise<{ caso?: string }>
 }) {
   if (process.env.NODE_ENV === 'production') notFound()
-  const vacio = (await searchParams).caso === 'vacio'
+  const { caso } = await searchParams
+  const vacio = caso === 'vacio'
+
+  // `?caso=apartado`: como en `/admin/resenas`, con el comercio de cada una
+  // y las de menos de 4 estrellas por revisar.
+  if (caso === 'apartado') {
+    const comercios = ['Dulces Momentos', 'Café de prueba', 'Bendito Brunch']
+    return (
+      <div className={`${portal.portal} ${estilos.pagina}`} data-theme="light">
+        <ResenasAdmin
+          conComercio
+          conRevision
+          resenas={RESENAS.map((r, i) => ({
+            ...r,
+            comercioId: i + 1,
+            comercioNombre: comercios[i % comercios.length],
+            porRevisar: r.estrellas < 4,
+          }))}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={`${portal.portal} ${estilos.pagina}`} data-theme="light">
       <ResenasAdmin
         comercioId={1}
-        total={vacio ? 0 : 23}
-        promedio={vacio ? null : 4}
+        resumen={{ total: vacio ? 0 : 23, promedio: vacio ? null : 4 }}
         resenas={vacio ? [] : RESENAS}
       />
     </div>

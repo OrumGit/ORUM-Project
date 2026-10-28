@@ -44,7 +44,7 @@ function leerIds(formData: FormData): Ids | null {
 
 async function anotar(
   actorId: string,
-  accion: 'eliminar' | 'responder' | 'quitar_respuesta',
+  accion: 'eliminar' | 'responder' | 'quitar_respuesta' | 'revisar',
   { resenaId, comercioId }: Ids,
 ) {
   const { error } = await createAdminClient()
@@ -59,6 +59,32 @@ async function anotar(
         : { datos_nuevos: { comercio_id: comercioId } }),
     })
   if (error) console.error('[resenas] bitácora:', error)
+}
+
+/** Lo que enseña una reseña en el panel: su ficha, el apartado y la portada (la alerta). */
+function refrescar(comercioId: number) {
+  revalidatePath(`/admin/comercios/${comercioId}`)
+  revalidatePath('/admin/resenas')
+  revalidatePath('/admin')
+}
+
+/**
+ * La marca como revisada. Sin la columna (migración
+ * `20261029120000_resenas_revisadas.sql` sin aplicar) contesta `'sin_columna'`.
+ */
+async function marcarRevisada(actorId: string, { resenaId, comercioId }: Ids): Promise<'ok' | 'sin_columna' | 'no_esta' | 'error'> {
+  const { data, error } = await createAdminClient()
+    .from('resenas')
+    .update({ revisada_at: new Date().toISOString(), revisada_por: actorId })
+    .eq('id', resenaId)
+    .eq('comercio_id', comercioId)
+    .select('id')
+  if (error) {
+    if (error.code === '42703' || error.code === 'PGRST204') return 'sin_columna'
+    console.error('[resenas] marcar revisada:', error)
+    return 'error'
+  }
+  return data && data.length > 0 ? 'ok' : 'no_esta'
 }
 
 async function escribirRespuestaAdmin(
@@ -90,7 +116,10 @@ async function escribirRespuestaAdmin(
   if (!data || data.length === 0) return { error: SIN_RESENA }
 
   await anotar(actorId, accion, ids)
-  revalidatePath(`/admin/comercios/${ids.comercioId}`)
+  // Responder ES revisarla: la alerta de la portada se va. Si aún no existe
+  // la columna, no pasa nada (sin ella, la respuesta ya cuenta como revisión).
+  if (accion === 'responder') await marcarRevisada(actorId, ids)
+  refrescar(ids.comercioId)
   return { ok: true }
 }
 
@@ -149,6 +178,33 @@ export async function eliminarResena(
   if (!data || data.length === 0) return { error: SIN_RESENA }
 
   await anotar(actorId, 'eliminar', ids)
-  revalidatePath(`/admin/comercios/${ids.comercioId}`)
+  refrescar(ids.comercioId)
+  return { ok: true }
+}
+
+/**
+ * «Ya la revisé»: la reseña de calificación baja deja de estar por revisar y
+ * sale de la alerta de la portada (29/10/2026). Si el socio cambia sus
+ * estrellas o su mensaje, la base la vuelve a dejar por revisar.
+ */
+export async function marcarResenaRevisada(_prev: ResenaState, formData: FormData): Promise<ResenaState> {
+  const actorId = await exigirSuperAdmin()
+  if (!actorId) return { error: SIN_PERMISO }
+
+  const ids = leerIds(formData)
+  if (!ids) return { error: SIN_RESENA }
+
+  const r = await marcarRevisada(actorId, ids)
+  if (r === 'sin_columna') {
+    return {
+      error:
+        'Falta aplicar en la base el script 20261029120000_resenas_revisadas.sql. Mientras tanto, responder como ORUM la da por revisada.',
+    }
+  }
+  if (r === 'no_esta') return { error: SIN_RESENA }
+  if (r === 'error') return { error: 'No pudimos marcarla como revisada. Inténtalo de nuevo.' }
+
+  await anotar(actorId, 'revisar', ids)
+  refrescar(ids.comercioId)
   return { ok: true }
 }

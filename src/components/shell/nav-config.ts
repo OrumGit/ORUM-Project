@@ -5,6 +5,7 @@ import {
   Images,
   LayoutGrid,
   Megaphone,
+  MessageSquareText,
   Search,
   ScrollText,
   Store,
@@ -56,6 +57,7 @@ const COMERCIOS: NavItem = { href: '/admin/comercios', label: 'Comercios', icon:
 const USUARIOS: NavItem = { href: '/admin/usuarios', label: 'Usuarios', icon: UserCog }
 const PLANES: NavItem = { href: '/admin/planes', label: 'Planes', icon: CreditCard }
 const ANUNCIOS: NavItem = { href: '/admin/anuncios', label: 'Novedades', icon: Megaphone }
+const RESENAS: NavItem = { href: '/admin/resenas', label: 'Reseñas', icon: MessageSquareText }
 const PUBLICIDAD: NavItem = { href: '/admin/publicidad', label: 'Publicidad', icon: Images }
 const METRICAS: NavItem = { href: '/admin/metricas', label: 'Métricas', icon: BarChart3 }
 const BITACORA: NavItem = { href: '/admin/bitacora', label: 'Bitácora', icon: ScrollText }
@@ -80,7 +82,8 @@ const BITACORA: NavItem = { href: '/admin/bitacora', label: 'Bitácora', icon: S
 export function navegacionPara(rol: RolCodigo): NavGroup[] {
   if (rol === 'super_admin') {
     return [
-      { items: [INICIO, MIEMBROS, COMERCIOS] },
+      // Reseñas, con los comercios: se revisan a diario (29/10/2026).
+      { items: [INICIO, MIEMBROS, COMERCIOS, RESENAS] },
       // Consultar, no operar. Métricas va primero: se mira a diario; la
       // bitácora solo cuando hay que averiguar quién hizo algo.
       { label: 'Análisis', items: [METRICAS, BITACORA] },

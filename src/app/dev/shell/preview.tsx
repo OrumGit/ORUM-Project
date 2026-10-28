@@ -163,6 +163,18 @@ export function ShellPreview() {
             { id: 1, quien: 'Ana Restrepo', que: 'Miembro registrado — plan Anual, $120000', miembro: 'Pedro Cano', cuando: 'Hace 12 min' },
             { id: 2, quien: 'Daniel Bulla', que: 'Membresía renovada — plan Anual, vence 2027-10-15', miembro: 'Laura Gil', cuando: 'Hace 3 h' },
           ]}
+          resenas={
+            rol === 'super_admin'
+              ? {
+                  total: 3,
+                  recientes: [
+                    { id: 1, comercioNombre: 'Dulces Momentos', estrellas: 2, autor: 'Ana Ruiz', mensaje: 'Tardaron casi una hora en atendernos y el descuento no lo quisieron aplicar.' },
+                    { id: 2, comercioNombre: 'Bendito Brunch', estrellas: 3, autor: 'Pedro Cano', mensaje: 'Bien, pero el lugar estaba lleno.' },
+                    { id: 3, comercioNombre: 'Café de prueba', estrellas: 1, autor: 'Laura Gil', mensaje: null },
+                  ],
+                }
+              : undefined
+          }
         />
       ) : (
       <>

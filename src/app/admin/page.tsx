@@ -2,6 +2,7 @@ import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { horaBogota, hoyISO, saludoPorHora, sumarDiasISO } from '@/lib/shared/fecha'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
+import { obtenerAlertaResenas } from '@/lib/resenas/datos-panel'
 import {
   DIAS_POR_VENCER,
   InicioPanel,
@@ -191,11 +192,13 @@ export default async function AdminInicioPage() {
   const perfil = await requireRol('super_admin', 'empleado')
   const esSuperAdmin = perfil.rolCodigo === 'super_admin'
   const ahora = new Date()
-  const [cifras, vencen, actividad, nombre] = await Promise.all([
+  const [cifras, vencen, actividad, nombre, alerta] = await Promise.all([
     obtenerCifras(),
     obtenerVencimientos(),
     esSuperAdmin ? obtenerActividad(ahora) : Promise.resolve([]),
     obtenerNombre(perfil.userId),
+    // Las reseñas se moderan solo con rol de administrador: la alerta, igual.
+    esSuperAdmin ? obtenerAlertaResenas() : Promise.resolve({ total: 0, recientes: [] }),
   ])
 
   return (
@@ -207,6 +210,16 @@ export default async function AdminInicioPage() {
       cifras={cifras}
       vencen={vencen}
       actividad={actividad}
+      resenas={{
+        total: alerta.total,
+        recientes: alerta.recientes.map((r) => ({
+          id: r.id,
+          comercioNombre: r.comercioNombre,
+          estrellas: r.estrellas,
+          autor: r.autor,
+          mensaje: r.mensaje,
+        })),
+      }}
     />
   )
 }

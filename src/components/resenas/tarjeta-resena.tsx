@@ -32,6 +32,8 @@ type TarjetaProps = {
   respuestaAdmin: string | null
   /** Controles bajo las respuestas (responder, quitar, eliminar). */
   acciones?: ReactNode
+  /** Una línea encima del nombre: de qué comercio es, si está por revisar (panel). */
+  contexto?: ReactNode
 }
 
 export function TarjetaResena({
@@ -42,11 +44,13 @@ export function TarjetaResena({
   respuestaComercio,
   respuestaAdmin,
   acciones,
+  contexto,
 }: TarjetaProps) {
   return (
     <article className={estilos.resena}>
       <Avatar nombre={autor} size="md" decorativo />
       <div className={estilos.resenaCuerpo}>
+        {contexto && <div className={estilos.contexto}>{contexto}</div>}
         <div className={estilos.resenaCabeza}>
           <p className={estilos.autor}>{autor}</p>
           {fecha && <p className={estilos.fecha}>{fecha}</p>}

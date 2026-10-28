@@ -696,6 +696,9 @@ export type Database = {
           /** Se muestra como «ORUM». */
           respuesta_admin: string | null
           respuesta_admin_at: Timestamp | null
+          /** Cuándo un administrador la marcó como revisada (migración 20261029120000; se vacía si el socio la cambia). */
+          revisada_at: Timestamp | null
+          revisada_por: string | null
           created_at: Timestamp
           /** Último cambio de estrellas o mensaje; responder no la mueve. */
           updated_at: Timestamp
@@ -710,6 +713,8 @@ export type Database = {
           respuesta_comercio_at?: Timestamp | null
           respuesta_admin?: string | null
           respuesta_admin_at?: Timestamp | null
+          revisada_at?: Timestamp | null
+          revisada_por?: string | null
           created_at?: Timestamp
           updated_at?: Timestamp
         }
