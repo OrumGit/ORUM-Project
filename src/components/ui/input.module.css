@@ -105,21 +105,19 @@
   de dos maneras según el navegador. Se neutraliza SOLO para ese tipo —`Select`
   ya tiene su propia regla y `Textarea` no necesita ninguna—.
 
-  El botón nativo de limpiar se devuelve a mano, porque `appearance: none` se
-  lo lleva por delante y es un toque menos para el socio que no tenemos que
-  construir. PENDIENTE DE VERIFICAR EN IPHONE REAL: en las versiones recientes
-  de Safari la reactivación del pseudo-elemento no siempre surte efecto; si no
-  aparece, el campo se limpia igual borrando el texto y no hay regresión, solo
-  un atajo que no está.
+  El botón nativo de limpiar lo viste `globals.css` («La X de los
+  buscadores», 29/10/2026): gris oscuro y animado, en vez del azul del
+  navegador. PENDIENTE DE VERIFICAR EN IPHONE REAL: si en Safari no aparece,
+  el campo se limpia igual borrando el texto; no hay regresión, solo un
+  atajo que no está.
 */
 .control[type='search'] {
   -webkit-appearance: none;
   appearance: none;
 }
 
-.control[type='search']::-webkit-search-cancel-button {
-  -webkit-appearance: searchfield-cancel-button;
-}
+/* La X la viste `globals.css` («La X de los buscadores»): gris oscura y
+   animada, ya no la azul del navegador. */
 
 /* Cifras que se alinean en columna o se leen dígito a dígito: número de
    membresía, cédula, teléfono, montos. */

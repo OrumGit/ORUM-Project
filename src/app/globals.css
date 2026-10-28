@@ -1545,6 +1545,65 @@ html[data-filtrando]::view-transition-old(*):only-child {
 }
 
 /*
+  LA X DE LOS BUSCADORES  ·  29/10/2026
+  ---------------------------------------------------------------------------
+  Encargo del propietario: «no me gusta la X de color azul; un gris oscuro o
+  un negro, que se vea mejor y con animación». Era la X del navegador en los
+  `<input type="search">` (azul en Chrome y Edge). Aquí se viste la MISMA
+  —sigue borrando el campo, sin JavaScript, en todos los buscadores del
+  sitio—: una X de trazo grueso en tinta gris oscura, dibujada con una
+  máscara para que tome el color de un token. Aparece creciendo y fundiéndose
+  al escribir, se oscurece y gira un cuarto al apuntarla, y se encoge al
+  pulsarla. Firefox no tiene esta X: ahí el campo se borra como siempre.
+  Quien tiene su propia X (el buscador del panel) la esconde con
+  `display: none`.
+*/
+input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-inline: var(--space-1) var(--space-2);
+  /* Tinta CRUDA y no `--text-2`: el campo es siempre blanco, aunque viva en
+     una franja oscura (el banner del directorio) que aclara los textos. */
+  background-color: var(--tinta-2);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / 15px 15px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / 15px 15px no-repeat;
+  cursor: pointer;
+  transition:
+    rotate var(--dur-base) var(--ease-out),
+    scale var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+  animation: aparecer-equis var(--dur-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  input[type='search']::-webkit-search-cancel-button:hover {
+    background-color: var(--tinta-1);
+    rotate: 90deg;
+  }
+}
+
+input[type='search']::-webkit-search-cancel-button:active {
+  scale: 0.82;
+}
+
+@keyframes aparecer-equis {
+  from {
+    opacity: 0;
+    scale: 0.6;
+    rotate: -90deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type='search']::-webkit-search-cancel-button {
+    animation: none;
+    transition: none;
+  }
+}
+
+/*
   LA BARRA DE DESPLAZAMIENTO CON DISEÑO  ·  `[data-barra]`  (09/10/2026)
   ---------------------------------------------------------------------------
   Encargo del propietario: «un diseño para todos los formularios; que tengan

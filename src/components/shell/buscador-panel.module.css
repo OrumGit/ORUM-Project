@@ -64,10 +64,9 @@
   color: var(--text-3);
 }
 
-/* Sin la X propia del navegador: hay una del sistema. */
+/* Sin la X del navegador (ni la vestida de `globals.css`): hay una del sistema. */
 .entrada::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
+  display: none;
 }
 
 .limpiar {

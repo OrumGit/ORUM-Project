@@ -1811,6 +1811,17 @@ el cuerpo de `Modal` y de `Sheet`, la lista de `SelectMenu` y la de la
 paleta. **No en una ventana que desplaza entera** (se fundiría su fondo)
 **ni con algo `sticky` abajo.** No vuelvas a un degradado superpuesto.
 
+**La X de los buscadores es la del navegador, VESTIDA** (`globals.css`,
+«La X de los buscadores», 29/10/2026: «no me gusta la X de color azul; un
+gris oscuro o un negro, que se vea mejor y con animación»). Todo
+`<input type="search">` del sitio la lleva: una X de trazo grueso pintada
+con una máscara en `--tinta-2` (tinta CRUDA, no `--text-2`: el campo es
+blanco aunque viva en el banner oscuro del directorio, que aclara los
+textos); aparece girando y creciendo, al apuntarla se oscurece a `--tinta-1`
+y gira un cuarto, y se encoge al pulsarla. Sigue borrando el campo sin
+JavaScript. Quien tenga su propia X la esconde con `display: none` (el
+buscador del panel). Firefox no tiene esta X. No vuelvas a la azul.
+
 **`.marcoCuerpo` (Modal) RECORTA a la forma de la ventana** (`overflow:
 clip` con el radio interior, abajo si no hay pie y arriba si no hay
 cabecera). El `<dialog>` no puede recortar —perdería su sombra—, y sin esto
