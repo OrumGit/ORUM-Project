@@ -211,7 +211,8 @@ export function ListaMiembros({
             <DropdownMenu
               trigger={
                 <Button variant="secondary" size="sm" icon={<Layers size={15} aria-hidden="true" />}>
-                  Plan: <strong className={styles.valorFiltro}>{planActual?.nombre ?? 'Todos'}</strong>
+                  <span className={styles.prefijoFiltro}>Plan: </span>
+                  <strong className={styles.valorFiltro}>{planActual?.nombre ?? 'Todos'}</strong>
                   <ChevronDown size={15} aria-hidden="true" />
                 </Button>
               }
@@ -235,7 +236,8 @@ export function ListaMiembros({
             align="end"
             trigger={
               <Button variant="secondary" size="sm" icon={<ArrowUpDown size={15} aria-hidden="true" />} className={styles.ordenar}>
-                Ordenar: <strong className={styles.valorFiltro}>{ordenActual.etiqueta}</strong>
+                <span className={styles.prefijoFiltro}>Ordenar: </span>
+                <strong className={styles.valorFiltro}>{ordenActual.etiqueta}</strong>
                 <ChevronDown size={15} aria-hidden="true" />
               </Button>
             }

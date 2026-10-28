@@ -9,6 +9,7 @@ import {
   EntradaInstalar,
   GuiaInstalacionIOS,
 } from '@/components/pwa/instalar-app'
+import { AvisoInstalar } from '@/components/pwa/instalar-movil'
 import { Button } from '@/components/ui/button'
 import { LogoOrum } from '@/components/ui/marca/marca'
 import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/menu'
@@ -248,6 +249,13 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
         {/* HERMANA de la hoja «Más», no hija: un `<dialog>` cerrado arrastra
             a sus descendientes, y cerrar «Más» para mostrarla la ocultaría. */}
         <GuiaInstalacionIOS abierta={guiaIOS} onCerrar={() => setGuiaIOS(false)} />
+
+        {/* El botón redondo de descarga en el celular, como en el portal de
+            miembros (29/10/2026: «tiene que aparecer el botón de descarga
+            como en el usuario»). Aquí no hay WhatsApp: va sobre la barra
+            inferior. Instala la app del PANEL (su manifiesto lo enlaza
+            `admin/layout.tsx`). */}
+        <AvisoInstalar sobre="barra" />
       </div>
     </ToastProvider>
   )

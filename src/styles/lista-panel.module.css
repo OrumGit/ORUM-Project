@@ -25,6 +25,13 @@
   font-weight: 700;
 }
 
+/*
+  EN EL TELÉFONO (29/10/2026: «se ven opciones corridas en el celular»). El
+  buscador ocupa su fila y los filtros comparten la siguiente: sin el
+  prefijo («Plan:», «Ordenar:») cabían, con él caían cada uno en su línea,
+  sueltos. El prefijo se oculta solo a la VISTA —el lector de pantalla lo
+  sigue leyendo— y el icono de cada filtro dice qué es.
+*/
 @container contenido (max-width: 640px) {
   .buscar {
     max-width: none;
@@ -32,6 +39,15 @@
 
   .ordenar {
     margin-left: 0;
+  }
+
+  .prefijoFiltro {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

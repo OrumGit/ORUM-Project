@@ -59,6 +59,18 @@
   }
 }
 
+/* En el panel no hay WhatsApp: el botón va en la esquina y, en el teléfono,
+   por encima de la barra inferior (que solo existe bajo 768 px). */
+.flotante[data-sobre='barra'] {
+  bottom: max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-4)));
+}
+
+@media (max-width: 767px) {
+  .flotante[data-sobre='barra'] {
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--space-4));
+  }
+}
+
 /* Presionar hunde. */
 .flotante:active {
   scale: 0.9;

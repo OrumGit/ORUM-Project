@@ -51,6 +51,25 @@
   outline-offset: 1px;
 }
 
+/* En el teléfono (29/10/2026: «opciones corridas en el celular») las
+   pestañas caían en filas desparejas («Todos · Vigentes» y debajo
+   «Vencidas · Sin membresía», cada fila de su largo). Ahora van en una
+   rejilla de dos columnas iguales, a todo el ancho: se leen como un
+   control, no como palabras sueltas. */
+@media (max-width: 520px) {
+  .pista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-self: stretch;
+  }
+
+  .pestana {
+    justify-content: center;
+    padding-inline: var(--space-2);
+    min-width: 0;
+  }
+}
+
 /* La elegida: una píldora blanca que se levanta. Es un control elegido, no
    una superficie en reposo: aquí la sombra dice «esta». */
 .pestana[data-activa] {

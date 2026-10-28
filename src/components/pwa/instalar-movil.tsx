@@ -71,7 +71,12 @@ function useAccionInstalar() {
  * computador la entrada del pie sigue ahí para quien la quiera. Y solo donde
  * instalar es posible: con la app ya instalada, desaparece.
  */
-export function AvisoInstalar() {
+export function AvisoInstalar({
+  sobre = 'whatsapp',
+}: {
+  /** Encima del botón de WhatsApp (portales) o de la barra inferior (panel). */
+  sobre?: 'whatsapp' | 'barra'
+}) {
   const { modo, instalar, guias } = useAccionInstalar()
   const enCelular = useMediaQuery('(pointer: coarse) and (max-width: 900px)')
 
@@ -83,6 +88,7 @@ export function AvisoInstalar() {
         <button
           type="button"
           className={estilos.flotante}
+          data-sobre={sobre}
           onClick={instalar}
           aria-label="Instalar la aplicación de ORUM"
         >

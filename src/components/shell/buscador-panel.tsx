@@ -8,6 +8,7 @@ import { buscarMiembrosAction } from '@/app/admin/actions'
 import { Avatar } from '@/components/ui/avatar'
 import { StatusBadge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
+import { useMediaQuery } from '@/components/use-media-query'
 import type { MiembroEncontrado } from '@/lib/miembros/buscar-miembros'
 import type { RolCodigo } from '@/lib/supabase/database.types'
 import { accionesPara } from './acciones-panel'
@@ -67,6 +68,7 @@ type Props = {
 }
 
 export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }: Props) {
+  const estrecho = useMediaQuery('(max-width: 639px)')
   const router = useRouter()
   const idLista = useId()
   const raiz = useRef<HTMLDivElement>(null)
@@ -213,7 +215,10 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
           }}
           onFocus={() => setAbierto(true)}
           onKeyDown={alTeclear}
-          placeholder="Busca un miembro, una cédula o qué hacer"
+          // En el teléfono la frase entera no cabía y se cortaba a la mitad
+          // («Busca un miembro, u»): ahí basta con «Buscar» (29/10/2026); qué
+          // se puede buscar lo dice la lista al escribir.
+          placeholder={estrecho ? 'Buscar' : 'Busca un miembro, una cédula o qué hacer'}
           aria-label="Buscar en el panel"
           role="combobox"
           aria-expanded={abierto}

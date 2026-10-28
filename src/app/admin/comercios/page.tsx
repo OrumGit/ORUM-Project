@@ -225,7 +225,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
             <DropdownMenu
               trigger={
                 <Button variant="secondary" size="sm" icon={<Shapes size={15} aria-hidden="true" />}>
-                  Categoría:{' '}
+                  <span className={styles.prefijoFiltro}>Categoría: </span>
                   <strong className={styles.valorFiltro}>{categoriaActual?.nombre ?? 'Todas'}</strong>
                   <ChevronDown size={15} aria-hidden="true" />
                 </Button>

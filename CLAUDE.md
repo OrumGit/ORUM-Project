@@ -622,6 +622,25 @@ marca con la casilla de «Registrar miembro» y de «Renovar membresía»
 (`salvoCortesia`) y el servidor ignora cualquier precio. Poner 0 sin casilla ya
 no es la forma de regalar una membresía: sigue siendo un descuento total.
 
+**Revocar** (29/10/2026: «que el administrador pueda revocar membresías»).
+Solo `super_admin`, desde la ficha del miembro («Revocar membresía», en
+secundario y antes de «Renovar», solo si hay una vigente), en una ventana
+encima (`admin/miembros/[id]/revocar` + su gemela de `@modal`) que dice
+primero qué va a pasar y pide un motivo de una lista y, con «Otro motivo»,
+una nota (`lib/miembros/revocacion.ts`, puro y probado). La membresía pasa a
+`cancelada` —el valor que el esquema ya tenía; sin migración—: no se borra
+ni devuelve dinero, la caja la rechaza (`fn_validar_venta` exige `activa`)
+y el socio ve su pantalla de membresía cancelada. Renovar crea una nueva
+desde hoy. Cuándo y por qué quedan en la bitácora (`accion: 'revocacion'`,
+con su pestaña «Revocaciones»), y la ficha lo dice en el estado y en el
+historial («Revocada el … · motivo»). Vista previa: `/dev/revocar`.
+
+**Los planes ya no se crean ni se retiran** (29/10/2026: «quitar la
+funcionalidad de añadir o quitar planes de membresía»). `/admin/planes`
+solo los lista y los EDITA (precio, duración, descripción); se borraron
+`planes/nuevo`, su gemela, `crearPlan`, `cambiarEstadoPlan` y sus accesos
+en la portada y el buscador del panel. No los vuelvas a poner.
+
 ---
 
 ## Movimiento
@@ -1415,6 +1434,44 @@ paleta:
   para dinero (en Chrome rechaza los puntos de miles en silencio).
 - `/dev/shell` la enseña con datos falsos (rol, sección simulada, portada y
   la lista de miembros).
+- **Las reseñas tienen su apartado** (`/admin/resenas`, 29/10/2026: «un
+  apartado completo de reseñas, donde aparezcan todas y de qué comercio
+  fue»), en la barra junto a Comercios; solo `super_admin`. Pestañas Todas ·
+  Por revisar · Calificación baja (`?ver=`), 25 por página, y cada reseña
+  con su comercio (enlace a la pestaña «Reseñas» de su ficha) y la misma
+  moderación que en la ficha (`ResenasAdmin conComercio`). **POR REVISAR**
+  = menos de 4 estrellas (`UMBRAL_REVISION`) y sin revisar
+  (`lib/resenas/moderacion.ts`, puro y probado). «Marcar como revisada» —o
+  responder como ORUM— la da por revisada. Columnas `revisada_at` /
+  `revisada_por` (`supabase/migrations/20261029120000_resenas_revisadas.sql`,
+  SE APLICA A MANO): un trigger las vacía si el socio cambia estrellas o
+  mensaje, así que vuelve a pedir revisión. ⚠️ Sin la migración el código
+  aguanta (`datos-panel.ts`): «por revisar» es «baja y sin respuesta de
+  ORUM» y el botón de marcar no sale.
+- **La portada avisa de las reseñas bajas**: arriba de todo, una tarjeta
+  con «N reseñas por revisar», las tres más recientes (estrellas, comercio,
+  el mensaje en una línea) y «Revisar» (a `?ver=por_revisar`). Solo sale
+  si hay alguna; el icono se balancea una vez al entrar.
+- **Métricas tiene gráficas** (29/10/2026: «gráficas simples para ver
+  gráficamente todos los datos»), sin librería y pintadas en el servidor
+  (`components/ui/graficas.tsx`): las ventas por día —por semana si el
+  periodo pasa de 45 días— en columnas con el detalle en un globo al
+  apuntar O enfocar, y dos rankings en barras (quién vendió más
+  membresías, qué comercios vendieron más; 7 + «Otros»). UN tono
+  (`--gold-600`), el texto en tinta, nada crece desde cero. La lógica es
+  pura y probada (`lib/metricas/graficas.ts`: `serieVentas` en día de
+  Colombia, `primerosYOtros`). Las tablas se quedan debajo: son la vista
+  exacta. Vista previa: `/dev/graficas`.
+- **El panel también se instala desde el celular** con el botón redondo de
+  descarga, como el portal de miembros (`AvisoInstalar sobre="barra"` en
+  `AppShell`: va encima de la barra inferior, no hay WhatsApp).
+- **En el teléfono** (29/10/2026: «se ven opciones corridas en el celular,
+  por ejemplo las búsquedas»): el buscador de arriba dice solo «Buscar» (la
+  frase entera se cortaba); las `Pestanas` van en una rejilla de dos
+  columnas iguales bajo 520 px; y los filtros de las listas (plan, orden,
+  categoría) esconden su prefijo a la vista para caber en una fila
+  (`.prefijoFiltro` de `lista-panel.module.css`; el lector lo sigue
+  diciendo).
 
 **La Herramienta de Comercios** (`src/app/comercios/(portal)/`, rediseño del
 04/10/2026) es la tercera cara de la fachada. El layout pone la cabecera del
