@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, type FocusEvent } from 'react'
+import { useRef, useState, type FocusEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
+import { CampoContrasenaNueva } from '@/components/auth/campo-contrasena-nueva'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
-import { Input, InputButton } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
 import { createClient } from '@/lib/supabase/client'
 import { MENSAJE_ENLACE_INVALIDO, MENSAJE_ENLACE_VENCIDO, textosActivacion } from '@/lib/auth/activacion'
+import { MENSAJE_FILTRADA, revisarContrasena } from '@/lib/auth/contrasena-segura'
+import { guardarContrasenaNueva, revisarAntesDeCanjear } from '../actions'
 
 type Estado = 'listo' | 'invalido' | 'guardando'
 
@@ -60,6 +63,11 @@ export function ActivarForm() {
   const [errores, setErrores] = useState<Errores>({})
   const [mensajeInvalido, setMensajeInvalido] = useState(MENSAJE_ENLACE_INVALIDO)
   const [verPassword, setVerPassword] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmar, setConfirmar] = useState('')
+  // El enlace sirve UNA vez. Si ya se canjeó y el servidor rechazó la
+  // contraseña (por ejemplo, se parece al nombre), el reintento solo guarda.
+  const canjeado = useRef(false)
 
   /*
     Los dos errores de contraseña son de CLIENTE y aquí sí sabemos cuál campo
@@ -72,8 +80,10 @@ export function ActivarForm() {
     const nueva = String(formData.get('password') ?? '')
     const repetida = String(formData.get('confirmar') ?? '')
 
-    if (nueva.length < 8) {
-      setErrores({ password: 'La contraseña debe tener al menos 8 caracteres.' })
+    // Lo que se ve ya en la guía, dicho en el campo al enviar.
+    const revision = revisarContrasena(nueva)
+    if (!revision.ok) {
+      setErrores({ password: revision.mensaje })
       return
     }
     if (nueva !== repetida) {
@@ -88,26 +98,61 @@ export function ActivarForm() {
     setErrores({})
     setEstado('guardando')
 
-    const supabase = createClient()
+    if (!canjeado.current) {
+      // Antes de gastar el enlace: lo que decide el servidor (filtraciones
+      // incluidas). Un rechazo aquí no quema el enlace.
+      const previa = await revisarAntesDeCanjear(nueva)
+      if (!previa.ok) {
+        setEstado('listo')
+        setErrores({ password: previa.error })
+        return
+      }
 
-    // El token se canjea justo aquí, al enviar el formulario — nunca al
-    // cargar la página. Así un GET pasivo (un escaneo automático de enlaces,
-    // el propio Gmail revisando el correo) no lo gasta antes de que la
-    // persona lo use de verdad.
-    const { error: errVerify } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: tipo as 'invite' | 'recovery',
-    })
-    if (errVerify) {
-      setMensajeInvalido(errVerify.code === 'otp_expired' ? MENSAJE_ENLACE_VENCIDO : MENSAJE_ENLACE_INVALIDO)
-      setEstado('invalido')
-      return
+      // El token se canjea justo aquí, al enviar el formulario — nunca al
+      // cargar la página. Así un GET pasivo (un escaneo automático de enlaces,
+      // el propio Gmail revisando el correo) no lo gasta antes de que la
+      // persona lo use de verdad.
+      const supabase = createClient()
+      const { error: errVerify } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: tipo as 'invite' | 'recovery',
+      })
+      if (errVerify) {
+        setMensajeInvalido(errVerify.code === 'otp_expired' ? MENSAJE_ENLACE_VENCIDO : MENSAJE_ENLACE_INVALIDO)
+        setEstado('invalido')
+        return
+      }
+      canjeado.current = true
     }
 
-    const { error: errUpdate } = await supabase.auth.updateUser({ password: nueva })
-    if (errUpdate) {
+    // Con la sesión del enlace: el servidor revisa con los datos de la
+    // cuenta (nombre, correo, cédula) y guarda.
+    const resultado = await guardarContrasenaNueva(nueva)
+    if (!resultado.ok) {
+      if (resultado.sinSesion) {
+        /*
+          RESPALDO. El enlace se acaba de canjear en ESTE navegador, pero el
+          servidor no reconoce la sesión (la cookie no llegó, o Supabase anotó
+          el canje de otra forma). Antes que dejar a la persona sin poder
+          entrar, se guarda como se hacía antes: desde el navegador, con la
+          sesión del enlace. La contraseña ya pasó las reglas y la revisión
+          de filtraciones (`revisarAntesDeCanjear`).
+        */
+        const { error: errUpdate } = await createClient().auth.updateUser({ password: nueva })
+        if (errUpdate) {
+          setEstado('listo')
+          setErrores(
+            errUpdate.code === 'weak_password'
+              ? { password: MENSAJE_FILTRADA }
+              : { global: 'No se pudo guardar la contraseña. Vuelve a intentarlo.' },
+          )
+          return
+        }
+        router.push(destino)
+        return
+      }
       setEstado('listo')
-      setErrores({ global: 'No se pudo activar la cuenta. Vuelve a intentarlo.' })
+      setErrores({ password: resultado.error })
       return
     }
 
@@ -164,27 +209,19 @@ export function ActivarForm() {
         </Alert>
       )}
 
-      <Field
+      <CampoContrasenaNueva
         label={textos.etiquetaPassword}
-        help="Mínimo 8 caracteres."
+        value={password}
+        onChange={(valor) => {
+          setPassword(valor)
+          // Al corregir, el aviso del servidor se va: ya no habla de esto.
+          if (errores.password) setErrores((previos) => ({ ...previos, password: undefined }))
+        }}
         error={errores.password ?? null}
-      >
-        <Input
-          name="password"
-          type={verPassword ? 'text' : 'password'}
-          autoComplete="new-password"
-          required
-          autoFocus
-          endAdornment={
-            <InputButton
-              label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              onClick={() => setVerPassword((v) => !v)}
-            >
-              {verPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-            </InputButton>
-          }
-        />
-      </Field>
+        ver={verPassword}
+        onVer={() => setVerPassword((v) => !v)}
+        autoFocus
+      />
 
       <Field label="Confirma tu contraseña" error={errores.confirmar ?? null}>
         <Input
@@ -192,6 +229,11 @@ export function ActivarForm() {
           type={verPassword ? 'text' : 'password'}
           autoComplete="new-password"
           required
+          // Controlado, como el de la contraseña: un formulario con `action`
+          // vacía al volver los campos no controlados, y un rechazo del
+          // servidor obligaba a escribir la confirmación otra vez.
+          value={confirmar}
+          onChange={(e) => setConfirmar(e.target.value)}
           /*
             Con la submisión implícita, el usuario NUNCA necesita alcanzar el
             botón: envía desde el teclado. Es el arreglo real al botón que

@@ -1,0 +1,177 @@
+/* ==========================================================================
+   EL CAMPO DE UNA CONTRASEÑA NUEVA  ·  el campo, el medidor y los requisitos
+   Sin trazo ni tarjeta: vive en el formulario de quien lo usa. Los colores
+   del medidor son SEMÁNTICOS (peligro → éxito), no de marca: el oro no
+   codifica datos.
+   ========================================================================== */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.guia {
+  --color-nivel: var(--text-3);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.guia[data-nivel='insegura'] {
+  --color-nivel: var(--danger);
+}
+
+.guia[data-nivel='aceptable'] {
+  --color-nivel: var(--warning);
+}
+
+.guia[data-nivel='buena'] {
+  --color-nivel: var(--info);
+}
+
+.guia[data-nivel='excelente'] {
+  --color-nivel: var(--success);
+}
+
+/* --- El medidor: cuatro segmentos y su nombre ------------------------------- */
+
+.medidor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.segmentos {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+}
+
+/* El carril, hueco; el relleno, un `::after` que crece desde la izquierda
+   (solo `transform`) y lleva el color del nivel. */
+.segmento {
+  position: relative;
+  height: 4px;
+  overflow: clip;
+  border-radius: var(--radius-full);
+  background: var(--surface-hueco);
+}
+
+.segmento::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-nivel);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.segmento[data-lleno]::after {
+  transform: scaleX(1);
+}
+
+/* Los segmentos se llenan uno tras otro, no a la vez. */
+.segmento:nth-child(2)::after {
+  transition-delay: calc(var(--escalonado) * 1);
+}
+
+.segmento:nth-child(3)::after {
+  transition-delay: calc(var(--escalonado) * 2);
+}
+
+.segmento:nth-child(4)::after {
+  transition-delay: calc(var(--escalonado) * 3);
+}
+
+.nivel {
+  flex-shrink: 0;
+  min-width: 9ch;
+  font-size: var(--t-caption-size);
+  font-weight: 700;
+  text-align: right;
+  color: var(--color-nivel);
+}
+
+.guia[data-nivel='vacia'] .nivel {
+  min-width: 0;
+  font-weight: 500;
+}
+
+/* --- Los requisitos, con su marca -------------------------------------------- */
+
+.requisitos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.requisito {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--t-caption-size);
+  color: var(--text-2);
+}
+
+/* La marca: un aro vacío que se llena de verde con su ✓ al cumplirse. El
+   aro es una sombra `inset` (no un borde): cambia sin mover nada. */
+.marca {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1.5px var(--border-control);
+  color: var(--blanco);
+}
+
+.marca::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--success);
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    scale var(--dur-base) var(--ease-out);
+}
+
+.marca svg {
+  position: relative;
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    scale var(--dur-base) var(--ease-out);
+}
+
+.requisito[data-cumple] {
+  color: var(--text);
+}
+
+.requisito[data-cumple] .marca::before,
+.requisito[data-cumple] .marca svg {
+  opacity: 1;
+  scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmento::after,
+  .marca::before,
+  .marca svg {
+    transition-duration: 0s;
+    transition-delay: 0s;
+  }
+}

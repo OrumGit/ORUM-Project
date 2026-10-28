@@ -2,35 +2,16 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { CampoContrasenaNueva } from '@/components/auth/campo-contrasena-nueva'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input, InputButton } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import {
-  LONGITUD_MINIMA,
-  evaluarFortaleza,
-  type NivelFortaleza,
-} from '@/lib/shared/password-fortaleza'
+import { revisarContrasena } from '@/lib/auth/contrasena-segura'
 import { cambiarPassword, type PasswordState } from '../../actions'
 import styles from './password-form.module.css'
 
 const estadoInicial: PasswordState = {}
-
-const ETIQUETA_NIVEL: Record<NivelFortaleza, string> = {
-  vacia: '',
-  debil: 'Débil',
-  aceptable: 'Aceptable',
-  buena: 'Buena',
-  excelente: 'Excelente',
-}
-
-const CLASE_NIVEL: Record<NivelFortaleza, string> = {
-  vacia: '',
-  debil: styles.nivelDebil,
-  aceptable: styles.nivelAceptable,
-  buena: styles.nivelBuena,
-  excelente: styles.nivelExcelente,
-}
 
 export function PasswordForm() {
   const [state, formAction, pending] = useActionState(cambiarPassword, estadoInicial)
@@ -40,8 +21,11 @@ export function PasswordForm() {
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [ver, setVer] = useState(false)
+  // La contraseña que se envió: el aviso del servidor sobre ella se va en
+  // cuanto se escribe otra cosa.
+  const [enviada, setEnviada] = useState<string | null>(null)
 
-  const fortaleza = evaluarFortaleza(password)
+  const valida = revisarContrasena(password).ok
 
   // El éxito se anuncia con un toast y se limpian los campos: dejar la
   // contraseña escrita después de guardarla no aporta nada y la deja a la
@@ -68,7 +52,12 @@ export function PasswordForm() {
   return (
     /* Sin `Card`: la superficie la pone quien usa el formulario —el overlay o
        la página—, nunca el formulario. */
-    <form action={formAction} className={styles.formulario} noValidate>
+    <form
+      action={formAction}
+      onSubmit={() => setEnviada(password)}
+      className={styles.formulario}
+      noValidate
+    >
       {/* Los errores sin `campo` (sesión caducada, fallo del servidor) van en el
           último campo que se escribe, como hasta ahora. */}
       <Field
@@ -94,41 +83,15 @@ export function PasswordForm() {
         />
       </Field>
 
-      <Field
+      {/* La guía (medidor y requisitos) y lo que diga el servidor —se parece
+          a tu nombre, está filtrada— viven en el campo compartido. */}
+      <CampoContrasenaNueva
         label="Nueva contraseña"
-        help={`Mínimo ${LONGITUD_MINIMA} caracteres.`}
-        error={state.campo !== 'actual' ? state.error : undefined}
-      >
-        <Input
-          name="password"
-          type={ver ? 'text' : 'password'}
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </Field>
-
-      {fortaleza.nivel !== 'vacia' && (
-        <div className={`${styles.medidor} ${CLASE_NIVEL[fortaleza.nivel]}`}>
-          <div className={styles.segmentos} aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => (
-              <span
-                key={i}
-                className={styles.segmento}
-                data-lleno={i < fortaleza.puntuacion}
-              />
-            ))}
-          </div>
-
-          <p className={styles.leyenda}>
-            <span className={styles.nivel}>{ETIQUETA_NIVEL[fortaleza.nivel]}</span>
-            {fortaleza.mensaje && (
-              <span className={styles.consejo}>{fortaleza.mensaje}</span>
-            )}
-          </p>
-        </div>
-      )}
+        value={password}
+        onChange={setPassword}
+        error={state.campo !== 'actual' && enviada === password ? state.error : undefined}
+        ver={ver}
+      />
 
       <Field
         label="Confirmar nueva contraseña"
@@ -150,7 +113,7 @@ export function PasswordForm() {
         <Button
           type="submit"
           loading={pending}
-          disabled={actual.length === 0 || !fortaleza.cumpleMinimo || noCoinciden}
+          disabled={actual.length === 0 || !valida || noCoinciden}
           icon={<ShieldCheck size={16} />}
         >
           Cambiar contraseña

@@ -16,6 +16,7 @@
 */
 
 import { enlaceValido, revisarCorreo, soloDigitos, telefonoValido } from '../aliados/solicitud-aliado'
+import { revisarContrasena } from '../auth/contrasena-segura'
 
 /** Los valores del formulario, por nombre de campo. */
 export type Valores = Record<string, string>
@@ -165,13 +166,14 @@ export function noAntesDe(otroCampo: string, mensaje: string): Regla {
 export const enlace: Regla = (v) =>
   enlaceValido(v) ? null : 'Escribe una dirección web válida, por ejemplo instagram.com/tucomercio.'
 
-/** Contraseña: 8 o más caracteres, con letras y números. */
+/**
+ * Contraseña NUEVA: la misma política de toda la app (`lib/auth/contrasena-segura.ts`,
+ * NIST y OWASP): largo, sin series ni repeticiones, ni común. Vacío pasa.
+ */
 export const contrasena: Regla = (v) => {
   if (v === '') return null
-  if (v.length < 8) return 'Debe tener al menos 8 caracteres.'
-  if (!/\p{L}/u.test(v) || !/\d/.test(v)) return 'Combina letras y números.'
-  if (/^(.)\1+$/u.test(v)) return 'Es demasiado fácil de adivinar.'
-  return null
+  const revision = revisarContrasena(v)
+  return revision.ok ? null : revision.mensaje
 }
 
 /** Este campo debe ser igual a `otroCampo` (repetir la contraseña). */

@@ -1,8 +1,9 @@
 'use server'
 
+import { contextoDeLaCuenta, motivoParaRechazar } from '@/lib/auth/contrasena-nueva'
+import { MENSAJE_FILTRADA, revisarContrasena } from '@/lib/auth/contrasena-segura'
 import { cupoDeLogin, ERROR_LIMITE_LOGIN, reiniciarLogin } from '@/lib/auth/limitador'
 import { verificarPasswordActual } from '@/lib/auth/password-actual'
-import { LONGITUD_MINIMA } from '@/lib/shared/password-fortaleza'
 import { mensajeDeError } from '@/lib/shared/errores'
 import { createClient } from '@/lib/supabase/server'
 
@@ -30,8 +31,10 @@ export async function cambiarPassword(
   if (!actual) {
     return { campo: 'actual', error: 'Escribe tu contraseña actual.' }
   }
-  if (nueva.length < LONGITUD_MINIMA) {
-    return { campo: 'nueva', error: `La contraseña debe tener al menos ${LONGITUD_MINIMA} caracteres.` }
+  // Las reglas que no necesitan saber de quién es (largo, series, comunes).
+  const revision = revisarContrasena(nueva)
+  if (!revision.ok) {
+    return { campo: 'nueva', error: revision.mensaje }
   }
   if (nueva !== confirmar) {
     return { campo: 'nueva', error: 'Las contraseñas no coinciden.' }
@@ -57,16 +60,20 @@ export async function cambiarPassword(
   }
   await reiniciarLogin(user.email)
 
+  // Con la cuenta ya comprobada: que no se parezca a su nombre, correo o
+  // cédula, y que no esté en filtraciones conocidas (`contrasena-nueva.ts`).
+  const motivo = await motivoParaRechazar(nueva, await contextoDeLaCuenta(user.id, user.email))
+  if (motivo) {
+    return { campo: 'nueva', error: motivo }
+  }
+
   const { error } = await supabase.auth.updateUser({ password: nueva })
   if (error) {
     // La protección contra contraseñas filtradas de Supabase rechaza las que
     // aparecen en brechas conocidas. Es un mensaje que el usuario necesita ver:
     // sin él no sabría por qué la suya «no vale».
     if (error.code === 'weak_password') {
-      return {
-        campo: 'nueva',
-        error: 'Esa contraseña es muy común o aparece en filtraciones conocidas. Elige otra.',
-      }
+      return { campo: 'nueva', error: MENSAJE_FILTRADA }
     }
     return { error: mensajeDeError('No se pudo cambiar la contraseña', error) }
   }

@@ -129,10 +129,10 @@ describe('fechas', () => {
 })
 
 describe('acceso', () => {
-  it('contraseña con letras y números', () => {
-    expect(contrasena('orum2026', sinOtros)).toBeNull()
-    expect(contrasena('corta1', sinOtros)).toMatch(/8/)
-    expect(contrasena('soloLetras', sinOtros)).toMatch(/letras y números/)
+  it('contraseña: la política de toda la app (largo, sin series, ni común)', () => {
+    expect(contrasena('el perro toby come arepas', sinOtros)).toBeNull()
+    expect(contrasena('corta1', sinOtros)).toMatch(/12/)
+    expect(contrasena('Colombia2024!', sinOtros)).toMatch(/común/)
   })
 
   it('repetir la contraseña', () => {

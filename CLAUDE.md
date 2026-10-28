@@ -1623,6 +1623,53 @@ borrar la imagen»). Tres piezas:
   sin ellas si no se programó nada; si se programa, avisa de que falta
   aplicarla.
 
+**Una contraseña NUEVA tiene que ser segura** (27/10/2026: «que el
+usuario no pueda poner una contraseña insegura»; con las fuentes oficiales:
+NIST SP 800-63B-4 §3.1.1.2 y el Authentication Cheat Sheet de OWASP). Hay
+DOS puertas por las que se crea una, y las dos usan lo mismo: activar la
+cuenta o restablecerla (`/activar-cuenta`, socios, comercios y personal) y
+«Cambiar contraseña» del panel.
+
+- **La política es pura y probada** (`lib/auth/contrasena-segura.ts`):
+  **12 caracteres o más** (NIST pide 15 sin segundo factor; subirlo es
+  cambiar `LONGITUD_MINIMA`), contados como los cuenta una persona; **SIN
+  reglas de mezcla** —nada de «una mayúscula, un número y un símbolo»: NIST
+  prohíbe exigirlas—; acepta espacios, tildes y emojis; tope de **72 bytes**
+  porque bcrypt (Supabase) trunca en silencio a partir de ahí; y rechaza,
+  DICIENDO POR QUÉ, las repeticiones («abcabc…»), las series del teclado o
+  del alfabeto, las comunes y las palabras del servicio aunque las decoren
+  («Colombia2024!», «ClubOrum2026») y las que salen de los datos de la
+  persona (correo, nombres, cédula: `palabrasDeContexto`). Una frase que
+  solo MENCIONA una de esas palabras pasa.
+- **Las filtradas, contra Pwned Passwords** (`contrasena-filtrada.ts`,
+  servidor): se manda solo el prefijo de 5 del SHA-1 (anonimato k), con
+  `Add-Padding`. **Si el servicio no responde en 2,5 s, no se bloquea a
+  nadie**: pasa con las demás reglas.
+- **Decide el servidor** (`lib/auth/contrasena-nueva.ts`:
+  `contextoDeLaCuenta` + `motivoParaRechazar`). Al activar, la contraseña
+  se revisa ANTES de canjear el enlace (`revisarAntesDeCanjear`: un rechazo
+  no lo quema) y se guarda DESPUÉS con la sesión del enlace
+  (`guardarContrasenaNueva`), ya con el nombre y la cédula de la cuenta; si
+  ese segundo paso la rechaza, el reintento no vuelve a canjear. Antes el
+  navegador la guardaba directamente con `updateUser` y solo miraba 8
+  caracteres. ⚠️ `guardarContrasenaNueva` cambia la contraseña SIN pedir la
+  actual, así que solo acepta una sesión abierta por el ENLACE hace menos de
+  15 minutos (`amr` del token, `vieneDeUnEnlace`): si no, sería una puerta
+  para quien se llevara una cookie. Y si el servidor no reconoce la sesión
+  recién canjeada, el navegador la guarda como antes (respaldo: no se puede
+  probar aquí sin un enlace real, y dejar a alguien sin activar su cuenta
+  sería peor). **Pendiente de verificar con una invitación y una
+  recuperación reales.**
+- **El campo es UNO** (`components/auth/campo-contrasena-nueva.tsx`): debajo,
+  siempre a la vista, cuatro segmentos que se llenan (solo `transform`) con
+  su nombre —Insegura · Aceptable · Buena · Excelente, en colores
+  SEMÁNTICOS, no oro— y los tres requisitos con su marca. El medidor premia
+  el LARGO y las frases, no la mezcla; si el servidor la rechaza, marca
+  «Insegura» y el motivo va en el campo. Se puede pegar y lo rellenan los
+  gestores (`autoComplete="new-password"`). La regla `contrasena` de
+  `lib/validacion/reglas.ts` es esta misma política. Un formulario nuevo
+  que cree una contraseña usa este campo y `motivoParaRechazar`.
+
 **El formulario «Quiero ser aliado» valida con EXIGENCIA** (05/10/2026: «es
 el portal público; no quiero que pongan datos que no son»). Las reglas viven
 en `lib/aliados/solicitud-aliado.ts` (puro, probado; el servidor es quien
