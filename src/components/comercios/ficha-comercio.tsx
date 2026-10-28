@@ -5,6 +5,7 @@ import { ComercioLogo } from '@/components/ui/comercio-logo'
 import { Ampliable, VisorImagenes, type ImagenVisor } from '@/components/ui/visor-imagenes'
 import { enlaceMapa } from '@/lib/comercios/enlace-mapa'
 import type { HorarioSucursal } from '@/lib/comercios/horario'
+import { telefonoLegible, telefonoParaMarcar } from '@/lib/shared/telefono'
 import { HorarioSede } from './horario-sede'
 import estilos from './ficha-comercio.module.css'
 
@@ -140,9 +141,17 @@ export function FichaComercio({
           {sedesVisibles.length > 0 && (
             <ul className={estilos.sedes} aria-label="Direcciones y horarios">
               {sedesVisibles.map((s) => (
+                /* Cada dato en SU fila, con su icono dorado a la izquierda:
+                   dirección, teléfono y horario (28/10/2026). Antes el
+                   teléfono iba pegado a la dirección, en oro y negrita, y el
+                   cliente lo quería como la dirección: texto en tinta. */
                 <li key={s.id} className={estilos.sede}>
-                  <MapPin size={15} aria-hidden="true" className={estilos.sedeIcono} />
-                  <span>
+                  {/* El nombre de la sede solo si hay varias: con una sola,
+                      «Sede principal» no le dice nada a nadie. */}
+                  {sedesVisibles.length > 1 && s.nombre && <p className={estilos.sedeTitulo}>{s.nombre}</p>}
+
+                  <p className={estilos.sedeFila}>
+                    <MapPin size={15} aria-hidden="true" className={estilos.sedeIcono} />
                     {s.direccion ? (
                       /* La dirección abre Google Maps (en el teléfono, la
                          app). Pestaña nueva: la ficha se queda donde estaba. */
@@ -150,7 +159,7 @@ export function FichaComercio({
                         href={enlaceMapa(s.direccion, s.ciudadNombre)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={estilos.sedeMapa}
+                        className={estilos.sedeEnlace}
                       >
                         {s.direccion}
                         {s.ciudadNombre && `, ${s.ciudadNombre}`}
@@ -160,22 +169,19 @@ export function FichaComercio({
                     ) : (
                       <span>{s.nombre ?? s.ciudadNombre ?? 'Sede'}</span>
                     )}
-                    {/* El nombre de la sede solo si hay varias: con una sola,
-                        «Sede principal» no le dice nada a nadie. */}
-                    {s.direccion && sedesVisibles.length > 1 && s.nombre && (
-                      <span className={estilos.sedeNombre}> · {s.nombre}</span>
-                    )}
-                    {s.telefono && (
-                      <a
-                        href={`tel:${s.telefono.replace(/\s+/g, '')}`}
-                        className={estilos.sedeTelefono}
-                      >
-                        <Phone size={13} aria-hidden="true" />
-                        {s.telefono}
+                  </p>
+
+                  {s.telefono && (
+                    <p className={estilos.sedeFila}>
+                      <Phone size={15} aria-hidden="true" className={estilos.sedeIcono} />
+                      <a href={`tel:${telefonoParaMarcar(s.telefono)}`} className={estilos.sedeEnlace}>
+                        <span className="sr-only">Llamar al </span>
+                        {telefonoLegible(s.telefono)}
                       </a>
-                    )}
-                    {s.horario && s.horario.length > 0 && <HorarioSede horario={s.horario} />}
-                  </span>
+                    </p>
+                  )}
+
+                  {s.horario && s.horario.length > 0 && <HorarioSede horario={s.horario} />}
                 </li>
               ))}
             </ul>

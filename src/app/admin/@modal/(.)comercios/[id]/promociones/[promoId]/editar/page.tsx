@@ -17,7 +17,9 @@ export default async function EditarPromocionInterceptada({
   const [{ data: promocion }, { data: tipos }] = await Promise.all([
     admin
       .from('promociones')
-      .select('id, titulo, descripcion, tipo_beneficio_id, valor, fecha_inicio, fecha_fin, dias_semana, restricciones')
+      // `*` y no la lista: así trae `franjas_horarias` cuando la migración
+      // está aplicada, y no falla cuando todavía no.
+      .select('*')
       .eq('id', Number(promoId))
       .eq('comercio_id', comercioId)
       .is('deleted_at', null)

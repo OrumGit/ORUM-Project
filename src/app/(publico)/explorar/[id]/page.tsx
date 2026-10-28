@@ -8,6 +8,7 @@ import { obtenerFichaPublica, obtenerWhatsappSoporte } from '@/lib/publico/datos
 import { detalleComercio } from '@/lib/publico/directorio'
 import { URL_SITIO } from '@/lib/publico/sitio'
 import { MENSAJE_WHATSAPP_PUBLICO } from '@/lib/publico/whatsapp'
+import { AdornoEstrella } from '@/components/ui/marca/marca'
 
 /*
   LA FICHA PÚBLICA DE UN COMERCIO — el MISMO componente en dos superficies
@@ -134,7 +135,10 @@ export default async function FichaPublicaPage({
           */
           <>
             <div className={estilos.beneficioTextos}>
-              <p className={estilos.beneficioEtiqueta}>Tu beneficio ORUM</p>
+              <p className={estilos.beneficioEtiqueta}>
+                <AdornoEstrella />
+                Tu beneficio ORUM
+              </p>
               {ficha.beneficios.length > 0 ? (
                 <>
                   <p className={`${estilos.beneficioValor} ${estilos.desenfocado}`} aria-hidden="true">

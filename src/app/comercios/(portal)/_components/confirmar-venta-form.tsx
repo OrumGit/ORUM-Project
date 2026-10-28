@@ -20,8 +20,10 @@ type Promocion = {
   titulo: string
   tipoCodigo: TipoBeneficioCodigo
   valor: number | null
-  /** Vale hoy (día de Colombia). Si no, se ve apagada y no se puede elegir. */
+  /** Vale AHORA (día y hora de Colombia). Si no, se ve apagada y no se puede elegir. */
   disponibleHoy: boolean
+  /** «Hoy aplica desde las 6:00 p. m.», «Hoy no aplica»: por qué no se puede elegir ahora. */
+  ahoraTexto?: string | null
   /** «Solo martes y jueves»; null si vale todos los días. */
   diasTexto: string | null
   /** «Condiciones y restricciones» de la promoción; null si no tiene. */
@@ -269,11 +271,9 @@ export function ConfirmarVentaForm({
                 label: `${formatearBeneficioCorto(p.tipoCodigo, p.valor)} · ${p.titulo}`,
                 /* La que hoy no toca se ve apagada y dice por qué. */
                 disabled: !p.disponibleHoy,
-                nota: p.diasTexto
-                  ? p.disponibleHoy
-                    ? p.diasTexto
-                    : `${p.diasTexto} · hoy no aplica`
-                  : undefined,
+                nota: p.disponibleHoy
+                  ? (p.diasTexto ?? undefined)
+                  : [p.diasTexto, p.ahoraTexto ?? 'hoy no aplica'].filter(Boolean).join(' · '),
               }))}
             />
           </Field>

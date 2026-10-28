@@ -15,6 +15,8 @@ type Promocion = {
   tipoCodigo: TipoBeneficioCodigo
   valor: number | null
   disponibleHoy: boolean
+  /** «Hoy aplica desde las 6:00 p. m.», «Hoy no aplica»: por qué no se puede elegir ahora. */
+  ahoraTexto?: string | null
   diasTexto: string | null
   restricciones: string | null
 }

@@ -5,7 +5,13 @@ import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import { obtenerMiComercio } from '@/lib/comercios/comercio-sesion'
 import { formatearBeneficioCorto } from '@/lib/comercios/beneficios-formato'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
-import { aplicaEnFecha, textoDias } from '@/lib/comercios/dias-promocion'
+import {
+  aplicaAhora,
+  cuandoAplica,
+  estadoPromocion,
+  normalizarFranjas,
+  textoEstadoPromocion,
+} from '@/lib/comercios/franjas-promocion'
 import { obtenerWhatsappSoporte } from '@/lib/publico/datos-publicos'
 import { hoyISO } from '@/lib/shared/fecha'
 import { ENTRADA, retardoEntrada } from '@/lib/shared/revelado'
@@ -69,7 +75,8 @@ export default async function ComerciosHomePage() {
         .limit(50),
       supabase
         .from('promociones')
-        .select('id, titulo, tipo_beneficio_id, valor, activo, fecha_inicio, fecha_fin, dias_semana, restricciones')
+        // `*`: trae `franjas_horarias` si la migración está aplicada, y no falla si no.
+        .select('*')
         .eq('comercio_id', comercio.id)
         .eq('activo', true)
         .is('deleted_at', null)
@@ -93,6 +100,8 @@ export default async function ComerciosHomePage() {
 
   const codigoPorTipoId = new Map((tipos ?? []).map((t) => [t.id, t.codigo as TipoBeneficioCodigo]))
   const hoy = hoyISO()
+  const ahora = new Date()
+  const franjasDe = (p: { franjas_horarias?: unknown }) => normalizarFranjas(p.franjas_horarias)
   const promociones = (promocionesRaw ?? [])
     .filter(
       (p) =>
@@ -104,9 +113,11 @@ export default async function ComerciosHomePage() {
       titulo: p.titulo,
       tipoCodigo: codigoPorTipoId.get(p.tipo_beneficio_id)!,
       valor: p.valor,
-      // Vigente por fechas, pero puede no tocar hoy: se ve apagada, con el aviso.
-      disponibleHoy: aplicaEnFecha(p.dias_semana, hoy),
-      diasTexto: textoDias(p.dias_semana),
+      // Vigente por fechas, pero puede no tocar hoy, o no a esta hora: se ve
+      // apagada, con el aviso. La acción de la venta lo vuelve a comprobar.
+      disponibleHoy: aplicaAhora(p.dias_semana, franjasDe(p), ahora),
+      diasTexto: cuandoAplica(p.dias_semana, franjasDe(p)),
+      ahoraTexto: textoEstadoPromocion(estadoPromocion(p.dias_semana, franjasDe(p), ahora)),
       restricciones: p.restricciones,
     }))
 
@@ -143,7 +154,7 @@ export default async function ComerciosHomePage() {
                     {p.titulo}
                     {p.diasTexto && (
                       <span className={styles.promocionDias}>
-                        {p.disponibleHoy ? p.diasTexto : `${p.diasTexto} · hoy no aplica`}
+                        {p.disponibleHoy ? p.diasTexto : `${p.diasTexto} · ${p.ahoraTexto.toLowerCase()}`}
                       </span>
                     )}
                   </span>

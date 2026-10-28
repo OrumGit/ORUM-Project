@@ -1096,11 +1096,74 @@ función `reemplazar_horario_sucursal` (`service_role`), que además toca
   ofrece UNA franja de almuerzo para todos los días abiertos.
 - **Se ve en la ficha** (`HorarioSede`, de CLIENTE): las fichas salen de caché
   (`updateTag('publico')`) y un «abierto ahora» calculado en el servidor se
-  quedaría viejo. `useSyncExternalStore` con `getServerSnapshot` en `null`:
-  el servidor pinta la semana y el navegador añade el estado y el día de hoy.
-  Punto lleno/hueco **y** texto, nunca color solo.
+  quedaría viejo. `useInstanteAlMinuto` (`components/comercios/use-minuto.ts`,
+  `useSyncExternalStore` con `getServerSnapshot` en `null`): el servidor
+  pinta la semana y el navegador añade el estado y el día de hoy. Punto
+  lleno/hueco **y** texto, nunca color solo. **Rediseño del 28/10/2026**
+  («que se evidencie en qué momento está abierto; si van a almorzar, en esos
+  momentos está cerrado; que se entienda mejor»): en la fila del reloj, el
+  estado en una píldora con un tinte de SU color (verde abierto, ámbar
+  almuerzo; NO el crema) y al lado lo que viene (`partesEstado`: «Cierra por
+  almuerzo a las 11:00 a. m.», «Reabre…», «Abre mañana…»); debajo, HOY con
+  sus horas ABIERTAS en tramos (`textoTramos`: «8:00 – 11:00 a. m. y 3:30 –
+  10:00 p. m.»: el hueco del almuerzo se ve sin leer «almuerzo»); y la semana
+  plegada en «Ver horario de la semana» (`<details>`, dos columnas, hoy en
+  negrita). Todo texto con horas se pinta con `sinCortarHoras` (no parte
+  «a. m.» ni un rango).
+- **La sede, una fila por dato** (28/10/2026): dirección, teléfono y horario,
+  cada uno con su icono DORADO a la izquierda y el texto en TINTA. **El
+  teléfono va como la dirección** —enlace en tinta con el subrayado fino,
+  agrupado con `telefonoLegible` («300 132 5756»)—, no en oro y negrita (el
+  cliente no lo quiso así). Con varias sedes, su nombre encima y un filo
+  fino entre ellas.
 - Vista previa con datos falsos, solo fuera de producción: `/dev/horarios`
   (`?caso=vacio`, `?caso=noche`).
+
+**Una promoción puede valer SOLO EN CIERTAS HORAS** (28/10/2026: «si los
+descuentos aplican únicamente en horarios fijos, que también se pueda poner»).
+Columna `promociones.franjas_horarias` (jsonb,
+`supabase/migrations/20261028120000_promociones_franjas_horarias.sql`, SE
+APLICA A MANO): `null` = todo el día, como antes; si no, franjas
+`{dias, desde, hasta}`, CADA UNA CON SUS DÍAS («martes y miércoles de 8:00 a
+9:30 y de 6:00 a 7:00 p. m.; sábado y domingo de 8:00 a 9:00» son cuatro
+franjas), hora de Colombia, `desde < hasta` (no cruza la medianoche; «hasta
+el cierre» es 23:59), hasta `MAX_FRANJAS` (6) y sin cruzarse el mismo día.
+
+- **Lógica pura y probada** (`lib/comercios/franjas-promocion.ts`):
+  `normalizarFranjas` (lee lo que venga, incluido `undefined` sin la
+  migración), `validarFranjas`, `estadoPromocion`/`aplicaAhora` («Aplica
+  ahora · hasta las 9:30 a. m.», «Hoy aplica desde las 6:00 p. m.», «Hoy no
+  aplica»), `lineasFranjas` y `cuandoAplica`. Con franjas, `dias_semana` se
+  guarda como la UNIÓN de sus días: lo que ya sabía de días sigue diciendo la
+  verdad.
+- **Se edita en el panel** (`EditorFranjas`, en `PromocionForm`, bloque
+  «Cuándo aplica»): apagado «Solo en ciertos horarios», las casillas de días
+  de siempre; encendido, una franja por fila con sus días en píldoras y sus
+  dos horas, «Añadir franja» y, debajo, «Así lo verá el socio». Viaja en el
+  campo oculto `franjas_horarias` (JSON).
+- **Se cumple tres veces**: la caja apaga la promoción que no toca AHORA y
+  dice por qué (`ahoraTexto`), la acción de la venta la rechaza
+  (`aplicaAhora`) y `fn_validar_venta` también (la migración lo añade).
+- ⚠️ **El código aguanta la base sin la migración**: las lecturas de
+  `promociones` van con `select('*')` (trae la columna si existe, no falla si
+  no) y la escritura (`escribirConFranjas`) reintenta sin ella; solo si la
+  promoción LLEVA franjas avisa de que falta aplicarla.
+
+**Los beneficios en la ficha del socio** (`BeneficiosSocio`, 28/10/2026:
+«ese color no me gusta; que el título diga el beneficio y en qué —10% de
+descuento · Brunch, Regalo · Bebida— y vaya subrayado»). El recuadro del
+beneficio (`.beneficio`) es una TARJETA BLANCA con su sombra (era un hueco
+crema hundido: no vuelvas a él) con el rótulo «Tus beneficios ORUM» y la
+estrella de ORUM. Cada beneficio: su icono por tipo en un aro dorado; el
+TITULAR subrayado con un trazo de marcador dorado bajo el texto
+(`asuntoDelTitulo`, `lib/comercios/titulo-beneficio.ts`: el valor en negrita
+y, tras «·», en qué, quitando el valor si el título lo repite); la
+descripción; CUÁNDO (días o franjas) con su estado de ahora en una píldora
+(de cliente, `useInstanteAlMinuto`); y las condiciones en letra pequeña con
+su icono. Entre beneficios, un filo fino. El título de una promoción se
+escribe CORTO («Brunch»): lo pide la ayuda del formulario. Vista previa con
+datos falsos (Coraje, el caso que lo pidió) y el editor de franjas:
+`/dev/beneficios`.
 
 `Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `Textarea` `Switch` `Checkbox` `Radio`
 `SegmentedControl` · `Card` `FormCard` `Stack` `Grid` `Section` `PageHeader` `Divider` ·
@@ -2004,6 +2067,11 @@ existe antes. Con Node 20 el instalador falla con `No such built-in module`.
     admin se verificaron con datos falsos (`/dev/resenas*`), el script SQL de
     verificación y lectura de código; falta recorrerlo con un socio, un
     comercio y un admin reales.
+15. **Las franjas horarias de las promociones no se han probado con sesión
+    real** (28/10/2026). Se miraron en `/dev/beneficios` (1024 y 375 px) con
+    datos falsos; falta aplicar la migración `20261028120000`, guardar una
+    promoción con franjas desde el panel, verla en la ficha del socio y
+    cobrarla en la caja dentro y fuera de su franja.
 14. **Los horarios de sucursal no se han probado con sesión real.** El editor
     y la ficha se miraron en `/dev/horarios` (~490 px) con datos falsos; falta
     guardar un horario de verdad desde el panel, verlo en la ficha pública y

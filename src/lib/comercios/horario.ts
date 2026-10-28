@@ -55,6 +55,24 @@ export function formatearHora(hhmm: string): string {
   return `${h % 12 || 12}${resto} ${h < 12 ? 'a. m.' : 'p. m.'}`
 }
 
+/**
+ * Para PINTAR un texto con horas: que «9:30 a. m.» no se parta en dos líneas
+ * («9:30 a.» / «m.») ni un rango («8:00 – 9:30 a. m.») quede partido: se
+ * corta entre rangos, no dentro de uno. Espacios de no separación donde cortar se lee mal; los textos
+ * de las funciones siguen con espacios normales (las pruebas los comparan).
+ */
+export function sinCortarHoras(texto: string): string {
+  return texto.replace(/ ([ap])\. m\./g, '\u00a0$1.\u00a0m.').replace(/ – /g, '\u00a0–\u00a0')
+}
+
+/** «8:00 – 9:30 a. m.» si comparten mitad del día; si no, «11:00 a. m. – 2:00 p. m.». */
+export function textoRango(desde: string, hasta: string): string {
+  const d = formatearHora(desde)
+  const h = formatearHora(hasta)
+  const sufijo = (t: string) => t.slice(t.indexOf(' '))
+  return sufijo(d) === sufijo(h) ? `${d.slice(0, d.indexOf(' '))} – ${h}` : `${d} – ${h}`
+}
+
 /* -------------------------------- validación ------------------------------- */
 
 function nombreDia(n: number): string {
@@ -257,6 +275,56 @@ export function textoJornada(fila: DiaHorario): string {
   const base = `${formatearHora(fila.abre)} – ${formatearHora(fila.cierra)}`
   if (fila.almuerzoDesde === null || fila.almuerzoHasta === null) return base
   return `${base} · Almuerzo ${formatearHora(fila.almuerzoDesde)} – ${formatearHora(fila.almuerzoHasta)}`
+}
+
+/**
+ * Las horas en que está ABIERTO, sin la palabra «almuerzo»: «8:00 – 11:00
+ * a. m. y 3:30 – 10:00 p. m.». Lo que se lee de un vistazo es cuándo se puede
+ * ir; el hueco del almuerzo queda a la vista entre los dos tramos.
+ */
+export function textoTramos(fila: DiaHorario): string {
+  if (fila.abre === null || fila.cierra === null) return 'Cerrado'
+  if (fila.almuerzoDesde === null || fila.almuerzoHasta === null) return textoRango(fila.abre, fila.cierra)
+  return `${textoRango(fila.abre, fila.almuerzoDesde)} y ${textoRango(fila.almuerzoHasta, fila.cierra)}`
+}
+
+/** «Lun a sáb», «Sáb y dom», «Dom»: los días de un grupo, en corto. */
+export function etiquetaDias(dias: readonly number[]): string {
+  const corto = (n: number) => DIAS_SEMANA[n - 1].corto
+  const primero = dias[0]
+  const ultimo = dias[dias.length - 1]
+  if (dias.length === 1) return corto(primero)
+  if (dias.length === 2) return `${corto(primero)} y ${corto(ultimo).toLowerCase()}`
+  return `${corto(primero)} a ${corto(ultimo).toLowerCase()}`
+}
+
+/**
+ * El estado de ahora en dos partes, para la ficha: el titular («Abierto
+ * ahora», «Cerrado por almuerzo», «Cerrado») y el detalle («Cierra por
+ * almuerzo a las 11:00 a. m.», «Abre mañana a las 8:00 a. m.»). `null` si no
+ * hay horario cargado.
+ */
+export function partesEstado(estado: EstadoHorario): { titulo: string; detalle: string | null } | null {
+  if (estado.tipo === 'sin_horario') return null
+  const p = estado.proximo
+  if (estado.tipo === 'abierto') {
+    if (!p) return { titulo: 'Abierto ahora', detalle: null }
+    const cuando = p.cuando === 'manana' ? ' mañana' : ''
+    return {
+      titulo: 'Abierto ahora',
+      detalle:
+        p.accion === 'almuerzo'
+          ? `Cierra por almuerzo ${aLas(p.hora)}`
+          : `Cierra${cuando} ${aLas(p.hora)}`,
+    }
+  }
+  if (estado.tipo === 'almuerzo') {
+    return { titulo: 'Cerrado por almuerzo', detalle: p ? `Reabre ${aLas(p.hora)}` : null }
+  }
+  if (!p) return { titulo: 'Cerrado', detalle: null }
+  const cuando =
+    p.cuando === 'hoy' ? 'hoy' : p.cuando === 'manana' ? 'mañana' : `el ${DIAS_SEMANA[p.cuando - 1].largo}`
+  return { titulo: 'Cerrado', detalle: `Abre ${cuando} ${aLas(p.hora)}` }
 }
 
 /** 'Lun–vie · 9:00 a. m. – 6:00 p. m.' */

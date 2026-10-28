@@ -515,6 +515,12 @@ export type Database = {
           dias_semana: number[] | null
           /** «Condiciones y restricciones»: cuándo o cómo NO aplica. 1–400 caracteres o `null`. Migración 20261024140000. */
           restricciones: string | null
+          /**
+           * Franjas en que vale: `[{dias, desde, hasta}]`, hora de Colombia; `null` = todo el día.
+           * Opcional en el tipo porque la migración 20261028120000 se aplica a mano: hasta
+           * entonces `select('*')` no la trae. Se lee SIEMPRE con `normalizarFranjas`.
+           */
+          franjas_horarias?: { dias: number[]; desde: string; hasta: string }[] | null
           activo: boolean
           created_at: Timestamp
           updated_at: Timestamp
@@ -532,6 +538,7 @@ export type Database = {
           fecha_fin?: string | null
           dias_semana?: number[] | null
           restricciones?: string | null
+          franjas_horarias?: { dias: number[]; desde: string; hasta: string }[] | null
           activo?: boolean
           created_at?: Timestamp
           updated_at?: Timestamp

@@ -16,6 +16,7 @@ import { cambiarEstadoAccesoComercio, cambiarEstadoComercio } from '../actions'
 import { cambiarEstadoSucursal } from '../sucursales-actions'
 import { cambiarEstadoPromocion } from '../promociones-actions'
 import { textoDias } from '@/lib/comercios/dias-promocion'
+import { lineasFranjas, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
 import { EditarComercioForm } from './editar/_components/editar-comercio-form'
 import { GestorImagenes } from './imagenes/_components/gestor-imagenes'
 import { cargarImagenesComercio } from './imagenes/_components/datos'
@@ -43,6 +44,7 @@ type Promocion = {
   activo: boolean
   tipo_beneficio_id: number
   dias_semana: number[] | null
+  franjas_horarias?: unknown
 }
 
 type Parte = 'datos' | 'sucursales' | 'promociones' | 'imagenes' | 'resenas'
@@ -102,7 +104,7 @@ export default async function FichaComercioPage({
       .order('nombre'),
     admin
       .from('promociones')
-      .select('id, titulo, valor, activo, tipo_beneficio_id, dias_semana')
+      .select('*') // con `franjas_horarias` si la migración está aplicada
       .eq('comercio_id', comercioId)
       .is('deleted_at', null)
       .order('titulo'),
@@ -166,8 +168,10 @@ export default async function FichaComercioPage({
 
   const columnasPromociones: ReadonlyArray<Column<Promocion>> = [
     { key: 'titulo', header: 'Promoción', primary: true, cell: (p) => {
-        const dias = textoDias(p.dias_semana)
-        return dias ? `${p.titulo} · ${dias}` : p.titulo
+        // Con franjas, sus días y sus horas; si no, los días (o nada: todo el día).
+        const franjas = lineasFranjas(normalizarFranjas(p.franjas_horarias))
+        const cuando = franjas.length > 0 ? franjas.join('; ') : textoDias(p.dias_semana)
+        return cuando ? `${p.titulo} · ${cuando}` : p.titulo
       },
     },
     {

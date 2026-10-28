@@ -1,0 +1,176 @@
+/* ==========================================================================
+   EDITOR DE FRANJAS DE UNA PROMOCIÓN
+   Cada franja es un bloque hundido (no una tarjeta: no se levanta; sin el
+   crema, que el cliente no quiso en la ficha), con sus
+   días como píldoras que se marcan y sus dos horas.
+   ========================================================================== */
+
+.franjas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.franja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hundida);
+}
+
+.cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--space-7);
+}
+
+.numero {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--t-footnote-size);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.numero svg {
+  color: var(--brand);
+}
+
+/* Quitar: discreto, con su área de toque completa. */
+.quitar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    scale var(--dur-fast) var(--ease-out);
+}
+
+.quitar::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .quitar:hover {
+    color: var(--danger);
+    scale: 1.08;
+  }
+}
+
+.quitar:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* --- Los días: píldoras que se marcan ---------------------------------------
+   Marcado = tinta llena con texto claro, y `aria-pressed`: la forma cambia
+   (relleno), no solo el color. */
+.dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.dia {
+  min-height: 36px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: scale var(--dur-press) var(--ease-out);
+}
+
+.dia[aria-pressed='true'] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--surface);
+}
+
+.dia:active {
+  scale: 0.94;
+}
+
+.dia:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .dia {
+    min-height: var(--tap-min);
+  }
+}
+
+/* --- Las horas ---------------------------------------------------------------- */
+
+.horas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.hora {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* --- Lo que dice y lo que verá el socio --------------------------------------- */
+
+.error {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.vista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hundida);
+}
+
+.vistaRotulo {
+  font-size: var(--t-overline-size);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.vistaLinea {
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--text);
+}

@@ -6,6 +6,10 @@ import { createClient } from '@/lib/supabase/server'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import { textoDias } from '@/lib/comercios/dias-promocion'
 import { formatearBeneficio } from '@/lib/comercios/beneficios-formato'
+import { lineasFranjas, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
+import { asuntoDelTitulo } from '@/lib/comercios/titulo-beneficio'
+import { BeneficiosSocio, type BeneficioSocio } from '@/components/comercios/beneficios-socio'
+import { AdornoEstrella } from '@/components/ui/marca/marca'
 import { resolverLogoComercio } from '@/lib/comercios/logo-comercio'
 import { leerHorariosDeSucursales } from '@/lib/comercios/horario-datos'
 import { transicionComercio } from '@/lib/comercios/transiciones'
@@ -165,7 +169,8 @@ export default async function FichaComercioPage({
     cargarComercio(numero),
     supabase
       .from('promociones')
-      .select('id, titulo, descripcion, valor, tipo_beneficio_id, activo, fecha_inicio, fecha_fin, dias_semana, restricciones')
+      // `*`: trae `franjas_horarias` si la migración está aplicada, y no falla si no.
+      .select('*')
       .eq('comercio_id', numero)
       .eq('activo', true)
       .is('deleted_at', null)
@@ -215,19 +220,27 @@ export default async function FichaComercioPage({
   /* SOLO PROMOCIONES VIGENTES, con el mismo criterio que el directorio: una
      ficha que anunciara un beneficio caducado prometería lo que la caja
      rechaza. */
-  const beneficios = (promociones ?? [])
+  const beneficios: BeneficioSocio[] = (promociones ?? [])
     .filter((p) => esPromocionVigente(p.activo, p.fecha_inicio, p.fecha_fin, hoy))
     .flatMap((p) => {
       const tipoCodigo = codigoTipo.get(p.tipo_beneficio_id)
       if (!tipoCodigo) return []
+      const valor = formatearBeneficio(tipoCodigo, p.valor)
+      const franjas = normalizarFranjas(p.franjas_horarias)
+      const dias = textoDias(p.dias_semana)
       return [
         {
           id: p.id,
-          valor: formatearBeneficio(tipoCodigo, p.valor),
-          titulo: p.titulo,
+          tipo: tipoCodigo,
+          // El titular: «10% de descuento · Brunch» (sin repetir el valor).
+          valor,
+          asunto: asuntoDelTitulo(valor, p.titulo),
           descripcion: p.descripcion,
-          // «Solo martes y jueves»: lo que el socio necesita saber antes de ir.
-          dias: textoDias(p.dias_semana),
+          // CUÁNDO, lo que el socio necesita saber antes de ir: las franjas
+          // con sus días y horas, o solo los días («De martes a jueves»).
+          cuando: franjas ? lineasFranjas(franjas) : dias ? [dias] : [],
+          dias: p.dias_semana,
+          franjas,
           restricciones: p.restricciones,
         },
       ]
@@ -278,30 +291,13 @@ export default async function FichaComercioPage({
       beneficio={
         <div className={estilos.beneficioTextos}>
           <p className={estilos.beneficioEtiqueta}>
+            <AdornoEstrella />
             {beneficios.length > 1 ? 'Tus beneficios ORUM' : 'Tu beneficio ORUM'}
           </p>
           {beneficios.length > 0 ? (
-            <ul className={estilos.beneficioLista}>
-              {beneficios.map((b) => (
-                <li key={b.id}>
-                  {/* El VALOR es el titular: es lo que el socio vino a buscar. */}
-                  <p className={estilos.beneficioValor}>{b.valor}</p>
-                  <p className={estilos.beneficioTitulo}>
-                    {b.titulo}
-                    {b.descripcion && ` · ${b.descripcion}`}
-                    {b.dias && ` · ${b.dias}`}
-                  </p>
-                  {b.restricciones && (
-                    <p className={estilos.beneficioRestricciones}>
-                      <span className={estilos.beneficioRestriccionesRotulo}>
-                        Condiciones y restricciones:{' '}
-                      </span>
-                      {b.restricciones}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
+            /* El titular subrayado, cuándo aplica y si aplica AHORA, y las
+               condiciones: `BeneficiosSocio` (28/10/2026). */
+            <BeneficiosSocio beneficios={beneficios} />
           ) : (
             <p className={estilos.beneficioPronto}>
               Este aliado no tiene beneficios vigentes hoy. En cuanto publique uno, aparecerá aquí.

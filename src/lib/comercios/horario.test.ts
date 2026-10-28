@@ -4,11 +4,15 @@ import {
   ahoraEnBogota,
   DIA_FESTIVOS,
   estadoAhora,
+  etiquetaDias,
   formatearHora,
   normalizarHora,
+  partesEstado,
   resumenHorario,
+  sinCortarHoras,
   textoEstado,
   textoGrupo,
+  textoTramos,
   validarHorario,
   type DiaHorario,
   type HorarioSucursal,
@@ -262,5 +266,46 @@ describe('textoGrupo', () => {
   it('un día cerrado dice Cerrado', () => {
     const { grupos } = resumenHorario([dia(6, null, null)])
     expect(textoGrupo(grupos[0])).toBe('Sáb · Cerrado')
+  })
+})
+
+describe('la ficha nueva: tramos, días y estado en dos partes', () => {
+  it('dice las horas en que está ABIERTO, con el hueco del almuerzo', () => {
+    expect(textoTramos(dia(1, '08:00', '22:00', ['11:00', '15:30']))).toBe('8:00 – 11:00 a. m. y 3:30 – 10:00 p. m.')
+    expect(textoTramos(dia(1, '09:00', '18:00'))).toBe('9:00 a. m. – 6:00 p. m.')
+    expect(textoTramos(dia(1, null, null))).toBe('Cerrado')
+    expect(textoTramos(dia(5, '18:00', '02:00'))).toBe('6:00 p. m. – 2:00 a. m.')
+  })
+
+  it('los días de un grupo, en corto', () => {
+    expect(etiquetaDias([1, 2, 3, 4, 5, 6])).toBe('Lun a sáb')
+    expect(etiquetaDias([6, 7])).toBe('Sáb y dom')
+    expect(etiquetaDias([7])).toBe('Dom')
+  })
+
+  it('el estado en titular y detalle', () => {
+    expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '10:00')))).toEqual({
+      titulo: 'Abierto ahora',
+      detalle: 'Cierra por almuerzo a las 12:00 p. m.',
+    })
+    expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '12:30')))).toEqual({
+      titulo: 'Cerrado por almuerzo',
+      detalle: 'Reabre a la 1:00 p. m.',
+    })
+    expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '15:00')))).toEqual({
+      titulo: 'Abierto ahora',
+      detalle: 'Cierra a las 6:00 p. m.',
+    })
+    expect(partesEstado(estadoAhora(SEMANA, bogota('2026-10-26', '19:00')))).toEqual({
+      titulo: 'Cerrado',
+      detalle: 'Abre mañana a las 9:00 a. m.',
+    })
+    expect(partesEstado({ tipo: 'sin_horario', proximo: null })).toBeNull()
+  })
+})
+
+describe('sinCortarHoras', () => {
+  it('pega «a. m.» a su hora y no parte un rango', () => {
+    expect(sinCortarHoras('8:00 – 9:30 a. m. y 6:00 p. m.')).toBe('8:00\u00a0–\u00a09:30\u00a0a.\u00a0m. y 6:00\u00a0p.\u00a0m.')
   })
 })

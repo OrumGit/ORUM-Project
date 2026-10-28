@@ -156,13 +156,35 @@
   gap: var(--space-2);
 }
 
+/* Una sede: sus filas (dirección, teléfono, horario) una debajo de otra. */
 .sede {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--space-2);
   font-size: var(--t-callout-size);
   line-height: 1.5;
+  color: var(--text);
+}
+
+.sede + .sede {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sedeTitulo {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--text-2);
+}
+
+/* Una fila: icono dorado y el texto en tinta. */
+.sedeFila {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
 }
 
 .sedeIcono {
@@ -172,15 +194,11 @@
   color: var(--brand);
 }
 
-.sedeNombre {
-  color: var(--text-3);
-}
-
-/* La dirección es un enlace a Maps: se lee como texto de la ficha, con un
-   subrayado fino que lo delata y la flecha de «sale del sitio». Al apuntar,
-   el subrayado toma el oro de la marca (movimiento de color, sin tinte de
-   fondo). */
-.sedeMapa {
+/* La dirección (a Maps) y el teléfono (a llamar) son enlaces que se leen como
+   texto de la ficha: en tinta, con un subrayado fino que los delata. Al
+   apuntar, el subrayado toma el oro de la marca. El teléfono era oro y
+   negrita; el cliente lo quería igual que la dirección (28/10/2026). */
+.sedeEnlace {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
@@ -198,33 +216,16 @@
 }
 
 @media (hover: hover) {
-  .sedeMapa:hover {
+  .sedeEnlace:hover {
     text-decoration-color: var(--brand);
   }
 
-  .sedeMapa:hover .sedeMapaIcono {
+  .sedeEnlace:hover .sedeMapaIcono {
     translate: 1px -1px;
   }
 }
 
-.sedeMapa:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-  border-radius: var(--radius-xs);
-}
-
-.sedeTelefono {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-left: var(--space-2);
-  color: var(--brand);
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.sedeTelefono:focus-visible {
+.sedeEnlace:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
@@ -278,30 +279,47 @@
 
 /* --- El beneficio desenfocado ------------------------------------------- */
 
-/* Hundido, no levantado: es un hueco dentro de la ficha. */
+/*
+  EL BENEFICIO, EN BLANCO (28/10/2026: «ese color no me gusta, algo
+  diferente»). Era un hueco crema hundido; ahora es una tarjeta blanca con
+  su sombra —lo que se levanta en la ficha es lo que el socio vino a
+  buscar—. El acento de marca es la estrella de ORUM junto al rótulo, no un
+  tinte ni un filo.
+*/
 .beneficio {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-md);
-  background: var(--surface-alt-2);
-  box-shadow: var(--shadow-hundida);
+  padding: var(--space-5);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card), var(--edge);
+}
+
+@media (max-width: 480px) {
+  .beneficio {
+    padding: var(--space-4);
+  }
 }
 
 .beneficioTextos {
+  flex: 1 1 260px;
   min-width: 0;
 }
 
 .beneficioEtiqueta {
-  margin: 0 0 var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
   font-size: var(--t-overline-size);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .beneficioValor {
@@ -315,38 +333,6 @@
 .desenfocado {
   filter: blur(5px);
   user-select: none;
-}
-
-/* Socio: la lista de beneficios vigentes, legible. */
-.beneficioLista {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: var(--space-3);
-}
-
-.beneficioTitulo {
-  margin: var(--space-1) 0 0;
-  font-size: var(--t-callout-size);
-  line-height: 1.45;
-  color: var(--text-2);
-}
-
-/* «Condiciones y restricciones» de una promoción: letra pequeña, pero legible
-   (mismo gris que el título, sobre el bloque hundido). Respeta los saltos de
-   línea que escribió el administrador. */
-.beneficioRestricciones {
-  margin: var(--space-1) 0 0;
-  font-size: var(--t-footnote-size);
-  line-height: 1.45;
-  color: var(--text-2);
-  white-space: pre-line;
-}
-
-.beneficioRestriccionesRotulo {
-  font-weight: 600;
-  color: var(--text);
 }
 
 .beneficioPronto {

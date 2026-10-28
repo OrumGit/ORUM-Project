@@ -6,7 +6,6 @@ import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input, Textarea } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/toggle'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
 import {
@@ -19,7 +18,6 @@ import {
   type Regla,
 } from '@/lib/validacion/reglas'
 import { Stack } from '@/components/ui/layout'
-import { DIAS_SEMANA } from '@/lib/comercios/dias-promocion'
 import { MAX_RESTRICCIONES } from '@/lib/comercios/restricciones-promocion'
 import { useCerrarCuando, useCerrarOverlay } from '@/components/shell/overlay-ruta'
 import {
@@ -28,6 +26,7 @@ import {
   type PromocionState,
 } from '../../../promociones-actions'
 import styles from '@/styles/formulario.module.css'
+import { EditorFranjas } from './editor-franjas'
 
 type TipoOpcion = { id: number; codigo: string; nombre: string }
 
@@ -41,6 +40,8 @@ type PromocionInicial = {
   fecha_fin: string | null
   dias_semana: number[] | null
   restricciones: string | null
+  /** Las franjas horarias tal como llegan de la base (o nada, sin la migración). */
+  franjas_horarias?: unknown
 }
 
 const estadoInicial: PromocionState = {}
@@ -129,13 +130,17 @@ export function PromocionForm({
         {promocion && <input type="hidden" name="id" value={promocion.id} />}
 
         <Stack gap={5}>
-          <Field label="Título" help="Es lo que ve el miembro. Sé concreto." error={v.error('titulo')}>
+          <Field
+            label="Título"
+            help="Corto: va junto al beneficio, como «10% de descuento · Brunch». Di en qué, no cuánto: el valor ya se muestra."
+            error={v.error('titulo')}
+          >
             <Input
               name="titulo"
               defaultValue={promocion?.titulo}
               required
               autoFocus
-              placeholder="20% en toda la carta"
+              placeholder="Brunch"
             />
           </Field>
 
@@ -201,27 +206,13 @@ export function PromocionForm({
             </Field>
           </div>
 
-          {/* Sin ninguno marcado vale todos los días. El cajero ve la promoción
-              apagada, con el aviso, los días que no toca. */}
-          <fieldset className={styles.grupoDias}>
-            <legend className={styles.grupoDiasTitulo}>
-              Días en que vale <span className={styles.grupoDiasOpcional}>(opcional)</span>
-            </legend>
-            <p className={styles.grupoDiasAyuda}>
-              Si no marcas ninguno, la promoción vale todos los días. Se cuenta el día en Colombia.
-            </p>
-            <div className={styles.dias}>
-              {DIAS_SEMANA.map((d) => (
-                <Checkbox
-                  key={d.numero}
-                  name="dias_semana"
-                  value={d.numero}
-                  label={d.corto}
-                  defaultChecked={promocion?.dias_semana?.includes(d.numero) ?? false}
-                />
-              ))}
-            </div>
-          </fieldset>
+          {/* Todo el día (los días marcados) o solo en ciertas franjas, cada
+              una con sus días. El cajero ve la promoción apagada, con el
+              aviso, cuando no toca. */}
+          <EditorFranjas
+            diasIniciales={promocion?.dias_semana ?? null}
+            franjasIniciales={promocion?.franjas_horarias ?? null}
+          />
         </Stack>
 
         <div className={styles.acciones}>

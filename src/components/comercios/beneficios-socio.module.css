@@ -1,0 +1,211 @@
+/* ==========================================================================
+   LOS BENEFICIOS DEL SOCIO  ·  uno debajo de otro, separados por un filo
+   La tarjeta la pone la ficha (`.beneficio`); aquí solo la lista.
+   ========================================================================== */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beneficio {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+}
+
+.beneficio:first-child {
+  padding-top: var(--space-2);
+}
+
+.beneficio:last-child {
+  padding-bottom: 0;
+}
+
+/* Entre beneficios, el filo fino de las filas: separa sin encajonar. */
+.beneficio + .beneficio {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* --- El icono, en su aro dorado ----------------------------------------------- */
+
+.icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1.5px var(--brand);
+  color: var(--brand);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* --- El titular, subrayado ------------------------------------------------------
+   «Subrayado» con un trazo de marcador dorado bajo el texto: se lee como
+   subrayado, no como una caja, y acompaña al texto cuando parte en dos
+   líneas (`box-decoration-break`). El texto va en tinta sobre el dorado
+   pálido: el contraste lo da la tinta, no el oro. */
+.titular {
+  margin: 0;
+  font-size: var(--t-title-3-size);
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.marcador {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--gold-400) 42%, transparent) 0.38em,
+    transparent 0.38em
+  );
+  background-repeat: no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding-inline: 2px;
+}
+
+.valor {
+  font-weight: 800;
+}
+
+.separador {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.descripcion {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* --- Cuándo aplica y el estado de ahora --------------------------------------- */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
+}
+
+.cuando {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cuandoIcono {
+  flex-shrink: 0;
+  margin-top: calc((1lh - 15px) / 2);
+  color: var(--brand);
+}
+
+.cuandoLinea {
+  display: block;
+}
+
+/* Píldora sin sombra (no se levanta): punto + texto. Lleno si aplica, hueco
+   si no: la forma cambia, no solo el color. */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  /* Un tinte de SU color, no el crema (el cliente no lo quiso en la ficha). */
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  font-size: var(--t-caption-size);
+  font-weight: 700;
+  color: var(--text);
+  /* En un teléfono estrecho parte en dos líneas antes que salirse. */
+  max-width: 100%;
+}
+
+.punto {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid currentColor;
+  color: var(--text-3);
+}
+
+.estado[data-tipo='aplica'] {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.estado[data-tipo='mas_tarde'] {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+}
+
+.estado[data-tipo='aplica'] .punto {
+  color: var(--success);
+  background: currentColor;
+}
+
+.estado[data-tipo='mas_tarde'] .punto {
+  color: var(--warning);
+}
+
+/* --- Condiciones y restricciones ----------------------------------------------- */
+
+.condiciones {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: pre-line;
+}
+
+.condicionesIcono {
+  flex-shrink: 0;
+  margin-top: calc((1lh - 14px) / 2);
+  color: var(--text-3);
+}
+
+.condicionesRotulo {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Estrecho: el icono, más pequeño, para dejar el ancho al texto. Con
+   `@media` y no `@container`: la ficha se abre también encima, en una
+   ventana que no es el contenedor `contenido`. */
+@media (max-width: 480px) {
+  .beneficio {
+    gap: var(--space-3);
+  }
+
+  .icono {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icono svg {
+    width: 16px;
+    height: 16px;
+  }
+}
