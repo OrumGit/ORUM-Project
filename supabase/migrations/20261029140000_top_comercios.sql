@@ -36,8 +36,9 @@ as $$
     and c.deleted_at is null
   group by r.comercio_id, c.nombre
   having count(r.id) >= 3
-  -- Empate de promedio: más reseñas primero; luego, orden alfabético.
-  order by avg(r.estrellas) desc, count(r.id) desc, c.nombre
+  -- Se ordena por el promedio YA REDONDEADO (el que ve el socio), para que el
+  -- corte de 5 coincida con la pantalla. Empate: más reseñas; luego, alfabético.
+  order by round(avg(r.estrellas), 1) desc, count(r.id) desc, c.nombre
   limit greatest(1, least(coalesce(p_limite, 5), 20));
 $$;
 
