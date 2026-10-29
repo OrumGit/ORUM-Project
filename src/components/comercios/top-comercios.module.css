@@ -66,6 +66,10 @@
 }
 
 .fila {
+  /* El logo de la tarjeta mide 72px; en una lista de cinco filas eso las
+     vuelve altísimas. Mismo gancho que usan los destacados de la portada. */
+  --placa-logo-w: 44px;
+
   display: grid;
   grid-template-columns: 1.25rem auto minmax(0, 1fr) auto;
   align-items: center;

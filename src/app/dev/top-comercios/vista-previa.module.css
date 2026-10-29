@@ -1,0 +1,10 @@
+/* Imita el contenedor `contenido` del Portal de Miembros, del que el
+   componente depende para adaptarse. Solo para esta vista previa. */
+.contenido {
+  container-type: inline-size;
+  container-name: contenido;
+  padding: var(--space-4);
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+}
