@@ -1,0 +1,138 @@
+/* ==========================================================================
+   EL TOP DE COMERCIOS  ·  Inicio del socio (29/10/2026)
+   Una tarjeta con su sombra (la define la sombra, no un trazo) y filas SIN
+   sombra, separadas por el hairline: flota solo lo que el dedo puede
+   levantar, y una fila de lista no. Al apuntar o pulsar una fila el
+   feedback es opacidad, nunca desplazamiento ni sombra.
+   ========================================================================== */
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+  padding: var(--space-5) var(--space-5) var(--space-3);
+
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card), var(--edge);
+  color: var(--text);
+}
+
+@container contenido (max-width: 640px) {
+  .top {
+    padding: var(--space-4) var(--space-4) var(--space-2);
+  }
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--t-title-3-size);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fundido corto al cambiar de pestaña: la lista se vuelve a montar por su
+   `key`. Es la única animación del bloque. */
+@media (prefers-reduced-motion: no-preference) {
+  .lista {
+    animation: aparecer var(--dur-fast) var(--ease-out);
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+.lista > li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1.25rem auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-min);
+  padding-block: var(--space-3);
+
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .fila:hover {
+    opacity: 0.8;
+  }
+}
+
+.fila:active {
+  opacity: 0.6;
+}
+
+.fila:focus-visible {
+  outline: 2px solid var(--brand-edge);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.posicion {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--brand);
+}
+
+.textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nombre,
+.detalle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nombre {
+  font-weight: 600;
+}
+
+.detalle {
+  font-size: var(--t-caption-size);
+  color: var(--text-2);
+}
+
+.dato {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vacio {
+  margin: 0;
+  padding-block: var(--space-4);
+  font-size: var(--t-body-size);
+  color: var(--text-2);
+}
