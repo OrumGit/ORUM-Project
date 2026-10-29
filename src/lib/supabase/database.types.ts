@@ -797,6 +797,16 @@ export type Database = {
           usos: number
         }[]
       }
+      /** Top de comercios por promedio de estrellas (mínimo 3 reseñas). Migración 20261029140000. */
+      top_comercios_calificados: {
+        Args: { p_limite?: number }
+        Returns: { comercio_id: number; promedio: number; total: number }[]
+      }
+      /** Top de comercios por número de ventas en los últimos 30 días. Migración 20261029140000. */
+      top_comercios_ventas: {
+        Args: { p_limite?: number }
+        Returns: { comercio_id: number; ventas: number }[]
+      }
       comercios_mas_usados: {
         Args: { p_miembro_id: number; p_limite?: number }
         Returns: {
