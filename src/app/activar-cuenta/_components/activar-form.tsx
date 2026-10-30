@@ -140,6 +140,19 @@ export function ActivarForm() {
         */
         const { error: errUpdate } = await createClient().auth.updateUser({ password: nueva })
         if (errUpdate) {
+          /*
+            SESIÓN PERDIDA ENTRE INTENTOS (pestaña cerrada o dormida, sesión
+            caducada tras un rechazo de contraseña). El enlace ya se gastó y
+            no hay sesión con la que guardar: reintentar no puede funcionar,
+            y decir «vuelve a intentarlo» dejaba a la persona en un bucle.
+            Se vuelve a permitir canjear y se manda a pedir un enlace nuevo.
+          */
+          if (errUpdate.name === 'AuthSessionMissingError' || errUpdate.code === 'session_not_found') {
+            canjeado.current = false
+            setMensajeInvalido(MENSAJE_ENLACE_VENCIDO)
+            setEstado('invalido')
+            return
+          }
           setEstado('listo')
           setErrores(
             errUpdate.code === 'weak_password'
