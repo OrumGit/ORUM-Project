@@ -3,7 +3,10 @@ import { obtenerDirectorioPublico } from '@/lib/publico/datos-publicos'
 import { createClient } from '@/lib/supabase/server'
 import { DirectorioComercios } from '@/components/comercios/directorio-comercios'
 import { AvisoNovedad } from '@/components/novedades/aviso-novedad'
+import { TopComerciosSocio } from '@/components/comercios/top-comercios'
 import { obtenerAnunciosVisibles } from '@/lib/anuncios/consultas'
+import { hayTop } from '@/lib/comercios/top-comercios'
+import { leerTopComercios } from '@/lib/comercios/top-comercios-datos'
 
 export const metadata = { title: 'Comercios y beneficios · ORUM' }
 
@@ -20,7 +23,13 @@ export const metadata = { title: 'Comercios y beneficios · ORUM' }
     · cada tarjeta lleva a la ficha del socio (`/miembros/comercios/[id]`);
     · entre el banner y los filtros va el aviso de su última novedad
       (`AvisoNovedad`, el de la portada pública), que lleva a
-      `/miembros/novedades` (21/10/2026).
+      `/miembros/novedades` (21/10/2026);
+    · justo debajo del aviso, el «Top de comercios» (29/10/2026): los 5 mejor
+      calificados y los 5 con más ventas del último mes. Ojo: el 29/09 se
+      retiró «el top del club» de este Inicio; este es un encargo NUEVO y
+      deliberado del propietario, no una regresión. Sin la migración
+      `20261029140000_top_comercios.sql`, `leerTopComercios` devuelve `null`
+      y el bloque no se pinta.
 
   Los datos son los del directorio público (`obtenerDirectorioPublico`): la
   misma lista de comercios activos, con su beneficio destacado. Nada de lo
@@ -30,8 +39,14 @@ export default async function MiembrosHomePage() {
   const miembro = await requireMiembroVigente()
   const supabase = await createClient()
 
-  const [directorio, { data: filasFavoritos }, novedades] = await Promise.all([
-    obtenerDirectorioPublico(),
+  const [{ directorio, top }, { data: filasFavoritos }, novedades] = await Promise.all([
+    /* El top se cruza con el catálogo (nombre, logo, categorías), así que
+       espera al directorio —que sale de caché—; mientras tanto corren las
+       otras dos lecturas. */
+    obtenerDirectorioPublico().then(async (directorio) => ({
+      directorio,
+      top: await leerTopComercios(supabase, directorio.comercios),
+    })),
     /*
       LOS FAVORITOS DEL SOCIO (30/09/2026): el corazón de cada tarjeta y el
       filtro «Favoritos». Cliente con sesión, no el de administración: la
@@ -65,7 +80,12 @@ export default async function MiembrosHomePage() {
       bajada="Elige dónde usar tu membresía: muestra tu carnet en la caja y el descuento es tuyo al momento."
       socio
       favoritos={favoritos}
-      aviso={<AvisoNovedad novedad={novedades[0] ?? null} href="/miembros/novedades" />}
+      aviso={
+        <>
+          <AvisoNovedad novedad={novedades[0] ?? null} href="/miembros/novedades" />
+          {hayTop(top) && <TopComerciosSocio top={top} />}
+        </>
+      }
     />
   )
 }
