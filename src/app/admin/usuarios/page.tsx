@@ -9,7 +9,7 @@ import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { PageHeader } from '@/components/ui/layout'
 import { DropdownMenu, MenuItem } from '@/components/ui/menu'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { cambiarEstadoAcceso } from './actions'
 import { ReenviarActivacion } from '../_components/reenviar-activacion'
 import { cuentaPendienteDeActivar } from '@/lib/auth/activacion'
@@ -144,67 +144,69 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
           }))}
         />
 
-        <DataList
-          caption="Usuarios del panel"
-          items={filas.filter(filtro.cumple)}
-          columns={COLUMNAS}
-          getKey={(f) => f.perfilId}
-          alwaysShowActions
-          empty={
-            <EmptyState
-              title="Aún no hay usuarios"
-              description="Crea el primer empleado o administrador del panel."
-              actions={
-                <Button href="/admin/usuarios/nuevo" icon={<UserPlus size={16} />}>
-                  Crear usuario
-                </Button>
-              }
-            />
-          }
-          actions={(f) => (
-            <>
-              <AccionEstado
-                activo={f.activo}
-                accion={cambiarEstadoAcceso}
-                campos={{ perfil_id: f.perfilId }}
-                etiquetaDesactivar="Desactivar"
-                etiquetaActivar="Activar"
-              />
-
-              <DropdownMenu
-                trigger={
-                  <Button
-                    iconOnly
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Acciones de ${f.nombre}`}
-                  >
-                    <MoreHorizontal size={16} />
+        <ContenidoPestana etiqueta="Filtrar usuarios" clave={filtro.clave}>
+          <DataList
+            caption="Usuarios del panel"
+            items={filas.filter(filtro.cumple)}
+            columns={COLUMNAS}
+            getKey={(f) => f.perfilId}
+            alwaysShowActions
+            empty={
+              <EmptyState
+                title="Aún no hay usuarios"
+                description="Crea el primer empleado o administrador del panel."
+                actions={
+                  <Button href="/admin/usuarios/nuevo" icon={<UserPlus size={16} />}>
+                    Crear usuario
                   </Button>
                 }
-              >
-                <MenuItem
-                  href={`/admin/usuarios/${f.perfilId}/editar`}
-                  icon={<Pencil size={16} />}
+              />
+            }
+            actions={(f) => (
+              <>
+                <AccionEstado
+                  activo={f.activo}
+                  accion={cambiarEstadoAcceso}
+                  campos={{ perfil_id: f.perfilId }}
+                  etiquetaDesactivar="Desactivar"
+                  etiquetaActivar="Activar"
+                />
+
+                <DropdownMenu
+                  trigger={
+                    <Button
+                      iconOnly
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Acciones de ${f.nombre}`}
+                    >
+                      <MoreHorizontal size={16} />
+                    </Button>
+                  }
                 >
-                  Editar datos
-                </MenuItem>
-                {/* La pantalla existía —página, modal y acción— pero nada
-                    enlazaba a ella: el avatar de un administrador no se podía
-                    cambiar navegando el panel. */}
-                <MenuItem
-                  href={`/admin/usuarios/${f.perfilId}/avatar`}
-                  icon={<Camera size={16} />}
-                >
-                  Cambiar foto
-                </MenuItem>
-                {f.pendiente && f.activo && (
-                  <ReenviarActivacion perfilId={f.perfilId} variante="menu" />
-                )}
-              </DropdownMenu>
-            </>
-          )}
-        />
+                  <MenuItem
+                    href={`/admin/usuarios/${f.perfilId}/editar`}
+                    icon={<Pencil size={16} />}
+                  >
+                    Editar datos
+                  </MenuItem>
+                  {/* La pantalla existía —página, modal y acción— pero nada
+                      enlazaba a ella: el avatar de un administrador no se podía
+                      cambiar navegando el panel. */}
+                  <MenuItem
+                    href={`/admin/usuarios/${f.perfilId}/avatar`}
+                    icon={<Camera size={16} />}
+                  >
+                    Cambiar foto
+                  </MenuItem>
+                  {f.pendiente && f.activo && (
+                    <ReenviarActivacion perfilId={f.perfilId} variante="menu" />
+                  )}
+                </DropdownMenu>
+              </>
+            )}
+          />
+        </ContenidoPestana>
       </div>
     </>
   )

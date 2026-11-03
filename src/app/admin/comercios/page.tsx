@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/layout'
 import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/menu'
 import { Paginacion } from '@/components/ui/paginacion'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import styles from '@/styles/lista-panel.module.css'
 
 export const metadata = { title: 'Comercios · ORUM' }
@@ -260,69 +260,71 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
           )}
         </div>
 
-        <DataList
-          caption="Comercios aliados"
-          items={pagina.filas}
-          columns={COLUMNAS}
-          getKey={(c) => c.id}
-          rowHref={(c) => `/admin/comercios/${c.id}`}
-          empty={
-            filas.length === 0 ? (
-              <EmptyState
-                title="Aún no hay comercios"
-                description="Crea el primer comercio aliado para empezar a cargar sus promociones."
-                actions={
-                  <Button href="/admin/comercios/nuevo" icon={<Store size={16} />}>
-                    Crear comercio
+        <ContenidoPestana etiqueta="Filtrar por estado" clave={pestana}>
+          <DataList
+            caption="Comercios aliados"
+            items={pagina.filas}
+            columns={COLUMNAS}
+            getKey={(c) => c.id}
+            rowHref={(c) => `/admin/comercios/${c.id}`}
+            empty={
+              filas.length === 0 ? (
+                <EmptyState
+                  title="Aún no hay comercios"
+                  description="Crea el primer comercio aliado para empezar a cargar sus promociones."
+                  actions={
+                    <Button href="/admin/comercios/nuevo" icon={<Store size={16} />}>
+                      Crear comercio
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Sin resultados"
+                  description={
+                    busqueda
+                      ? `Ningún comercio coincide con «${busqueda}» aquí.`
+                      : 'No hay comercios en esta pestaña con los filtros puestos.'
+                  }
+                  actions={
+                    <Button href="/admin/comercios" variant="secondary">
+                      Ver todos
+                    </Button>
+                  }
+                />
+              )
+            }
+            actions={(c) => (
+              <DropdownMenu
+                trigger={
+                  <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${c.nombre}`}>
+                    <MoreHorizontal size={16} />
                   </Button>
                 }
-              />
-            ) : (
-              <EmptyState
-                title="Sin resultados"
-                description={
-                  busqueda
-                    ? `Ningún comercio coincide con «${busqueda}» aquí.`
-                    : 'No hay comercios en esta pestaña con los filtros puestos.'
-                }
-                actions={
-                  <Button href="/admin/comercios" variant="secondary">
-                    Ver todos
-                  </Button>
-                }
-              />
-            )
-          }
-          actions={(c) => (
-            <DropdownMenu
-              trigger={
-                <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${c.nombre}`}>
-                  <MoreHorizontal size={16} />
-                </Button>
-              }
-            >
-              <MenuItem href={`/admin/comercios/${c.id}`} icon={<Store size={16} />}>
-                Abrir ficha
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem href={`/admin/comercios/${c.id}?pestana=sucursales`} icon={<MapPin size={16} />}>
-                Sucursales
-              </MenuItem>
-              <MenuItem href={`/admin/comercios/${c.id}?pestana=promociones`} icon={<Tag size={16} />}>
-                Promociones
-              </MenuItem>
-              <MenuItem href={`/admin/comercios/${c.id}?pestana=imagenes`} icon={<Images size={16} />}>
-                Imágenes
-              </MenuItem>
-            </DropdownMenu>
-          )}
-        />
+              >
+                <MenuItem href={`/admin/comercios/${c.id}`} icon={<Store size={16} />}>
+                  Abrir ficha
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem href={`/admin/comercios/${c.id}?pestana=sucursales`} icon={<MapPin size={16} />}>
+                  Sucursales
+                </MenuItem>
+                <MenuItem href={`/admin/comercios/${c.id}?pestana=promociones`} icon={<Tag size={16} />}>
+                  Promociones
+                </MenuItem>
+                <MenuItem href={`/admin/comercios/${c.id}?pestana=imagenes`} icon={<Images size={16} />}>
+                  Imágenes
+                </MenuItem>
+              </DropdownMenu>
+            )}
+          />
 
-        <Paginacion
-          {...pagina}
-          nombre={pagina.total === 1 ? 'comercio' : 'comercios'}
-          href={(n) => href({ pagina: n > 1 ? String(n) : undefined })}
-        />
+          <Paginacion
+            {...pagina}
+            nombre={pagina.total === 1 ? 'comercio' : 'comercios'}
+            href={(n) => href({ pagina: n > 1 ? String(n) : undefined })}
+          />
+        </ContenidoPestana>
       </div>
     </>
   )

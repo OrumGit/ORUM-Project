@@ -1398,7 +1398,15 @@ paleta:
   franja gris suave, la elegida en píldora blanca con sombra, punto de color
   y recuento; son enlaces; la píldora SE DESLIZA a la pulsada en el acto
   —FLIP con `element.animate`, solo `transform`, `--dur-slow`/`--ease-out`—
-  sin esperar a la página), herramientas (buscador GET, filtros como
+  sin esperar a la página; y desde el 03/11/2026 el CONTENIDO de debajo
+  también se desplaza, como la rejilla del directorio de los socios: va en
+  `ContenidoPestana` con la pestaña elegida como `clave` y la MISMA
+  `etiqueta` que sus pestañas, y la lista nueva entra deslizándose 16 px
+  desde el lado hacia el que se movió la píldora, con un fundido
+  (`--dur-base`); nada se anima en la primera carga, y con movimiento
+  reducido solo se funde. Lo llevan Miembros, Comercios, Usuarios,
+  Bitácora, Novedades, Reseñas y la ficha del comercio; una lista nueva con
+  `Pestanas` envuelve su contenido igual), herramientas (buscador GET, filtros como
   `DropdownMenu` con `MenuItem href`, orden) y `Paginacion` (25 por página,
   `lib/shared/paginacion.ts`). Todo en la URL. La primera es Miembros
   (`ListaMiembros`; pestañas Todos / Vigentes / Vencidas —la membresía

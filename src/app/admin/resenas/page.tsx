@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/feedback'
 import { PageHeader, Stack } from '@/components/ui/layout'
 import { Paginacion } from '@/components/ui/paginacion'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { ResenasAdmin } from '@/app/admin/comercios/[id]/_components/resenas-admin'
 import { obtenerResenasDelPanel } from '@/lib/resenas/datos-panel'
 import { leerFiltroResenas, type FiltroResenas } from '@/lib/resenas/moderacion'
@@ -80,27 +80,29 @@ export default async function ResenasPage({
             }))}
           />
 
-          <Card padding="lg">
-            <ResenasAdmin
-              key={filtro}
-              conComercio
-              conRevision={datos.conRevision}
-              resenas={datos.resenas}
-              vacio={VACIO[filtro]}
-            />
-          </Card>
+          <ContenidoPestana etiqueta="Filtrar reseñas" clave={filtro}>
+            <Card padding="lg">
+              <ResenasAdmin
+                key={filtro}
+                conComercio
+                conRevision={datos.conRevision}
+                resenas={datos.resenas}
+                vacio={VACIO[filtro]}
+              />
+            </Card>
 
-          {datos.conteos[filtro] > 0 && (
-            <Paginacion
-              pagina={datos.pagina}
-              paginas={datos.paginas}
-              total={datos.conteos[filtro]}
-              desde={datos.desde}
-              hasta={datos.hasta}
-              nombre={datos.conteos[filtro] === 1 ? 'reseña' : 'reseñas'}
-              href={(n) => enlace(filtro, n)}
-            />
-          )}
+            {datos.conteos[filtro] > 0 && (
+              <Paginacion
+                pagina={datos.pagina}
+                paginas={datos.paginas}
+                total={datos.conteos[filtro]}
+                desde={datos.desde}
+                hasta={datos.hasta}
+                nombre={datos.conteos[filtro] === 1 ? 'reseña' : 'reseñas'}
+                href={(n) => enlace(filtro, n)}
+              />
+            )}
+          </ContenidoPestana>
         </Stack>
       ) : (
         <EmptyState

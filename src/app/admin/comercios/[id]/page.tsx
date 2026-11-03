@@ -9,7 +9,7 @@ import { ComercioLogo } from '@/components/ui/comercio-logo'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { DropdownMenu, MenuItem } from '@/components/ui/menu'
-import { Pestanas } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas } from '@/components/ui/pestanas'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import { cargarCategoriasConSubcategorias, cargarFilasCategoria } from '@/lib/comercios/categorias-admin'
 import { cambiarEstadoAccesoComercio, cambiarEstadoComercio } from '../actions'
@@ -253,243 +253,245 @@ export default async function FichaComercioPage({
         ]}
       />
 
-      {parte === 'datos' && (
-        <div className={styles.datos}>
-          <section className={styles.panel} aria-label="Datos del comercio">
-            <EditarComercioForm
-              enPagina
-              comercio={{
-                id: comercio.id,
-                perfil_id: comercio.perfil_id,
-                nombre: comercio.nombre,
-                descripcion: comercio.descripcion,
-                categorias: filasCategoria,
-                indexable: comercio.indexable,
-                correo,
-              }}
-              categorias={categorias}
-            />
-          </section>
+      <ContenidoPestana etiqueta="Partes del comercio" clave={parte}>
+        {parte === 'datos' && (
+          <div className={styles.datos}>
+            <section className={styles.panel} aria-label="Datos del comercio">
+              <EditarComercioForm
+                enPagina
+                comercio={{
+                  id: comercio.id,
+                  perfil_id: comercio.perfil_id,
+                  nombre: comercio.nombre,
+                  descripcion: comercio.descripcion,
+                  categorias: filasCategoria,
+                  indexable: comercio.indexable,
+                  correo,
+                }}
+                categorias={categorias}
+              />
+            </section>
 
-          {/* Dos decisiones distintas, cada una con su explicación: mezclarlas
-              lleva a desactivar el acceso creyendo que se retira al aliado. */}
-          <section className={styles.estados} aria-labelledby="titulo-estado">
-            <h2 id="titulo-estado" className={styles.tituloBloque}>
-              Estado
-            </h2>
+            {/* Dos decisiones distintas, cada una con su explicación: mezclarlas
+                lleva a desactivar el acceso creyendo que se retira al aliado. */}
+            <section className={styles.estados} aria-labelledby="titulo-estado">
+              <h2 id="titulo-estado" className={styles.tituloBloque}>
+                Estado
+              </h2>
 
-            <div className={styles.estado}>
-              <div className={styles.estadoTextos}>
-                <span className={styles.estadoTitulo}>
-                  Visible para los socios
-                  <Badge tone={comercio.activo ? 'success' : 'neutral'} size="sm">
-                    {comercio.activo ? 'Sí' : 'No'}
-                  </Badge>
-                </span>
-                <span className={styles.estadoNota}>
-                  Si lo retiras, deja de salir en el directorio y en la portada, pero no se borra nada.
-                </span>
+              <div className={styles.estado}>
+                <div className={styles.estadoTextos}>
+                  <span className={styles.estadoTitulo}>
+                    Visible para los socios
+                    <Badge tone={comercio.activo ? 'success' : 'neutral'} size="sm">
+                      {comercio.activo ? 'Sí' : 'No'}
+                    </Badge>
+                  </span>
+                  <span className={styles.estadoNota}>
+                    Si lo retiras, deja de salir en el directorio y en la portada, pero no se borra nada.
+                  </span>
+                </div>
+                <form action={cambiarEstadoComercio}>
+                  <input type="hidden" name="id" value={comercio.id} />
+                  <input type="hidden" name="activar" value={comercio.activo ? 'false' : 'true'} />
+                  <Button type="submit" size="sm" variant={comercio.activo ? 'danger' : 'primary'}>
+                    {comercio.activo ? 'Retirar del club' : 'Activar como aliado'}
+                  </Button>
+                </form>
               </div>
-              <form action={cambiarEstadoComercio}>
-                <input type="hidden" name="id" value={comercio.id} />
-                <input type="hidden" name="activar" value={comercio.activo ? 'false' : 'true'} />
-                <Button type="submit" size="sm" variant={comercio.activo ? 'danger' : 'primary'}>
-                  {comercio.activo ? 'Retirar del club' : 'Activar como aliado'}
-                </Button>
-              </form>
-            </div>
 
-            <div className={styles.estado}>
-              <div className={styles.estadoTextos}>
-                <span className={styles.estadoTitulo}>
-                  Acceso a su herramienta
-                  <Badge tone={perfilActivo ? 'success' : 'neutral'} size="sm">
-                    {perfilActivo ? 'Activo' : 'Desactivado'}
-                  </Badge>
-                </span>
-                <span className={styles.estadoNota}>
-                  Si puede iniciar sesión para registrar ventas. Es independiente de seguir siendo aliado.
-                </span>
-                {pendienteDeActivar && (
-                  <span className={styles.estadoNota}>Aún no ha activado su cuenta.</span>
+              <div className={styles.estado}>
+                <div className={styles.estadoTextos}>
+                  <span className={styles.estadoTitulo}>
+                    Acceso a su herramienta
+                    <Badge tone={perfilActivo ? 'success' : 'neutral'} size="sm">
+                      {perfilActivo ? 'Activo' : 'Desactivado'}
+                    </Badge>
+                  </span>
+                  <span className={styles.estadoNota}>
+                    Si puede iniciar sesión para registrar ventas. Es independiente de seguir siendo aliado.
+                  </span>
+                  {pendienteDeActivar && (
+                    <span className={styles.estadoNota}>Aún no ha activado su cuenta.</span>
+                  )}
+                </div>
+                <form action={cambiarEstadoAccesoComercio}>
+                  <input type="hidden" name="id" value={comercio.id} />
+                  <input type="hidden" name="perfil_id" value={comercio.perfil_id ?? ''} />
+                  <input type="hidden" name="activar" value={perfilActivo ? 'false' : 'true'} />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant={perfilActivo ? 'danger' : 'primary'}
+                    disabled={!comercio.perfil_id}
+                  >
+                    {perfilActivo ? 'Desactivar acceso' : 'Activar acceso'}
+                  </Button>
+                </form>
+                {/* Mientras no active su cuenta, se le puede mandar el correo otra vez. */}
+                {pendienteDeActivar && perfilActivo && comercio.perfil_id && (
+                  <ReenviarActivacion perfilId={comercio.perfil_id} tamano="sm" />
                 )}
               </div>
-              <form action={cambiarEstadoAccesoComercio}>
-                <input type="hidden" name="id" value={comercio.id} />
-                <input type="hidden" name="perfil_id" value={comercio.perfil_id ?? ''} />
-                <input type="hidden" name="activar" value={perfilActivo ? 'false' : 'true'} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant={perfilActivo ? 'danger' : 'primary'}
-                  disabled={!comercio.perfil_id}
-                >
-                  {perfilActivo ? 'Desactivar acceso' : 'Activar acceso'}
-                </Button>
-              </form>
-              {/* Mientras no active su cuenta, se le puede mandar el correo otra vez. */}
-              {pendienteDeActivar && perfilActivo && comercio.perfil_id && (
-                <ReenviarActivacion perfilId={comercio.perfil_id} tamano="sm" />
-              )}
+            </section>
+          </div>
+        )}
+
+        {parte === 'sucursales' && (
+          <section className={styles.seccion} aria-labelledby="titulo-sucursales">
+            <div className={styles.barraSeccion}>
+              <h2 id="titulo-sucursales" className={styles.tituloBloque}>
+                Sucursales
+              </h2>
+              <Button href={`${base}/sucursales/nueva`} size="sm" icon={<MapPin size={15} />}>
+                Nueva sucursal
+              </Button>
             </div>
+            <DataList
+              caption={`Sucursales de ${comercio.nombre}`}
+              items={listaSucursales}
+              columns={columnasSucursales}
+              getKey={(s) => s.id}
+              // Activar/desactivar es la acción principal de estas filas: no
+              // debe esconderse hasta que el ratón pase por encima.
+              alwaysShowActions
+              empty={
+                <EmptyState
+                  title="Sin sucursales"
+                  description="Añade al menos una sucursal para que los miembros sepan dónde usar el beneficio."
+                  actions={
+                    <Button href={`${base}/sucursales/nueva`} icon={<MapPin size={16} />}>
+                      Nueva sucursal
+                    </Button>
+                  }
+                />
+              }
+              actions={(s) => (
+                <>
+                  {/* El cambio de estado es una MUTACIÓN: va en su propio
+                      formulario, no dentro del menú. */}
+                  <AccionEstado
+                    activo={s.activo}
+                    accion={cambiarEstadoSucursal}
+                    campos={{ id: s.id, comercio_id: comercio.id }}
+                    etiquetaDesactivar="Desactivar"
+                    etiquetaActivar="Activar"
+                  />
+                  <DropdownMenu
+                    trigger={
+                      <Button
+                        iconOnly
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Acciones de ${s.nombre ?? 'la sucursal'}`}
+                      >
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    }
+                  >
+                    <MenuItem href={`${base}/sucursales/${s.id}/editar`} icon={<Pencil size={16} />}>
+                      Editar
+                    </MenuItem>
+                  </DropdownMenu>
+                </>
+              )}
+            />
           </section>
-        </div>
-      )}
+        )}
 
-      {parte === 'sucursales' && (
-        <section className={styles.seccion} aria-labelledby="titulo-sucursales">
-          <div className={styles.barraSeccion}>
-            <h2 id="titulo-sucursales" className={styles.tituloBloque}>
-              Sucursales
-            </h2>
-            <Button href={`${base}/sucursales/nueva`} size="sm" icon={<MapPin size={15} />}>
-              Nueva sucursal
-            </Button>
-          </div>
-          <DataList
-            caption={`Sucursales de ${comercio.nombre}`}
-            items={listaSucursales}
-            columns={columnasSucursales}
-            getKey={(s) => s.id}
-            // Activar/desactivar es la acción principal de estas filas: no
-            // debe esconderse hasta que el ratón pase por encima.
-            alwaysShowActions
-            empty={
-              <EmptyState
-                title="Sin sucursales"
-                description="Añade al menos una sucursal para que los miembros sepan dónde usar el beneficio."
-                actions={
-                  <Button href={`${base}/sucursales/nueva`} icon={<MapPin size={16} />}>
-                    Nueva sucursal
-                  </Button>
-                }
-              />
-            }
-            actions={(s) => (
-              <>
-                {/* El cambio de estado es una MUTACIÓN: va en su propio
-                    formulario, no dentro del menú. */}
-                <AccionEstado
-                  activo={s.activo}
-                  accion={cambiarEstadoSucursal}
-                  campos={{ id: s.id, comercio_id: comercio.id }}
-                  etiquetaDesactivar="Desactivar"
-                  etiquetaActivar="Activar"
-                />
-                <DropdownMenu
-                  trigger={
-                    <Button
-                      iconOnly
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Acciones de ${s.nombre ?? 'la sucursal'}`}
-                    >
-                      <MoreHorizontal size={16} />
+        {parte === 'promociones' && (
+          <section className={styles.seccion} aria-labelledby="titulo-promociones">
+            <div className={styles.barraSeccion}>
+              <h2 id="titulo-promociones" className={styles.tituloBloque}>
+                Promociones
+              </h2>
+              <Button href={`${base}/promociones/nueva`} size="sm" icon={<Tag size={15} />}>
+                Nueva promoción
+              </Button>
+            </div>
+            <DataList
+              caption={`Promociones de ${comercio.nombre}`}
+              items={listaPromociones}
+              columns={columnasPromociones}
+              getKey={(p) => p.id}
+              alwaysShowActions
+              empty={
+                <EmptyState
+                  title="Sin promociones"
+                  description="Las promociones son el beneficio que ve el miembro. Crea la primera."
+                  actions={
+                    <Button href={`${base}/promociones/nueva`} icon={<Tag size={16} />}>
+                      Nueva promoción
                     </Button>
                   }
-                >
-                  <MenuItem href={`${base}/sucursales/${s.id}/editar`} icon={<Pencil size={16} />}>
-                    Editar
-                  </MenuItem>
-                </DropdownMenu>
-              </>
-            )}
-          />
-        </section>
-      )}
-
-      {parte === 'promociones' && (
-        <section className={styles.seccion} aria-labelledby="titulo-promociones">
-          <div className={styles.barraSeccion}>
-            <h2 id="titulo-promociones" className={styles.tituloBloque}>
-              Promociones
-            </h2>
-            <Button href={`${base}/promociones/nueva`} size="sm" icon={<Tag size={15} />}>
-              Nueva promoción
-            </Button>
-          </div>
-          <DataList
-            caption={`Promociones de ${comercio.nombre}`}
-            items={listaPromociones}
-            columns={columnasPromociones}
-            getKey={(p) => p.id}
-            alwaysShowActions
-            empty={
-              <EmptyState
-                title="Sin promociones"
-                description="Las promociones son el beneficio que ve el miembro. Crea la primera."
-                actions={
-                  <Button href={`${base}/promociones/nueva`} icon={<Tag size={16} />}>
-                    Nueva promoción
-                  </Button>
-                }
-              />
-            }
-            actions={(p) => (
-              <>
-                <AccionEstado
-                  activo={p.activo}
-                  accion={cambiarEstadoPromocion}
-                  campos={{ id: p.id, comercio_id: comercio.id }}
-                  etiquetaDesactivar="Desactivar"
-                  etiquetaActivar="Activar"
                 />
-                <DropdownMenu
-                  trigger={
-                    <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${p.titulo}`}>
-                      <MoreHorizontal size={16} />
-                    </Button>
-                  }
-                >
-                  <MenuItem href={`${base}/promociones/${p.id}/editar`} icon={<Pencil size={16} />}>
-                    Editar
-                  </MenuItem>
-                </DropdownMenu>
+              }
+              actions={(p) => (
+                <>
+                  <AccionEstado
+                    activo={p.activo}
+                    accion={cambiarEstadoPromocion}
+                    campos={{ id: p.id, comercio_id: comercio.id }}
+                    etiquetaDesactivar="Desactivar"
+                    etiquetaActivar="Activar"
+                  />
+                  <DropdownMenu
+                    trigger={
+                      <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${p.titulo}`}>
+                        <MoreHorizontal size={16} />
+                      </Button>
+                    }
+                  >
+                    <MenuItem href={`${base}/promociones/${p.id}/editar`} icon={<Pencil size={16} />}>
+                      Editar
+                    </MenuItem>
+                  </DropdownMenu>
+                </>
+              )}
+            />
+          </section>
+        )}
+
+        {parte === 'imagenes' && imagenes && (
+          <section className={styles.panel} aria-label="Imágenes del comercio">
+            <GestorImagenes
+              comercioId={imagenes.id}
+              nombre={imagenes.nombre}
+              logoUrl={imagenes.logoUrl}
+              portadaUrl={imagenes.portadaUrl}
+              galeria={imagenes.galeria}
+            />
+          </section>
+        )}
+
+        {parte === 'resenas' && (
+          <section className={styles.panel} aria-label="Reseñas del comercio">
+            {resenas?.disponible ? (
+              <>
+              <ResenasAdmin
+                comercioId={comercio.id}
+                resumen={{ total: resenas.total, promedio: resenas.promedio }}
+                resenas={resenas.resenas}
+              />
+              <Paginacion
+                pagina={resenas.pagina}
+                paginas={resenas.paginas}
+                total={resenas.total}
+                desde={resenas.desde}
+                hasta={resenas.hasta}
+                nombre={resenas.total === 1 ? 'reseña' : 'reseñas'}
+                href={(n) => `${base}?pestana=resenas${n > 1 ? `&pagina=${n}` : ''}`}
+              />
               </>
+            ) : (
+              <EmptyState
+                title="Las reseñas todavía no están disponibles"
+                description="No pudimos leer las reseñas. Inténtalo de nuevo más tarde."
+              />
             )}
-          />
-        </section>
-      )}
-
-      {parte === 'imagenes' && imagenes && (
-        <section className={styles.panel} aria-label="Imágenes del comercio">
-          <GestorImagenes
-            comercioId={imagenes.id}
-            nombre={imagenes.nombre}
-            logoUrl={imagenes.logoUrl}
-            portadaUrl={imagenes.portadaUrl}
-            galeria={imagenes.galeria}
-          />
-        </section>
-      )}
-
-      {parte === 'resenas' && (
-        <section className={styles.panel} aria-label="Reseñas del comercio">
-          {resenas?.disponible ? (
-            <>
-            <ResenasAdmin
-              comercioId={comercio.id}
-              resumen={{ total: resenas.total, promedio: resenas.promedio }}
-              resenas={resenas.resenas}
-            />
-            <Paginacion
-              pagina={resenas.pagina}
-              paginas={resenas.paginas}
-              total={resenas.total}
-              desde={resenas.desde}
-              hasta={resenas.hasta}
-              nombre={resenas.total === 1 ? 'reseña' : 'reseñas'}
-              href={(n) => `${base}?pestana=resenas${n > 1 ? `&pagina=${n}` : ''}`}
-            />
-            </>
-          ) : (
-            <EmptyState
-              title="Las reseñas todavía no están disponibles"
-              description="No pudimos leer las reseñas. Inténtalo de nuevo más tarde."
-            />
-          )}
-        </section>
-      )}
+          </section>
+        )}
+      </ContenidoPestana>
     </div>
   )
 }

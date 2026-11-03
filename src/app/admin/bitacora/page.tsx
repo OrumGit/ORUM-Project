@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { Input } from '@/components/ui/input'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { PageHeader } from '@/components/ui/layout'
 import styles from './bitacora.module.css'
 
@@ -323,32 +323,34 @@ export default async function BitacoraPage({
         </p>
       )}
 
-      <DataList
-        caption="Eventos registrados sobre miembros"
-        items={filas}
-        columns={COLUMNAS}
-        getKey={(e) => e.id}
-        empty={
-          hayFiltros ? (
-            <EmptyState
-              icon={<ScrollText size={24} />}
-              title="Sin eventos"
-              description="Ningún evento coincide con los filtros aplicados."
-              actions={
-                <Button href="/admin/bitacora" variant="secondary">
-                  Quitar filtros
-                </Button>
-              }
-            />
-          ) : (
-            <EmptyState
-              icon={<ScrollText size={24} />}
-              title="Aún no hay actividad"
-              description="Cuando se registren o renueven miembros, el rastro aparecerá aquí."
-            />
-          )
-        }
-      />
+      <ContenidoPestana etiqueta="Filtrar por acción" clave={accion ?? ''}>
+        <DataList
+          caption="Eventos registrados sobre miembros"
+          items={filas}
+          columns={COLUMNAS}
+          getKey={(e) => e.id}
+          empty={
+            hayFiltros ? (
+              <EmptyState
+                icon={<ScrollText size={24} />}
+                title="Sin eventos"
+                description="Ningún evento coincide con los filtros aplicados."
+                actions={
+                  <Button href="/admin/bitacora" variant="secondary">
+                    Quitar filtros
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<ScrollText size={24} />}
+                title="Aún no hay actividad"
+                description="Cuando se registren o renueven miembros, el rastro aparecerá aquí."
+              />
+            )
+          }
+        />
+      </ContenidoPestana>
     </>
   )
 }

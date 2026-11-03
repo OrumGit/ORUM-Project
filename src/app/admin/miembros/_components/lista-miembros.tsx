@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/layout'
 import { DropdownMenu, MenuItem, MenuSeparator } from '@/components/ui/menu'
 import { Paginacion } from '@/components/ui/paginacion'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import styles from '@/styles/lista-panel.module.css'
 
 
@@ -260,66 +260,68 @@ export function ListaMiembros({
           )}
         </div>
 
-        <DataList
-          caption="Miembros del club"
-          items={pagina.filas}
-          columns={COLUMNAS}
-          getKey={(m) => m.id}
-          rowHref={(m) => `/admin/miembros/${m.id}`}
-          empty={
-            filas.length === 0 ? (
-              <EmptyState
-                title="Aún no hay miembros"
-                description="Registra el primer cliente y véndele su membresía."
-                actions={
-                  <Button href="/admin/miembros/nuevo" icon={<UserPlus size={16} />}>
-                    Registrar miembro
+        <ContenidoPestana etiqueta="Filtrar por estado" clave={pestana}>
+          <DataList
+            caption="Miembros del club"
+            items={pagina.filas}
+            columns={COLUMNAS}
+            getKey={(m) => m.id}
+            rowHref={(m) => `/admin/miembros/${m.id}`}
+            empty={
+              filas.length === 0 ? (
+                <EmptyState
+                  title="Aún no hay miembros"
+                  description="Registra el primer cliente y véndele su membresía."
+                  actions={
+                    <Button href="/admin/miembros/nuevo" icon={<UserPlus size={16} />}>
+                      Registrar miembro
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Sin resultados"
+                  description={
+                    busqueda
+                      ? `Ningún miembro coincide con «${busqueda}» aquí. Prueba con el número de membresía o la cédula, o mira en «Todos».`
+                      : 'No hay miembros en esta pestaña con los filtros puestos.'
+                  }
+                  actions={
+                    <Button href="/admin/miembros" variant="secondary">
+                      Ver todos
+                    </Button>
+                  }
+                />
+              )
+            }
+            actions={(m) => (
+              <DropdownMenu
+                trigger={
+                  <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${m.nombre}`}>
+                    <MoreHorizontal size={16} />
                   </Button>
                 }
-              />
-            ) : (
-              <EmptyState
-                title="Sin resultados"
-                description={
-                  busqueda
-                    ? `Ningún miembro coincide con «${busqueda}» aquí. Prueba con el número de membresía o la cédula, o mira en «Todos».`
-                    : 'No hay miembros en esta pestaña con los filtros puestos.'
-                }
-                actions={
-                  <Button href="/admin/miembros" variant="secondary">
-                    Ver todos
-                  </Button>
-                }
-              />
-            )
-          }
-          actions={(m) => (
-            <DropdownMenu
-              trigger={
-                <Button iconOnly variant="ghost" size="sm" aria-label={`Acciones de ${m.nombre}`}>
-                  <MoreHorizontal size={16} />
-                </Button>
-              }
-            >
-              <MenuItem href={`/admin/miembros/${m.id}/renovar`} icon={<CreditCard size={16} />}>
-                Renovar membresía
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem href={`/admin/miembros/${m.id}/editar`} icon={<Pencil size={16} />}>
-                Editar datos
-              </MenuItem>
-              <MenuItem href={`/admin/miembros/${m.id}/foto`} icon={<Camera size={16} />}>
-                Cambiar foto
-              </MenuItem>
-            </DropdownMenu>
-          )}
-        />
+              >
+                <MenuItem href={`/admin/miembros/${m.id}/renovar`} icon={<CreditCard size={16} />}>
+                  Renovar membresía
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem href={`/admin/miembros/${m.id}/editar`} icon={<Pencil size={16} />}>
+                  Editar datos
+                </MenuItem>
+                <MenuItem href={`/admin/miembros/${m.id}/foto`} icon={<Camera size={16} />}>
+                  Cambiar foto
+                </MenuItem>
+              </DropdownMenu>
+            )}
+          />
 
-        <Paginacion
-          {...pagina}
-          nombre={pagina.total === 1 ? 'miembro' : 'miembros'}
-          href={(n) => href({ pagina: n > 1 ? String(n) : undefined })}
-        />
+          <Paginacion
+            {...pagina}
+            nombre={pagina.total === 1 ? 'miembro' : 'miembros'}
+            href={(n) => href({ pagina: n > 1 ? String(n) : undefined })}
+          />
+        </ContenidoPestana>
       </div>
     </>
   )

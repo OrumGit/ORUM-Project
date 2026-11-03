@@ -149,3 +149,48 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
 }
+
+/* --- El contenido de debajo, al cambiar de pestaña (03/11/2026) -------------
+   Entra deslizándose 16 px desde el lado hacia el que se movió la píldora,
+   con un fundido: la misma lectura que la rejilla del directorio de los
+   socios al cambiar de categoría. `display: contents` no sirve (no se puede
+   animar): es un bloque más, sin márgenes ni relleno propios. */
+.contenido {
+  display: flex;
+  flex-direction: column;
+  /* El mismo hueco que su padre ponía entre la tabla y la paginación. */
+  gap: inherit;
+  min-width: 0;
+}
+
+.contenido[data-entra] {
+  animation: contenido-entra var(--dur-base) var(--ease-out) both;
+}
+
+.contenido[data-entra='izquierda'] {
+  --desde: -16px;
+}
+
+.contenido[data-entra='derecha'] {
+  --desde: 16px;
+}
+
+@keyframes contenido-entra {
+  from {
+    opacity: 0;
+    translate: var(--desde, 0) 0;
+  }
+}
+
+/* Con movimiento reducido no viaja: solo se funde. */
+@media (prefers-reduced-motion: reduce) {
+  .contenido[data-entra] {
+    animation: contenido-funde var(--dur-base) var(--ease-out) both;
+  }
+
+  @keyframes contenido-funde {
+    from {
+      opacity: 0;
+    }
+  }
+}

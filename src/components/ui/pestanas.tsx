@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { prefiereMovimientoReducido } from '@/lib/shared/motion'
 import styles from './pestanas.module.css'
 
@@ -33,6 +33,16 @@ import styles from './pestanas.module.css'
     · Con movimiento reducido no viaja: aparece en su sitio.
     · Es una animación NATIVA (`element.animate`), no de `motion`: la mueve
       el compositor y no gasta el hilo principal mientras llega la página.
+
+  Y EL CONTENIDO TAMBIÉN SE DESPLAZA (03/11/2026: «quiero una animación de
+  desplazamiento como los otros portales para estos apartados»; en el
+  directorio de los socios la rejilla entera se desliza al cambiar de
+  categoría). Lo que va debajo de las pestañas se envuelve en
+  `ContenidoPestana` con la pestaña elegida como `clave`: cuando llega la
+  lista nueva, entra deslizándose 16 px DESDE EL LADO hacia el que se movió
+  la píldora, con un fundido corto (`--dur-base`, `--ease-out`). Solo
+  `transform` y `opacity`; no se anima nada al cargar la página (solo tras
+  pulsar una pestaña), y con movimiento reducido queda un fundido.
 */
 
 export type TonoPestana = 'neutro' | 'exito' | 'aviso' | 'peligro' | 'vacio'
@@ -50,6 +60,15 @@ type Caja = { x: number; y: number; w: number; h: number }
 
 /** La última posición de la píldora por grupo de pestañas, para la que se monte después. */
 const ULTIMA = new Map<string, { caja: Caja; cuando: number }>()
+
+/**
+  Hacia dónde se movió la píldora en el último clic, por grupo: lo lee el
+  contenido que llega después para entrar desde ese lado. Vale unos
+  segundos: un contenido que se monta más tarde (otra visita a la lista) no
+  hereda un viaje viejo.
+*/
+const ULTIMO_VIAJE = new Map<string, { hacia: 'izquierda' | 'derecha'; cuando: number }>()
+const VIAJE_VIGENTE_MS = 5000
 
 /** Un clic que abre en otra pestaña o ventana no cambia la elegida aquí. */
 function esClicNormal(e: MouseEvent) {
@@ -148,7 +167,14 @@ export function Pestanas({ items, etiqueta }: { items: Pestana[]; etiqueta: stri
             data-activa={activa || undefined}
             data-href={p.href}
             onClick={(e) => {
-              if (esClicNormal(e) && p.href !== elegida) setPulsada({ href: p.href, desde: hrefActivo })
+              if (!esClicNormal(e) || p.href === elegida) return
+              const desde = items.findIndex((x) => x.href === elegida)
+              const hasta = items.findIndex((x) => x.href === p.href)
+              ULTIMO_VIAJE.set(etiqueta, {
+                hacia: hasta > desde ? 'derecha' : 'izquierda',
+                cuando: performance.now(),
+              })
+              setPulsada({ href: p.href, desde: hrefActivo })
             }}
           >
             {p.tono && <span className={styles.punto} data-tono={p.tono} aria-hidden="true" />}
@@ -160,5 +186,40 @@ export function Pestanas({ items, etiqueta }: { items: Pestana[]; etiqueta: stri
         )
       })}
     </nav>
+  )
+}
+
+/**
+ * Lo que va debajo de unas `Pestanas`: cuando cambia la pestaña elegida
+ * (`clave`), el contenido nuevo entra deslizándose desde el lado hacia el
+ * que se movió la píldora. `etiqueta` es la MISMA que la de sus pestañas.
+ */
+export function ContenidoPestana({
+  etiqueta,
+  clave,
+  children,
+}: {
+  etiqueta: string
+  clave: string
+  children: ReactNode
+}) {
+  return (
+    <PiezaContenido key={clave} etiqueta={etiqueta}>
+      {children}
+    </PiezaContenido>
+  )
+}
+
+function PiezaContenido({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  // Se decide al montarse: solo entra deslizándose si acaba de pulsarse una
+  // pestaña de su grupo (no en la primera carga de la página).
+  const [hacia] = useState(() => {
+    const viaje = ULTIMO_VIAJE.get(etiqueta)
+    return viaje && performance.now() - viaje.cuando < VIAJE_VIGENTE_MS ? viaje.hacia : undefined
+  })
+  return (
+    <div className={styles.contenido} data-entra={hacia}>
+      {children}
+    </div>
   )
 }

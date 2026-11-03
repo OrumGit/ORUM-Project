@@ -11,7 +11,7 @@ import {
   type EstadoNovedad,
 } from '@/lib/anuncios/programacion'
 import { obtenerInstanteServidor } from '@/lib/publico/datos-publicos'
-import { Pestanas, type TonoPestana } from '@/components/ui/pestanas'
+import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { AccionEstado } from '@/components/ui/accion-estado'
 import { Badge, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -159,64 +159,66 @@ export default async function AnunciosPage({ searchParams }: { searchParams: Pro
           ]}
         />
 
-        <DataList
-          caption="Novedades"
-          items={anuncios}
-          columns={COLUMNAS}
-          getKey={(a) => a.id}
-          alwaysShowActions
-          empty={
-            todas.length > 0 ? (
-              <EmptyState
-                title="Ninguna en esta pestaña"
-                description="Las novedades con este estado aparecerán aquí."
-                actions={
-                  <Button href="/admin/anuncios" variant="secondary">
-                    Ver todas
-                  </Button>
-                }
-              />
-            ) : (
-              <EmptyState
-                title="Aún no hay novedades"
-                description="Publica la primera para anunciar un beneficio nuevo o una actualización del club."
-                actions={
-                  <Button href="/admin/anuncios/nuevo" icon={<Megaphone size={16} />}>
-                    Nueva novedad
-                  </Button>
-                }
-              />
-            )
-          }
-          actions={(a) => (
-            <>
-              <AccionEstado
-                activo={a.activo}
-                accion={cambiarEstadoAnuncio}
-                campos={{ id: a.id }}
-                etiquetaDesactivar="Retirar"
-                etiquetaActivar="Publicar"
-              />
+        <ContenidoPestana etiqueta="Filtrar novedades" clave={filtro ?? 'todas'}>
+          <DataList
+            caption="Novedades"
+            items={anuncios}
+            columns={COLUMNAS}
+            getKey={(a) => a.id}
+            alwaysShowActions
+            empty={
+              todas.length > 0 ? (
+                <EmptyState
+                  title="Ninguna en esta pestaña"
+                  description="Las novedades con este estado aparecerán aquí."
+                  actions={
+                    <Button href="/admin/anuncios" variant="secondary">
+                      Ver todas
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Aún no hay novedades"
+                  description="Publica la primera para anunciar un beneficio nuevo o una actualización del club."
+                  actions={
+                    <Button href="/admin/anuncios/nuevo" icon={<Megaphone size={16} />}>
+                      Nueva novedad
+                    </Button>
+                  }
+                />
+              )
+            }
+            actions={(a) => (
+              <>
+                <AccionEstado
+                  activo={a.activo}
+                  accion={cambiarEstadoAnuncio}
+                  campos={{ id: a.id }}
+                  etiquetaDesactivar="Retirar"
+                  etiquetaActivar="Publicar"
+                />
 
-              <DropdownMenu
-                trigger={
-                  <Button
-                    iconOnly
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Acciones de ${a.titulo}`}
-                  >
-                    <MoreHorizontal size={16} />
-                  </Button>
-                }
-              >
-                <MenuItem href={`/admin/anuncios/${a.id}/editar`} icon={<Pencil size={16} />}>
-                  Editar novedad
-                </MenuItem>
-              </DropdownMenu>
-            </>
-          )}
-        />
+                <DropdownMenu
+                  trigger={
+                    <Button
+                      iconOnly
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Acciones de ${a.titulo}`}
+                    >
+                      <MoreHorizontal size={16} />
+                    </Button>
+                  }
+                >
+                  <MenuItem href={`/admin/anuncios/${a.id}/editar`} icon={<Pencil size={16} />}>
+                    Editar novedad
+                  </MenuItem>
+                </DropdownMenu>
+              </>
+            )}
+          />
+        </ContenidoPestana>
       </div>
     </>
   )
