@@ -151,8 +151,9 @@
 }
 
 /* --- El contenido de debajo, al cambiar de pestaña (03/11/2026) -------------
-   Entra deslizándose 16 px desde el lado hacia el que se movió la píldora,
-   con un fundido: la misma lectura que la rejilla del directorio de los
+   Entra deslizándose 32 px desde el lado hacia el que se movió la píldora,
+   con un fundido, en `--dur-page` (420 ms). Empezó en 16 px y 220 ms y el
+   propietario lo vio «tan rápido que no se ve bien» (03/11/2026): la misma lectura que la rejilla del directorio de los
    socios al cambiar de categoría. `display: contents` no sirve (no se puede
    animar): es un bloque más, sin márgenes ni relleno propios. */
 .contenido {
@@ -164,15 +165,15 @@
 }
 
 .contenido[data-entra] {
-  animation: contenido-entra var(--dur-base) var(--ease-out) both;
+  animation: contenido-entra var(--dur-page) var(--ease-out) both;
 }
 
 .contenido[data-entra='izquierda'] {
-  --desde: -16px;
+  --desde: -32px;
 }
 
 .contenido[data-entra='derecha'] {
-  --desde: 16px;
+  --desde: 32px;
 }
 
 @keyframes contenido-entra {
@@ -185,7 +186,7 @@
 /* Con movimiento reducido no viaja: solo se funde. */
 @media (prefers-reduced-motion: reduce) {
   .contenido[data-entra] {
-    animation: contenido-funde var(--dur-base) var(--ease-out) both;
+    animation: contenido-funde var(--dur-page) var(--ease-out) both;
   }
 
   @keyframes contenido-funde {

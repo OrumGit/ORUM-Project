@@ -1397,13 +1397,14 @@ paleta:
 - **Las listas del panel** llevan `Pestanas` (`components/ui/pestanas.tsx`:
   franja gris suave, la elegida en píldora blanca con sombra, punto de color
   y recuento; son enlaces; la píldora SE DESLIZA a la pulsada en el acto
-  —FLIP con `element.animate`, solo `transform`, `--dur-slow`/`--ease-out`—
+  —FLIP con `element.animate`, solo `transform`, `--dur-page`/`--ease-out`—
   sin esperar a la página; y desde el 03/11/2026 el CONTENIDO de debajo
   también se desplaza, como la rejilla del directorio de los socios: va en
   `ContenidoPestana` con la pestaña elegida como `clave` y la MISMA
-  `etiqueta` que sus pestañas, y la lista nueva entra deslizándose 16 px
+  `etiqueta` que sus pestañas, y la lista nueva entra deslizándose 32 px
   desde el lado hacia el que se movió la píldora, con un fundido
-  (`--dur-base`); nada se anima en la primera carga, y con movimiento
+  (`--dur-page`, 420 ms; con 16 px y 220 ms «no se veía bien», así que no
+  lo vuelvas a acortar); nada se anima en la primera carga, y con movimiento
   reducido solo se funde. Lo llevan Miembros, Comercios, Usuarios,
   Bitácora, Novedades, Reseñas y la ficha del comercio; una lista nueva con
   `Pestanas` envuelve su contenido igual), herramientas (buscador GET, filtros como

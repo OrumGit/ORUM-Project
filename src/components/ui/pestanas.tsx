@@ -39,8 +39,9 @@ import styles from './pestanas.module.css'
   directorio de los socios la rejilla entera se desliza al cambiar de
   categoría). Lo que va debajo de las pestañas se envuelve en
   `ContenidoPestana` con la pestaña elegida como `clave`: cuando llega la
-  lista nueva, entra deslizándose 16 px DESDE EL LADO hacia el que se movió
-  la píldora, con un fundido corto (`--dur-base`, `--ease-out`). Solo
+  lista nueva, entra deslizándose 32 px DESDE EL LADO hacia el que se movió
+  la píldora, con un fundido (`--dur-page`, `--ease-out`; la primera versión,
+  16 px y 220 ms, se veía demasiado rápida). Solo
   `transform` y `opacity`; no se anima nada al cargar la página (solo tras
   pulsar una pestaña), y con movimiento reducido queda un fundido.
 */
@@ -125,7 +126,8 @@ export function Pestanas({ items, etiqueta }: { items: Pestana[]; etiqueta: stri
       }
       if (prefiereMovimientoReducido()) return
       // Animación nativa (la mueve el compositor) con la curva y la duración
-      // de los tokens: `--ease-out` y `--dur-slow`.
+      // de los tokens: `--ease-out` y `--dur-page` (era `--dur-slow`, 320 ms:
+      // «tan rápido que no se ve bien», 03/11/2026; va al paso del contenido).
       const estilo = getComputedStyle(pieza)
       pieza.getAnimations().forEach((a) => a.cancel())
       pieza.animate(
@@ -136,7 +138,7 @@ export function Pestanas({ items, etiqueta }: { items: Pestana[]; etiqueta: stri
           { transform: 'translate(0px, 0px) scaleX(1)' },
         ],
         {
-          duration: parseFloat(estilo.getPropertyValue('--dur-slow')) || 320,
+          duration: parseFloat(estilo.getPropertyValue('--dur-page')) || 420,
           easing: estilo.getPropertyValue('--ease-out').trim() || 'ease-out',
         },
       )
