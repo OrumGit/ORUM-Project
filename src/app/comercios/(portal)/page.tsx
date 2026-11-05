@@ -3,7 +3,6 @@ import { Store, TriangleAlert } from 'lucide-react'
 import { EmptyState } from '@/components/ui/feedback'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import { obtenerMiComercio } from '@/lib/comercios/comercio-sesion'
-import { formatearBeneficioCorto } from '@/lib/comercios/beneficios-formato'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import {
   aplicaAhora,
@@ -18,6 +17,7 @@ import { ENTRADA, retardoEntrada } from '@/lib/shared/revelado'
 import { obtenerResenasParaComercio } from '@/lib/resenas/datos'
 import { ResenasComercio } from './_components/resenas-comercio'
 import { VerificacionTool } from './_components/verificacion-tool'
+import { ListaPromociones } from './_components/lista-promociones'
 import type { TipoBeneficioCodigo } from '@/lib/supabase/database.types'
 import styles from './_components/verificar.module.css'
 
@@ -145,25 +145,20 @@ export default async function ComerciosHomePage() {
             />
 
             {promociones.length > 0 ? (
-              <ul className={styles.promociones}>
-                {promociones.map((p) => (
-                  <li key={p.id} className={styles.promocion}>
-                    {/* La cifra corta de las tarjetas del directorio («10%»,
-                        «2x1»): el título de al lado ya dice el resto. */}
-                    <span className={styles.promocionValor}>
-                      {formatearBeneficioCorto(p.tipoCodigo, p.valor)}
-                    </span>
-                    <span className={styles.promocionTitulo}>
-                      {p.titulo}
-                      {p.diasTexto && (
-                        <span className={styles.promocionDias}>
-                          {p.disponibleHoy ? p.diasTexto : `${p.diasTexto} · ${p.ahoraTexto.toLowerCase()}`}
-                        </span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <ListaPromociones
+                ahoraServidor={ahora.toISOString()}
+                promociones={(promocionesRaw ?? [])
+                  .filter((p) => promociones.some((v) => v.id === p.id))
+                  .map((p) => ({
+                    id: p.id,
+                    titulo: p.titulo,
+                    tipoCodigo: codigoPorTipoId.get(p.tipo_beneficio_id)!,
+                    valor: p.valor,
+                    diasSemana: p.dias_semana,
+                    franjas: franjasDe(p),
+                    restricciones: p.restricciones,
+                  }))}
+              />
             ) : (
               <p className={styles.sinPromociones}>
                 Hoy no tienes promociones vigentes. La venta se registra igual, sin descuento.

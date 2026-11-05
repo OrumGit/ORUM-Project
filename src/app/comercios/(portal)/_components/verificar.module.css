@@ -848,6 +848,34 @@
   color: var(--text-2);
 }
 
+/* El estado de AHORA: solo la palabra lleva color, y siempre dice el texto
+   («Aplica hoy» / «Hoy no aplica»); el color nunca es el único portador.
+   Verde y rojo de TEXTO, ambos AA sobre blanco. */
+.estadoAplica,
+.estadoNoAplica {
+  font-weight: 600;
+}
+
+.estadoAplica {
+  color: var(--success);
+}
+
+.estadoNoAplica {
+  color: var(--danger);
+}
+
+.promocionCondiciones {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--t-footnote-size);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.promocionCondicionesRotulo {
+  font-weight: 600;
+}
+
 .sinPromociones {
   margin: 0;
   font-size: var(--t-callout-size);
