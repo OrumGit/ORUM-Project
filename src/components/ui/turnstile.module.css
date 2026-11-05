@@ -1,3 +1,9 @@
+.envoltura {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .caja {
   /* Reserva el alto del widget (300×65 en tamaño normal) para que al
      renderizarse no empuje el botón de envío: un salto de maqueta en el
@@ -8,4 +14,36 @@
      izquierda de un formulario más ancho, quedaba descolgado del botón. */
   display: flex;
   justify-content: center;
+}
+
+.error {
+  margin: 0;
+  text-align: center;
+  color: var(--text-2);
+}
+
+/* Se ve y se toca: el área de pulsación sube a --tap-min con un ::after. */
+.reintentar {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.reintentar::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  translate: -50% -50%;
+}
+
+.reintentar:focus-visible {
+  outline: 2px solid var(--brand-edge);
+  outline-offset: 2px;
 }

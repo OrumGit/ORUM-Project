@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input, InputButton } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
-import { Turnstile } from '@/components/ui/turnstile'
+import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { iniciarSesionComercio, type LoginComercioState } from '../actions'
 
 const estadoInicial: LoginComercioState = {}
 
 export function LoginComercioForm({ mensajeInicial }: { mensajeInicial?: string }) {
+  const turnstile = useTurnstile()
   const [state, formAction, pending] = useActionState(iniciarSesionComercio, estadoInicial)
   const [verPassword, setVerPassword] = useState(false)
 
@@ -64,7 +65,7 @@ export function LoginComercioForm({ mensajeInicial }: { mensajeInicial?: string 
         ¿Olvidaste tu contraseña?
       </Link>
 
-      <Turnstile reiniciarAl={state} />
+      <Turnstile {...turnstile.enlace} reiniciarAl={state} />
 
       {/* Relleno dorado PLANO (`brand`), nunca el barrido (`gold`): ver la
           nota del acceso de administración. */}
@@ -75,6 +76,7 @@ export function LoginComercioForm({ mensajeInicial }: { mensajeInicial?: string 
         pildora
         fullWidth
         loading={pending}
+        disabled={!turnstile.listo}
         icon={<LogIn size={17} />}
       >
         Iniciar sesión

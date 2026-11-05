@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
-import { Turnstile } from '@/components/ui/turnstile'
+import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { solicitarRecuperacionComercio, type RecuperarState } from '../actions'
 
 const estadoInicial: RecuperarState = {}
 
 export function RecuperarComercioForm() {
+  const turnstile = useTurnstile()
   const [state, formAction, pending] = useActionState(solicitarRecuperacionComercio, estadoInicial)
 
   if (state.enviado) {
@@ -49,7 +50,7 @@ export function RecuperarComercioForm() {
         />
       </Field>
 
-      <Turnstile reiniciarAl={state} />
+      <Turnstile {...turnstile.enlace} reiniciarAl={state} />
 
       <Button
         type="submit"
@@ -58,6 +59,7 @@ export function RecuperarComercioForm() {
         pildora
         fullWidth
         loading={pending}
+        disabled={!turnstile.listo}
         icon={<Mail size={17} />}
       >
         Enviar enlace

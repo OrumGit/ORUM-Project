@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
-import { Turnstile } from '@/components/ui/turnstile'
+import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { solicitarRecuperacionMiembro, type RecuperarState } from '../actions'
 
 const estadoInicial: RecuperarState = {}
 
 export function RecuperarMiembroForm() {
+  const turnstile = useTurnstile()
   const [state, formAction, pending] = useActionState(solicitarRecuperacionMiembro, estadoInicial)
 
   if (state.enviado) {
@@ -53,7 +54,7 @@ export function RecuperarMiembroForm() {
         />
       </Field>
 
-      <Turnstile reiniciarAl={state} />
+      <Turnstile {...turnstile.enlace} reiniciarAl={state} />
 
       {/* Dorado y en píldora, como el de iniciar sesión: las dos pantallas
           del socio comparten puerta (`PantallaAccesoSocio`). */}
@@ -64,6 +65,7 @@ export function RecuperarMiembroForm() {
         pildora
         fullWidth
         loading={pending}
+        disabled={!turnstile.listo}
         icon={<Mail size={17} />}
       >
         Enviar enlace

@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input, InputButton } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
-import { Turnstile } from '@/components/ui/turnstile'
+import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { iniciarSesion, type LoginState } from './actions'
 
 const estadoInicial: LoginState = {}
 
 export function LoginForm({ mensajeInicial }: { mensajeInicial?: string }) {
+  const turnstile = useTurnstile()
   const [state, formAction, pending] = useActionState(iniciarSesion, estadoInicial)
   const [verPassword, setVerPassword] = useState(false)
 
@@ -62,7 +63,7 @@ export function LoginForm({ mensajeInicial }: { mensajeInicial?: string }) {
         />
       </Field>
 
-      <Turnstile reiniciarAl={state} />
+      <Turnstile {...turnstile.enlace} reiniciarAl={state} />
 
       {/*
         `brand` es el relleno dorado PLANO. Nunca `gold`: ese es el barrido
@@ -76,6 +77,7 @@ export function LoginForm({ mensajeInicial }: { mensajeInicial?: string }) {
         pildora
         fullWidth
         loading={pending}
+        disabled={!turnstile.listo}
         icon={<LogIn size={17} />}
       >
         Iniciar sesión
