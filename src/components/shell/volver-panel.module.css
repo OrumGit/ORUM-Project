@@ -1,0 +1,57 @@
+/* «Volver»: un enlace discreto encima del titular, con la flecha que se
+   adelanta al apuntarlo. Sin fondo (ningún tinte al apuntar). */
+.volver {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  min-height: 32px;
+  margin: 0 0 var(--space-3) calc(var(--space-1) * -1);
+  padding: 0 var(--space-2) 0 var(--space-1);
+  border-radius: var(--radius-full);
+  color: var(--text-2);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+/* El área que se toca mide al menos 44 px aunque se vea más baja. */
+.volver::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto;
+  height: var(--tap-min);
+  translate: 0 -50%;
+}
+
+.flecha {
+  flex-shrink: 0;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .volver:hover {
+    color: var(--text);
+  }
+
+  .volver:hover .flecha {
+    translate: -3px 0;
+  }
+}
+
+.volver:active .flecha {
+  translate: -5px 0;
+}
+
+.volver:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flecha {
+    transition: none;
+  }
+}

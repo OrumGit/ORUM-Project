@@ -1407,6 +1407,19 @@ paleta:
   probaron y no gustaron). Al pasar, el texto se aclara y el icono se
   desliza. **El plateado es el acento del cromo negro** («juega mucho más
   con el plateado»); el oro queda para la acción principal.
+- **«Volver» arriba de CADA pantalla del panel** salvo la portada
+  (07/11/2026: «la funcionalidad para ir atrás, en todos los apartados»;
+  `VolverPanel`, que monta `AppShell` encima del contenido). No es el atrás
+  del navegador —las pestañas y los filtros viven en la URL y lo
+  recorrería paso a paso—: lleva al LUGAR de donde se vino TAL COMO SE DEJÓ
+  (filtros, pestaña, página) y dice adónde («Volver a Comercios», «Volver
+  al comercio»). La pila de lugares es pura y probada
+  (`lib/shared/volver-panel.ts`: `anotarVisita` corta al volver a un lugar
+  ya visitado, así cerrar una ventana encima no la deja como «anterior»;
+  `rutaPadre` sube al lugar que contiene un formulario, y lo de la ficha del
+  comercio vuelve a SU pestaña) y vive en `sessionStorage`. Sin pila (enlace
+  directo), sube al lugar de arriba; el servidor pinta ese enlace. **Una
+  sección o ficha nueva del panel se añade a `LUGARES` y a `NOMBRES`.**
 - **La barra de arriba, blanca y pegada**: «Panel / sección», el
   **buscador** y «Registrar miembro» en oro. En el teléfono, el logotipo en
   oro a la izquierda y la barra inferior negra con la hoja «Más» (la activa,

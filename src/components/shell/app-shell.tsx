@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useRef, useState, type ComponentProps, type ReactNode } from 'react'
+import { Suspense, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import { ChevronsUpDown, KeyRound, LogOut, UserPlus } from 'lucide-react'
 import {
   BotonInstalar,
@@ -18,6 +18,8 @@ import { ToastProvider } from '@/components/ui/toast'
 import type { RolCodigo } from '@/lib/supabase/database.types'
 import cromo from '@/app/miembros/(portal)/portal.module.css'
 import { BuscadorPanel, enfocarBuscador } from './buscador-panel'
+import { VolverPanel } from './volver-panel'
+import { hayVolver } from '@/lib/shared/volver-panel'
 import {
   esRutaActiva,
   navegacionPara,
@@ -186,7 +188,15 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
             </Button>
           </header>
 
-          <main className={styles.main}>{children}</main>
+          <main className={styles.main}>
+            {/* «Volver» en todas las pantallas menos la portada (07/11/2026). */}
+            {hayVolver(pathname) && (
+              <Suspense fallback={null}>
+                <VolverPanel />
+              </Suspense>
+            )}
+            {children}
+          </main>
         </div>
 
         <TabBar
