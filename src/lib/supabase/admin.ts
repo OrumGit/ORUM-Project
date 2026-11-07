@@ -12,6 +12,7 @@
 import 'server-only'
 
 import { createClient } from '@supabase/supabase-js'
+import { fetchConTiempoMaximo } from '@/lib/shared/fetch-con-tiempo'
 import type { Database } from './database.types'
 
 /**
@@ -26,7 +27,15 @@ import type { Database } from './database.types'
  * Se usa, sobre todo, para la Admin API de Auth (crear usuarios, cambiar
  * contraseñas, desactivar accesos) que no está disponible con la anon key.
  */
-export function createAdminClient() {
+export function createAdminClient(opciones?: {
+  /**
+   * Techo de espera por petición. Sin él, `fetch` espera sin límite y una
+   * función de Vercel puede quedar colgada 300 s si Supabase no contesta (visto
+   * en la prueba de carga del 06/11/2026). Lo pide la capa de datos de la
+   * fachada; las acciones del panel y el Auth siguen sin límite, como antes.
+   */
+  tiempoMaximoMs?: number
+}) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -41,5 +50,8 @@ export function createAdminClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    ...(opciones?.tiempoMaximoMs
+      ? { global: { fetch: fetchConTiempoMaximo(opciones.tiempoMaximoMs) } }
+      : {}),
   })
 }
