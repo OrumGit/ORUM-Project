@@ -23,7 +23,7 @@ export default async function EditarPlanInterceptado({
   if (!plan) notFound()
 
   return (
-    <OverlayRuta title="Editar plan" description={plan.nombre} detent="medium">
+    <OverlayRuta title="Editar descripción" description={plan.nombre} detent="medium">
       <PlanForm plan={plan} />
     </OverlayRuta>
   )

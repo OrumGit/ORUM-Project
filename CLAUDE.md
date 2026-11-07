@@ -637,7 +637,10 @@ historial («Revocada el … · motivo»). Vista previa: `/dev/revocar`.
 
 **Los planes ya no se crean ni se retiran** (29/10/2026: «quitar la
 funcionalidad de añadir o quitar planes de membresía»). `/admin/planes`
-solo los lista y los EDITA (precio, duración, descripción); se borraron
+solo los lista y edita su DESCRIPCIÓN (07/11/2026: «al administrador
+únicamente le permitamos editar la descripción»; el nombre, el precio y la
+duración se ven en la ventana pero no se tocan, y `editarPlan` solo escribe
+`descripcion`); se borraron
 `planes/nuevo`, su gemela, `crearPlan`, `cambiarEstadoPlan` y sus accesos
 en la portada y el buscador del panel. No los vuelvas a poner.
 

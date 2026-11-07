@@ -82,11 +82,11 @@ export default async function PlanesPage() {
     <>
       {/* Sin «Crear plan» ni «Retirar» (29/10/2026, encargo del propietario:
           «quitar la funcionalidad de añadir o quitar planes de membresía»).
-          Los planes son los que hay; aquí solo se ajusta su precio, su
-          duración o su descripción. */}
+          Los planes son los que hay, y desde el 07/11/2026 aquí solo se edita
+          su DESCRIPCIÓN: el nombre, el precio y la duración no se tocan. */}
       <PageHeader
         title="Planes de membresía"
-        description="Los planes con los que se registran y renuevan las membresías. Puedes ajustar su precio, su duración y su descripción."
+        description="Los planes con los que se registran y renuevan las membresías. Puedes editar su descripción."
       />
 
       <DataList
@@ -107,7 +107,7 @@ export default async function PlanesPage() {
             variant="ghost"
             size="sm"
             icon={<Pencil size={15} />}
-            aria-label={`Editar ${p.nombre}`}
+            aria-label={`Editar la descripción de ${p.nombre}`}
           >
             Editar
           </Button>

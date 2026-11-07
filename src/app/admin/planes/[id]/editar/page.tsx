@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/layout'
 import { FormCard } from '@/components/ui/form-card'
 import { PlanForm } from '../../_components/plan-form'
 
-export const metadata = { title: 'Editar plan · ORUM' }
+export const metadata = { title: 'Editar descripción del plan · ORUM' }
 
 export default async function EditarPlanPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRol('super_admin')
@@ -23,7 +23,7 @@ export default async function EditarPlanPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <PageHeader title="Editar plan" description={plan.nombre} />
+      <PageHeader title="Editar descripción" description={plan.nombre} />
       <FormCard><PlanForm plan={plan} /></FormCard>
     </>
   )
