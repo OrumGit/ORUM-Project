@@ -3,6 +3,8 @@ import 'server-only'
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CortacircuitoAbierto, crearCortacircuito } from '@/lib/shared/cortacircuito'
+import { conReintentoUnico } from '@/lib/shared/reintento'
 import { obtenerAnunciosVisibles } from '@/lib/anuncios/consultas'
 import { resolverLogoComercio } from '@/lib/comercios/logo-comercio'
 import { leerHorariosDeSucursales } from '@/lib/comercios/horario-datos'
@@ -40,7 +42,38 @@ import { prepararPlanes, type PlanPublico } from './planes'
        hasta 60 s en vez de afectar a una sola petición.
    ========================================================================== */
 
-const OPCIONES_CACHE: { revalidate: number; tags: string[] } = { revalidate: 60, tags: ['publico'] }
+/*
+  06/11/2026 · PRUEBA DE CARGA · 60 s → 300 s.
+
+  Con 250 usuarios simultáneos Supabase empezó a devolver 522/525 a los
+  refrescos de esta caché: ~69 peticiones por segundo contra una API que ya
+  rechazaba conexiones, y Vercel registró ~17.000 errores y 2.155 funciones
+  muertas a los 300 s. Con 300 s el refresco baja unas cinco veces.
+
+  DECISIÓN DEL PROPIETARIO (06/11/2026): un cambio del administrador puede
+  tardar HASTA 5 MINUTOS en verse en la fachada (antes, 1). La etiqueta
+  `publico` sigue puesta: `revalidateTag('publico')` en las acciones del admin
+  lo haría inmediato si algún día importa más.
+
+  Tres piezas más lo acompañan, todas probadas aparte en `lib/shared/`:
+    · `fetchConTiempoMaximo`: ninguna lectura espera más de TIEMPO_MAXIMO_LECTURA_MS.
+    · `crearCortacircuito`: tras un fallo, esa lectura no vuelve a llamar a
+      Supabase durante ENFRIAMIENTO_MS y se sigue sirviendo lo último bueno.
+    · `conReintentoUnico`: el reintento espera una pausa aleatoria y se salta
+      si el circuito está abierto.
+*/
+const OPCIONES_CACHE: { revalidate: number; tags: string[] } = { revalidate: 300, tags: ['publico'] }
+
+const TIEMPO_MAXIMO_LECTURA_MS = 5_000
+const ENFRIAMIENTO_MS = 15_000
+
+// Un solo cortacircuito para todas las lecturas de la fachada, una clave por lectura.
+const circuito = crearCortacircuito({ enfriamientoMs: ENFRIAMIENTO_MS })
+
+/** El cliente de servicio de la fachada: igual que el de siempre, con techo de espera. */
+function clienteFachada() {
+  return createAdminClient({ tiempoMaximoMs: TIEMPO_MAXIMO_LECTURA_MS })
+}
 
 /*
   UN FALLO DE LA BASE NO ES «NO HAY DATOS» (02/10/2026).
@@ -69,14 +102,13 @@ function exigir<T>(
 
 async function conRespaldo<T>(leer: () => Promise<T>, respaldo: T, que: string): Promise<T> {
   try {
-    return await leer()
-  } catch {
-    try {
-      return await leer()
-    } catch (e) {
-      console.error(`[publico] ${que}: falló dos veces, se sirve vacío sin cachear`, e)
-      return respaldo
-    }
+    return await conReintentoUnico(leer, {
+      // Con el circuito abierto insistir no sirve: es justo lo que se evita.
+      noReintentar: (e) => e instanceof CortacircuitoAbierto,
+    })
+  } catch (e) {
+    console.error(`[publico] ${que}: no se pudo leer, se sirve vacío sin cachear`, e)
+    return respaldo
   }
 }
 
@@ -218,7 +250,7 @@ export type CatalogoPublico = {
  * que, si las dos lo piden en la misma petición, se consulte una sola vez.
  */
 async function leerCatalogoPublico(): Promise<CatalogoPublico> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
   // Fecha civil 'YYYY-MM-DD' en America/Bogotá: `fecha_inicio` y `fecha_fin` de
   // promociones son fechas civiles, no `timestamptz`. Se comparan como cadenas.
   const hoy = hoyISO()
@@ -374,7 +406,11 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
   }
 }
 
-const catalogoEnCache = unstable_cache(leerCatalogoPublico, ['publico-catalogo'], OPCIONES_CACHE)
+const catalogoEnCache = unstable_cache(
+  () => circuito.ejecutar('catalogo', leerCatalogoPublico),
+  ['publico-catalogo'],
+  OPCIONES_CACHE,
+)
 const cargarCatalogoPublico = cache(() =>
   conRespaldo(
     () => catalogoEnCache(),
@@ -429,7 +465,7 @@ export const obtenerVitrinaPublica = cache(async (): Promise<DatosVitrina> => {
 const TABLA_AUSENTE = new Set(['42P01', 'PGRST205'])
 
 async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
   const { data, error } = await supabase
     .from('publicidad')
     .select('imagen_url, descripcion')
@@ -450,7 +486,7 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
 }
 
 const publicidadEnCache = unstable_cache(
-  leerPublicidadPublica,
+  () => circuito.ejecutar('publicidad', leerPublicidadPublica),
   ['publico-publicidad'],
   OPCIONES_CACHE,
 )
@@ -506,7 +542,7 @@ export type FichaPublica = {
  * permitiría enumerar comercios dados de baja probando ids.
  */
 async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
   const hoy = hoyISO()
 
   const [
@@ -650,7 +686,11 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
 }
 
 // El `id` entra en la clave de caché automáticamente (argumentos de la función).
-const fichaEnCache = unstable_cache(leerFichaPublica, ['publico-ficha'], OPCIONES_CACHE)
+const fichaEnCache = unstable_cache(
+  (id: number) => circuito.ejecutar(`ficha-${id}`, () => leerFichaPublica(id)),
+  ['publico-ficha'],
+  OPCIONES_CACHE,
+)
 export const obtenerFichaPublica = cache((id: number) =>
   conRespaldo(() => fichaEnCache(id), null, `la ficha ${id}`),
 )
@@ -660,7 +700,7 @@ export const obtenerFichaPublica = cache((id: number) =>
  * Solo `id` y la fecha de última edición: nada más se publica ahí.
  */
 export async function obtenerComerciosIndexables(): Promise<{ id: number; actualizado: string }[]> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
   const { data } = await supabase
     .from('comercios')
     .select('id, updated_at')
@@ -682,7 +722,7 @@ export async function obtenerComerciosIndexables(): Promise<{ id: number; actual
  * Solo planes activos y no borrados: uno retirado no se anuncia en la puerta.
  */
 async function leerPlanesPublicos(): Promise<PlanPublico[]> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
   const data = exigir(
     await supabase
       .from('planes_membresia')
@@ -698,7 +738,11 @@ async function leerPlanesPublicos(): Promise<PlanPublico[]> {
   return prepararPlanes((data ?? []).map((p) => ({ ...p, precio: Number(p.precio) })))
 }
 
-const planesEnCache = unstable_cache(leerPlanesPublicos, ['publico-planes'], OPCIONES_CACHE)
+const planesEnCache = unstable_cache(
+  () => circuito.ejecutar('planes', leerPlanesPublicos),
+  ['publico-planes'],
+  OPCIONES_CACHE,
+)
 export const obtenerPlanesPublicos = cache(() =>
   conRespaldo(() => planesEnCache(), [] as PlanPublico[], 'los planes'),
 )
@@ -712,7 +756,7 @@ export const obtenerPlanesPublicos = cache(() =>
  * navegable. Quien llama decide qué ocultar (SPEC §5.2).
  */
 async function leerWhatsappSoporte(): Promise<string | null> {
-  const supabase = createAdminClient()
+  const supabase = clienteFachada()
 
   const resultado = await supabase
     .from('configuracion')
@@ -725,7 +769,11 @@ async function leerWhatsappSoporte(): Promise<string | null> {
   return valor === '' ? null : valor
 }
 
-const whatsappEnCache = unstable_cache(leerWhatsappSoporte, ['publico-whatsapp'], OPCIONES_CACHE)
+const whatsappEnCache = unstable_cache(
+  () => circuito.ejecutar('whatsapp', leerWhatsappSoporte),
+  ['publico-whatsapp'],
+  OPCIONES_CACHE,
+)
 export const obtenerWhatsappSoporte = cache(() =>
   conRespaldo(() => whatsappEnCache(), null as string | null, 'el WhatsApp de soporte'),
 )
@@ -737,10 +785,10 @@ export const obtenerWhatsappSoporte = cache(() =>
 /**
  * Las novedades de la fachada. La consulta es la misma que usa el portal de
  * socios (`obtenerAnunciosVisibles`), pero aquí va con el cliente de servicio
- * y detrás del mismo caché de 60 s que el resto de la fachada.
+ * y detrás del mismo caché (300 s desde el 06/11/2026) que el resto de la fachada.
  */
 const anunciosEnCache = unstable_cache(
-  () => obtenerAnunciosVisibles(createAdminClient(), 'publico'),
+  () => obtenerAnunciosVisibles(clienteFachada(), 'publico'),
   ['publico-anuncios'],
   OPCIONES_CACHE,
 )
