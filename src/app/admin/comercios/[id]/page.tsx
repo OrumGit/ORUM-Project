@@ -24,6 +24,8 @@ import { Paginacion } from '@/components/ui/paginacion'
 import { ResenasAdmin } from './_components/resenas-admin'
 import { obtenerResenasParaAdmin } from '@/lib/resenas/datos'
 import { ReenviarActivacion } from '../../_components/reenviar-activacion'
+import { VisibilidadComercio } from './_components/visibilidad-comercio'
+import { leerVisibilidad, textoVisibilidad } from '@/lib/comercios/visibilidad'
 import { cuentaPendienteDeActivar } from '@/lib/auth/activacion'
 import styles from './ficha.module.css'
 
@@ -76,7 +78,8 @@ export default async function FichaComercioPage({
   const admin = createAdminClient()
   const { data: comercio } = await admin
     .from('comercios')
-    .select('id, perfil_id, nombre, descripcion, logo_url, portada_url, activo, indexable')
+    // `*`: trae `visible_publico`/`visible_miembros` si la migración 20261107120000 está aplicada.
+    .select('*')
     .eq('id', comercioId)
     .is('deleted_at', null)
     .maybeSingle()
@@ -200,6 +203,7 @@ export default async function FichaComercioPage({
   ]
 
   const activas = listaSucursales.filter((s) => s.activo).length
+  const visibilidad = leerVisibilidad(comercio)
 
   return (
     <div className={styles.ficha}>
@@ -213,6 +217,12 @@ export default async function FichaComercioPage({
             <Badge tone={comercio.activo ? 'success' : 'neutral'} size="sm">
               {comercio.activo ? 'Aliado activo' : 'Aliado inactivo'}
             </Badge>
+            {/* Registrado pero aún no del todo a la vista (07/11/2026). */}
+            {comercio.activo && !(visibilidad.publico && visibilidad.miembros) && (
+              <Badge tone={visibilidad.publico || visibilidad.miembros ? 'info' : 'warning'} size="sm">
+                {textoVisibilidad(visibilidad)}
+              </Badge>
+            )}
             <span>
               {[etiquetaCategorias, `${activas} ${activas === 1 ? 'sucursal activa' : 'sucursales activas'}`]
                 .filter(Boolean)
@@ -272,8 +282,9 @@ export default async function FichaComercioPage({
               />
             </section>
 
-            {/* Dos decisiones distintas, cada una con su explicación: mezclarlas
-                lleva a desactivar el acceso creyendo que se retira al aliado. */}
+            {/* Tres decisiones distintas, cada una con su explicación: mezclarlas
+                lleva a desactivar el acceso creyendo que se retira al aliado.
+                «Dónde se ve» (07/11/2026) elige el portal sin retirarlo. */}
             <section className={styles.estados} aria-labelledby="titulo-estado">
               <h2 id="titulo-estado" className={styles.tituloBloque}>
                 Estado
@@ -299,6 +310,13 @@ export default async function FichaComercioPage({
                   </Button>
                 </form>
               </div>
+
+              <VisibilidadComercio
+                comercioId={comercio.id}
+                visible={visibilidad}
+                disponible={'visible_publico' in comercio}
+                aliadoActivo={comercio.activo}
+              />
 
               <div className={styles.estado}>
                 <div className={styles.estadoTextos}>

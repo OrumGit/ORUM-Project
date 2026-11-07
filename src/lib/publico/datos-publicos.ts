@@ -14,6 +14,7 @@ import { formatearBeneficio, formatearBeneficioCorto } from '@/lib/comercios/ben
 import { TOPE_PUBLICIDAD, textoAlternativo } from '@/lib/publicidad/publicidad'
 import { hoyISO } from '@/lib/shared/fecha'
 import { compararNombres, ordenarCategorias, type CategoriaDeComercio } from './directorio'
+import { catalogoPara, faltaColumnaVisibilidad, leerVisibilidad, type Visibilidad } from '@/lib/comercios/visibilidad'
 import { prepararPlanes, type PlanPublico } from './planes'
 
 /* ==========================================================================
@@ -203,6 +204,8 @@ export type ComercioVitrina = {
    * pidiendo otra vez la propia página.
    */
   portadaUrl: string | null
+  /** Dónde se ve: el catálogo es UNO y cada portal se queda con lo suyo (`catalogoPara`). */
+  visible: Visibilidad
 }
 
 /** Una opción de filtro del directorio: una categoría o una ciudad. */
@@ -258,9 +261,9 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
   const [rComercios, rMarcas, rCategorias, rSubcategorias] = await Promise.all([
     supabase
       .from('comercios')
-      .select(
-        'id, nombre, descripcion, logo_url, portada_url, marca_id',
-      )
+      // `*` y no una lista: trae `visible_publico`/`visible_miembros` si la
+      // migración 20261107120000 está aplicada, y no falla si no lo está.
+      .select('*')
       .eq('activo', true)
       .is('deleted_at', null)
       .order('nombre')
@@ -392,6 +395,7 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
       ),
       beneficioDestacado: beneficioPorComercio.get(c.id) ?? null,
       portadaUrl: (c.portada_url ?? '').trim() || null,
+      visible: leerVisibilidad(c),
     }
   })
 
@@ -408,7 +412,8 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
 
 const catalogoEnCache = unstable_cache(
   () => circuito.ejecutar('catalogo', leerCatalogoPublico),
-  ['publico-catalogo'],
+  // v2 (07/11/2026): cada comercio trae `visible`; una copia vieja no lo tenía.
+  ['publico-catalogo-v2'],
   OPCIONES_CACHE,
 )
 const cargarCatalogoPublico = cache(() =>
@@ -424,7 +429,7 @@ const cargarCatalogoPublico = cache(() =>
  * total del club.
  */
 export const obtenerVitrinaPublica = cache(async (): Promise<DatosVitrina> => {
-  const { comercios } = await cargarCatalogoPublico()
+  const { comercios } = catalogoPara(await cargarCatalogoPublico(), 'publico')
 
   /*
     Delante, quien tiene algo que enseñar. Una tarjeta de «destacados» sin
@@ -500,9 +505,17 @@ export const obtenerPublicidadPublica = cache(
     conRespaldo(() => publicidadEnCache(), null, 'la publicidad'),
 )
 
-/** El directorio entero, con sus opciones de filtro. */
+/** El directorio del Portal Público, con sus opciones de filtro. */
 export const obtenerDirectorioPublico = cache(
-  async (): Promise<CatalogoPublico> => cargarCatalogoPublico(),
+  async (): Promise<CatalogoPublico> => catalogoPara(await cargarCatalogoPublico(), 'publico'),
+)
+
+/**
+ * El directorio del Portal de Miembros: el MISMO catálogo (y la misma caché),
+ * con los comercios que el administrador puso a la vista de los socios.
+ */
+export const obtenerDirectorioMiembros = cache(
+  async (): Promise<CatalogoPublico> => catalogoPara(await cargarCatalogoPublico(), 'miembros'),
 )
 
 /* ==========================================================================
@@ -559,9 +572,7 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
   ] = await Promise.all([
     supabase
       .from('comercios')
-      .select(
-        'id, nombre, descripcion, logo_url, portada_url, marca_id, indexable',
-      )
+      .select('*') // con `visible_publico` si la migración 20261107120000 está aplicada
       .eq('id', id)
       .eq('activo', true)
       .is('deleted_at', null)
@@ -612,7 +623,8 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
   const sucursales = exigir(rSucursales, 'las sucursales')
   const ciudades = exigir(rCiudades, 'las ciudades')
 
-  if (!comercio) return null
+  // Oculto para el Portal Público: lo mismo que si no existiera (no se distingue).
+  if (!comercio || !leerVisibilidad(comercio).publico) return null
 
   const nombreCiudad = new Map((ciudades ?? []).map((c) => [c.id, c.nombre]))
   const codigoTipo = new Map((tipos ?? []).map((t) => [t.id, t.codigo]))
@@ -701,14 +713,18 @@ export const obtenerFichaPublica = cache((id: number) =>
  */
 export async function obtenerComerciosIndexables(): Promise<{ id: number; actualizado: string }[]> {
   const supabase = clienteFachada()
-  const { data } = await supabase
-    .from('comercios')
-    .select('id, updated_at')
-    .eq('activo', true)
-    .eq('indexable', true)
-    .is('deleted_at', null)
-    .order('id')
-    .limit(TOPE_DIRECTORIO)
+  const consultar = (conVisibilidad: boolean) => {
+    const q = supabase
+      .from('comercios')
+      .select('id, updated_at')
+      .eq('activo', true)
+      .eq('indexable', true)
+      .is('deleted_at', null)
+    // Un comercio oculto del Portal Público no se anuncia a los buscadores.
+    return (conVisibilidad ? q.eq('visible_publico', true) : q).order('id').limit(TOPE_DIRECTORIO)
+  }
+  const con = await consultar(true)
+  const { data } = faltaColumnaVisibilidad(con.error) ? await consultar(false) : con
   return (data ?? []).map((c) => ({ id: c.id, actualizado: c.updated_at }))
 }
 

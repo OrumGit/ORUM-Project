@@ -1,3 +1,4 @@
+import { faltaColumnaVisibilidad, leerVisibilidad } from '@/lib/comercios/visibilidad'
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { requireMiembroVigente } from '@/lib/miembros/requerir-miembro'
@@ -62,20 +63,36 @@ const cargarComercio = cache(async (id: number): Promise<Hero | null> => {
   // final no saltan RLS.
   const supabase = await createClient()
 
-  const [
-    { data: comercio },
-    { data: marcas },
-    { data: categorias },
-    { data: subcategorias },
-    { data: filasCategoria },
-  ] = await Promise.all([
-    supabase
+  /* Con `visible_miembros` (07/11/2026): un comercio que el administrador
+     ocultó a los socios no tiene ficha para ellos. Sin la migración
+     20261107120000 la columna no existe y se lee sin ella (se ve). */
+  const leerFila = async () => {
+    const con = await supabase
+      .from('comercios')
+      .select('id, nombre, descripcion, marca_id, logo_url, visible_miembros')
+      .eq('id', id)
+      .eq('activo', true)
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (!faltaColumnaVisibilidad(con.error)) return con.data
+    const sin = await supabase
       .from('comercios')
       .select('id, nombre, descripcion, marca_id, logo_url')
       .eq('id', id)
       .eq('activo', true)
       .is('deleted_at', null)
-      .maybeSingle(),
+      .maybeSingle()
+    return sin.data
+  }
+
+  const [
+    comercio,
+    { data: marcas },
+    { data: categorias },
+    { data: subcategorias },
+    { data: filasCategoria },
+  ] = await Promise.all([
+    leerFila(),
     supabase.from('marcas').select('id, nombre, logo_url').limit(100),
     supabase.from('categorias').select('id, nombre').limit(100),
     supabase.from('subcategorias').select('id, subcategoria').limit(300),
@@ -87,7 +104,7 @@ const cargarComercio = cache(async (id: number): Promise<Hero | null> => {
       .limit(3),
   ])
 
-  if (!comercio) return null
+  if (!comercio || !leerVisibilidad(comercio).miembros) return null
 
   const marca = comercio.marca_id
     ? ((marcas ?? []).find((m) => m.id === comercio.marca_id) ?? null)

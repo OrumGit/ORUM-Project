@@ -176,6 +176,13 @@ export type Database = {
           portada_url: string | null
           /** Si la ficha pública sale en buscadores (sitemap, sin noindex). Migración comercios_indexable. */
           indexable: boolean
+          /**
+           * Dónde se ve (encima de `activo`). Opcionales en el tipo porque la migración
+           * 20261107120000 se aplica a mano: hasta entonces `select('*')` no las trae.
+           * Se leen SIEMPRE con `leerVisibilidad` (lib/comercios/visibilidad.ts).
+           */
+          visible_publico?: boolean
+          visible_miembros?: boolean
           activo: boolean
           created_at: Timestamp
           updated_at: Timestamp
@@ -193,6 +200,8 @@ export type Database = {
           logo_url?: string | null
           portada_url?: string | null
           indexable?: boolean
+          visible_publico?: boolean
+          visible_miembros?: boolean
           activo?: boolean
           created_at?: Timestamp
           updated_at?: Timestamp

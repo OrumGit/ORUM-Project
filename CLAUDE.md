@@ -1093,6 +1093,41 @@ prueba falla si dos comparten clave; ningún glifo de `GLIFOS`
 quedan para las que se creen después. **Al crear una categoría o
 subcategoría nueva en la base, añádela a `EXACTOS` con un glifo libre.**
 
+**Un comercio elige DÓNDE SE VE** (07/11/2026: «que pueda ponerlo visible
+en el portal inicial, en el de miembros o en ambos, para registrarlos pero
+tenerlos no visibles hasta que se tengan todos los recursos»). Columnas
+`comercios.visible_publico` / `visible_miembros`, `true` por defecto
+(`supabase/migrations/20261107120000_comercios_visibilidad.sql`, SE APLICA A
+MANO; comprobación en `supabase/verificacion/comercios_visibilidad_verificacion.sql`).
+Van ENCIMA de `activo` (un aliado retirado no sale en ninguna parte) y NO
+tocan la caja ni las políticas RLS: lo filtra la aplicación.
+
+- **Lógica pura y probada** en `lib/comercios/visibilidad.ts`:
+  `leerVisibilidad` (sin la columna = se ve), `catalogoPara(catalogo,
+  portal)` (deja los comercios del portal y quita las ciudades y
+  subcategorías que se quedan sin ninguno), los textos y
+  `faltaColumnaVisibilidad`.
+- **El catálogo sigue siendo UNO** (`leerCatalogoPublico`, con `select('*')`
+  para traer las columnas si existen; clave de caché `publico-catalogo-v2`)
+  y cada portal toma lo suyo: `obtenerVitrinaPublica` y
+  `obtenerDirectorioPublico` → `publico`; **`obtenerDirectorioMiembros`** →
+  `miembros` (el Inicio del socio; el top y los favoritos se cruzan con él).
+  La ficha pública devuelve `null` si `visible_publico` es falso, la del
+  socio también con `visible_miembros`, y el sitemap no anuncia los ocultos
+  del público. **Una pantalla nueva que liste comercios a un portal pasa por
+  `catalogoPara`.**
+- **Se cambia en la ficha del panel** (pestaña Datos, tarjeta «Dónde se ve»,
+  `VisibilidadComercio`): un interruptor por portal que se aplica al
+  tocarlo (`useOptimistic`; `cambiarVisibilidadComercio`, suelta
+  `publico` y el sitemap). La cabecera de la ficha lo dice si no se ve en
+  los dos. **Al CREAR un comercio arranca OCULTO** (los dos interruptores
+  apagados en «Crear comercio»): aún no tiene logotipo, fotos ni
+  promociones.
+- ⚠️ **El código aguanta la base sin la migración**: se ve todo, la tarjeta
+  sale con los interruptores apagados y un aviso, y crear uno que se pidió
+  oculto lo crea visible y lo dice.
+- Vista previa: `/dev/panel-movil?f=visibilidad`.
+
 **El horario de atención es de CADA sucursal** (24/10/2026; la dirección sigue
 siendo opcional, no se hizo obligatoria). Vive en `sucursal_horarios`
 (`supabase/migrations/20261024120000_sucursal_horarios.sql`; comprobación en
@@ -1423,7 +1458,10 @@ paleta:
   Comercios sigue el mismo patrón (`lib/comercios/listado-admin.ts`, puro y
   probado): pestañas Todos / Activos / **Sin promociones** / Inactivos,
   buscador sin tildes, categoría, y en cada fila el logotipo y cuántas
-  sucursales y promociones ACTIVAS tiene. Las hojas de las listas son una
+  sucursales y promociones ACTIVAS tiene, cuántas FOTOS (portada + galería,
+  sin el logotipo; `contarImagenes`) y dónde se ve («Se ve en»: Ambos ·
+  Solo inicial · Solo miembros · Oculto). Desde el 07/11/2026 hay pestaña
+  **Ocultos** (activos que no se ven en NINGÚN portal). Las hojas de las listas son una
   sola, `src/styles/lista-panel.module.css` (antes vivía dentro de
   miembros y Comercios se quedó sin estilo al rehacerla). Usuarios lleva
   pestañas Todos / Administradores / Empleados / Sin acceso (`?ver=`), y la
@@ -2275,6 +2313,13 @@ existe antes. Con Node 20 el instalador falla con `No such built-in module`.
     datos falsos; falta aplicar la migración `20261028120000`, guardar una
     promoción con franjas desde el panel, verla en la ficha del socio y
     cobrarla en la caja dentro y fuera de su franja.
+16. **La visibilidad por portal no se ha probado con sesión real**
+    (07/11/2026). Se miró en `/dev/panel-movil?f=visibilidad` y el
+    formulario de alta con datos falsos; falta aplicar la migración
+    `20261107120000`, ocultar un comercio desde su ficha y comprobar que
+    desaparece de la portada, del directorio y del Inicio del socio (y que
+    su ficha da «no disponible»), y mirar la lista con las columnas nuevas
+    a 1366 y 390 px.
 14. **Los horarios de sucursal no se han probado con sesión real.** El editor
     y la ficha se miraron en `/dev/horarios` (~490 px) con datos falsos; falta
     guardar un horario de verdad desde el panel, verlo en la ficha pública y

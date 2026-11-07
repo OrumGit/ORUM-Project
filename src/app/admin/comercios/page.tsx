@@ -12,7 +12,8 @@ import {
 } from '@/lib/comercios/listado-admin'
 import { leerPagina } from '@/lib/miembros/listado'
 import { cargarFilasCategoriaDeTodos } from '@/lib/comercios/categorias-admin'
-import { Badge } from '@/components/ui/badge'
+import { contarImagenes, leerVisibilidad, textoVisibilidad, textoVisibilidadCorto } from '@/lib/comercios/visibilidad'
+import { Badge, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
 import { DataList, type Column } from '@/components/ui/data-list'
@@ -31,6 +32,12 @@ function Cifra({ n }: { n: number }) {
   return (
     <span className={[styles.cifraFila, n === 0 && styles.cifraCero].filter(Boolean).join(' ')}>{n}</span>
   )
+}
+
+function tonoVisibilidad({ visible: v }: FilaComercio): BadgeTone {
+  if (v.publico && v.miembros) return 'success'
+  if (v.publico || v.miembros) return 'info'
+  return 'warning'
 }
 
 const COLUMNAS: ReadonlyArray<Column<FilaComercio>> = [
@@ -67,6 +74,30 @@ const COLUMNAS: ReadonlyArray<Column<FilaComercio>> = [
     cell: (c) => <Cifra n={c.promociones} />,
   },
   {
+    key: 'imagenes',
+    header: 'Imágenes',
+    numeric: true,
+    width: '110px',
+    // Portada + galería, sin el logotipo (07/11/2026).
+    cell: (c) => <Cifra n={c.imagenes} />,
+  },
+  {
+    key: 'visible',
+    header: 'Se ve en',
+    width: '140px',
+    cell: (c) =>
+      // Un aliado retirado no se ve en ningún sitio: lo dice la columna de al lado.
+      c.activo ? (
+        <span title={textoVisibilidad(c.visible)}>
+          <Badge tone={tonoVisibilidad(c)} size="sm">
+            {textoVisibilidadCorto(c.visible)}
+          </Badge>
+        </span>
+      ) : (
+        <span className={styles.cifraCero}>—</span>
+      ),
+  },
+  {
     key: 'activo',
     header: 'Aliado',
     width: '130px',
@@ -84,6 +115,7 @@ const PESTANAS: { clave: PestanaComercio; etiqueta: string; tono: TonoPestana }[
   { clave: 'todos', etiqueta: 'Todos', tono: 'neutro' },
   { clave: 'activos', etiqueta: 'Activos', tono: 'exito' },
   { clave: 'sin-promociones', etiqueta: 'Sin promociones', tono: 'aviso' },
+  { clave: 'ocultos', etiqueta: 'Ocultos', tono: 'aviso' },
   { clave: 'inactivos', etiqueta: 'Inactivos', tono: 'vacio' },
 ]
 
@@ -95,7 +127,9 @@ type Params = { q?: string; estado?: string; categoria?: string; pagina?: string
   El diseño de la de miembros: pestañas por estado con recuento, buscador,
   categoría y páginas de 25, todo en la URL. Cada fila dice cuántas
   sucursales y promociones ACTIVAS tiene: un aliado sin promociones no le
-  ofrece nada al socio, y por eso tiene pestaña propia.
+  ofrece nada al socio, y por eso tiene pestaña propia. Desde el 07/11/2026
+  también cuántas fotos (sin el logotipo) y en qué portal se ve; «Ocultos»
+  reúne a los registrados que aún no se ven en ninguno.
 */
 export default async function ComerciosPage({ searchParams }: { searchParams: Promise<Params> }) {
   await requireRol('super_admin')
@@ -109,16 +143,20 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
     { data: promociones },
     { data: subcategorias },
     filasCategoria,
+    { data: imagenes },
   ] = await Promise.all([
       admin
         .from('comercios')
-        .select('id, nombre, logo_url, activo')
+        // `*`: trae `visible_publico`/`visible_miembros` si la migración 20261107120000 está aplicada.
+        .select('*')
         .is('deleted_at', null),
       admin.from('categorias').select('id, nombre').order('nombre'),
       admin.from('sucursales').select('comercio_id').eq('activo', true).is('deleted_at', null),
       admin.from('promociones').select('comercio_id').eq('activo', true).is('deleted_at', null),
       admin.from('subcategorias').select('id, subcategoria'),
       cargarFilasCategoriaDeTodos(admin),
+      // Una fila por foto de galería (ocho por comercio como mucho).
+      admin.from('comercio_imagenes').select('comercio_id').limit(5000),
     ])
 
   const contar = (filas: { comercio_id: number }[] | null) => {
@@ -128,6 +166,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
   }
   const nSucursales = contar(sucursales)
   const nPromociones = contar(promociones)
+  const nGaleria = contar(imagenes)
   const nombreCategoria = new Map((categorias ?? []).map((c) => [c.id, c.nombre.trim()]))
   const nombreSubcategoria = new Map((subcategorias ?? []).map((s) => [s.id, s.subcategoria.trim()]))
 
@@ -146,6 +185,8 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
     activo: c.activo,
     sucursales: nSucursales.get(c.id) ?? 0,
     promociones: nPromociones.get(c.id) ?? 0,
+    imagenes: contarImagenes(c.portada_url, nGaleria.get(c.id) ?? 0),
+    visible: leerVisibilidad(c),
   }))
 
   const busqueda = (params.q ?? '').trim()

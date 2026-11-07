@@ -86,6 +86,27 @@ function FormularioComercio({
 
           <CamposCategoria categorias={categorias} />
 
+          {/* Dónde se ve (07/11/2026): un comercio recién creado aún no tiene
+              logotipo, fotos ni promociones, así que arranca OCULTO y el
+              administrador lo muestra cuando esté listo, desde su ficha. */}
+          <fieldset className={styles.grupoDias}>
+            <legend className={styles.grupoDiasTitulo}>¿Dónde se ve?</legend>
+            <p className={styles.grupoDiasAyuda}>
+              Déjalo oculto mientras cargas su logotipo, sus fotos y sus promociones. Podrás
+              mostrarlo después desde su ficha.
+            </p>
+            <Switch
+              name="visible_publico"
+              label="Portal inicial"
+              description="La portada y el directorio que ve cualquier persona."
+            />
+            <Switch
+              name="visible_miembros"
+              label="Portal de miembros"
+              description="El inicio de los socios, donde usan sus beneficios."
+            />
+          </fieldset>
+
           <Switch
             name="indexable"
             defaultChecked
@@ -125,6 +146,8 @@ function Credenciales({
     <>
       <div className={styles.credenciales}>
         <Alert tone="success" title="Comercio creado" />
+
+        {estado.aviso && <Alert tone="warning">{estado.aviso}</Alert>}
 
         <Alert tone="success" title="Correo de activación enviado">
           Se envió un enlace de un solo uso a {estado.email} para que el comercio

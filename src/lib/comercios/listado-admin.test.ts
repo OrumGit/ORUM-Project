@@ -15,6 +15,8 @@ const fila = (f: Partial<FilaComercio>): FilaComercio => ({
   activo: true,
   sucursales: 1,
   promociones: 1,
+  imagenes: 0,
+  visible: { publico: true, miembros: true },
   ...f,
 })
 
@@ -36,6 +38,7 @@ describe('lista de comercios del panel', () => {
       todos: 3,
       activos: 2,
       'sin-promociones': 1,
+      ocultos: 0,
       inactivos: 1,
     })
   })
@@ -66,5 +69,17 @@ describe('lista de comercios del panel', () => {
     const base = { pestana: 'todos' as const, busqueda: '' }
     expect(filtrarComercios(filas, { ...base, categoriaId: 1 })).toHaveLength(0)
     expect(filtrarComercios(filas, { ...base, categoriaId: null })).toHaveLength(1)
+  })
+
+  it('«ocultos»: activos que no se ven en NINGÚN portal', () => {
+    const filas = [
+      fila({ id: 4, visible: { publico: false, miembros: false } }),
+      fila({ id: 5, visible: { publico: false, miembros: true } }),
+      fila({ id: 6, activo: false, visible: { publico: false, miembros: false } }),
+    ]
+    expect(contarPorPestanaComercio(filas).ocultos).toBe(1)
+    expect(leerPestanaComercio('ocultos')).toBe('ocultos')
+    const base = { busqueda: '', categoriaId: null }
+    expect(filtrarComercios(filas, { ...base, pestana: 'ocultos' }).map((f) => f.id)).toEqual([4])
   })
 })

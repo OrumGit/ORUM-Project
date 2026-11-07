@@ -7,6 +7,7 @@
 */
 
 export { FILAS_POR_PAGINA, paginar, paginasVisibles, type Pagina } from '../shared/paginacion'
+import type { Visibilidad } from './visibilidad'
 
 export type FilaComercio = {
   id: number
@@ -20,12 +21,20 @@ export type FilaComercio = {
   sucursales: number
   /** Promociones activas. */
   promociones: number
+  /** Fotos SIN el logotipo: la portada y la galería (07/11/2026). */
+  imagenes: number
+  /** Dónde se ve (07/11/2026). */
+  visible: Visibilidad
 }
 
-/** «Sin promociones»: aliados activos que no ofrecen nada hoy; es lo que hay que perseguir. */
-export type PestanaComercio = 'todos' | 'activos' | 'sin-promociones' | 'inactivos'
+/**
+ * «Sin promociones»: aliados activos que no ofrecen nada hoy; es lo que hay
+ * que perseguir. «Ocultos» (07/11/2026): aliados activos que no se ven en
+ * NINGÚN portal, los registrados que esperan sus recursos.
+ */
+export type PestanaComercio = 'todos' | 'activos' | 'sin-promociones' | 'ocultos' | 'inactivos'
 
-const PESTANAS: readonly PestanaComercio[] = ['todos', 'activos', 'sin-promociones', 'inactivos']
+const PESTANAS: readonly PestanaComercio[] = ['todos', 'activos', 'sin-promociones', 'ocultos', 'inactivos']
 
 export function leerPestanaComercio(valor: string | undefined): PestanaComercio {
   return PESTANAS.includes(valor as PestanaComercio) ? (valor as PestanaComercio) : 'todos'
@@ -37,6 +46,8 @@ export function enPestanaComercio(fila: FilaComercio, pestana: PestanaComercio):
       return fila.activo
     case 'sin-promociones':
       return fila.activo && fila.promociones === 0
+    case 'ocultos':
+      return fila.activo && !fila.visible.publico && !fila.visible.miembros
     case 'inactivos':
       return !fila.activo
     default:
@@ -45,7 +56,13 @@ export function enPestanaComercio(fila: FilaComercio, pestana: PestanaComercio):
 }
 
 export function contarPorPestanaComercio(filas: readonly FilaComercio[]): Record<PestanaComercio, number> {
-  const cuentas: Record<PestanaComercio, number> = { todos: 0, activos: 0, 'sin-promociones': 0, inactivos: 0 }
+  const cuentas: Record<PestanaComercio, number> = {
+    todos: 0,
+    activos: 0,
+    'sin-promociones': 0,
+    ocultos: 0,
+    inactivos: 0,
+  }
   for (const f of filas) for (const p of PESTANAS) if (enPestanaComercio(f, p)) cuentas[p]++
   return cuentas
 }

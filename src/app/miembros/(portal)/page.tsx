@@ -1,5 +1,5 @@
 import { requireMiembroVigente } from '@/lib/miembros/requerir-miembro'
-import { obtenerDirectorioPublico } from '@/lib/publico/datos-publicos'
+import { obtenerDirectorioMiembros } from '@/lib/publico/datos-publicos'
 import { createClient } from '@/lib/supabase/server'
 import { DirectorioComercios } from '@/components/comercios/directorio-comercios'
 import { AvisoNovedad } from '@/components/novedades/aviso-novedad'
@@ -31,8 +31,9 @@ export const metadata = { title: 'Comercios y beneficios · ORUM' }
       `20261029140000_top_comercios.sql`, `leerTopComercios` devuelve `null`
       y el bloque no se pinta.
 
-  Los datos son los del directorio público (`obtenerDirectorioPublico`): la
-  misma lista de comercios activos, con su beneficio destacado. Nada de lo
+  Los datos son los del directorio público, filtrados para el socio
+  (`obtenerDirectorioMiembros`: los comercios activos que el administrador
+  dejó a la vista de los miembros), con su beneficio destacado. Nada de lo
   que se muestra aquí es privado del socio.
 */
 export default async function MiembrosHomePage() {
@@ -43,7 +44,7 @@ export default async function MiembrosHomePage() {
     /* El top se cruza con el catálogo (nombre, logo, categorías), así que
        espera al directorio —que sale de caché—; mientras tanto corren las
        otras dos lecturas. */
-    obtenerDirectorioPublico().then(async (directorio) => ({
+    obtenerDirectorioMiembros().then(async (directorio) => ({
       directorio,
       top: await leerTopComercios(supabase, directorio.comercios),
     })),

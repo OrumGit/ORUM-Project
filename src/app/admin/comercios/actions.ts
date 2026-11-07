@@ -14,6 +14,7 @@ import {
   revisarFilasCategoria,
   type FilaCategoriaComercio,
 } from '@/lib/comercios/categorias-comercio'
+import { faltaColumnaVisibilidad, type Portal } from '@/lib/comercios/visibilidad'
 
 /** Verifica que quien ejecuta la acción sea super_admin. */
 async function exigirSuperAdmin(): Promise<string | null> {
@@ -25,7 +26,12 @@ export type CrearComercioState = {
   error?: string
   ok?: boolean
   email?: string
+  /** Se creó, pero algo no quedó como se pidió (la visibilidad sin su migración). */
+  aviso?: string
 }
+
+const AVISO_SIN_MIGRACION =
+  'Falta aplicar en Supabase la migración 20261107120000_comercios_visibilidad.sql: hasta entonces el comercio se ve en los dos portales.'
 
 /**
  * Lee y valida los campos comunes de un comercio desde el formulario.
@@ -47,7 +53,12 @@ function leerCamposComercio(formData: FormData) {
     formData.getAll('categoria_id').map(String),
     formData.getAll('subcategoria_id').map(String),
   )
-  return { nombre, descripcion, categorias, indexable }
+  // Dónde se ve (07/11/2026): un interruptor por portal, como `indexable`.
+  const visible = {
+    publico: formData.get('visible_publico') === 'on',
+    miembros: formData.get('visible_miembros') === 'on',
+  }
+  return { nombre, descripcion, categorias, indexable, visible }
 }
 
 /**
@@ -142,18 +153,33 @@ export async function crearComercio(
     return { error: mensajeDeError('No se pudo crear el perfil', errPerfil) }
   }
 
-  const { data: comercioNuevo, error: errComercio } = await admin
+  const fila = {
+    perfil_id: userId,
+    nombre: campos.nombre,
+    descripcion: campos.descripcion,
+    indexable: campos.indexable,
+    activo: true,
+  }
+  let { data: comercioNuevo, error: errComercio } = await admin
     .from('comercios')
     .insert({
       updated_by: actorId,
-      perfil_id: userId,
-      nombre: campos.nombre,
-      descripcion: campos.descripcion,
-      indexable: campos.indexable,
-      activo: true,
+      ...fila,
+      visible_publico: campos.visible.publico,
+      visible_miembros: campos.visible.miembros,
     })
     .select('id')
     .single()
+  // Sin la migración de visibilidad: se crea igual, y se avisa si pedía ocultarlo.
+  let aviso: string | undefined
+  if (faltaColumnaVisibilidad(errComercio)) {
+    ;({ data: comercioNuevo, error: errComercio } = await admin
+      .from('comercios')
+      .insert({ updated_by: actorId, ...fila })
+      .select('id')
+      .single())
+    if (!campos.visible.publico || !campos.visible.miembros) aviso = AVISO_SIN_MIGRACION
+  }
   if (errComercio || !comercioNuevo) {
     await revertir()
     return { error: mensajeDeError('No se pudo registrar el comercio', errComercio) }
@@ -183,7 +209,8 @@ export async function crearComercio(
   })
 
   revalidatePath('/admin/comercios')
-  return { ok: true, email }
+  updateTag('publico')
+  return { ok: true, email, aviso }
 }
 
 export type EditarComercioState = { error?: string; ok?: boolean }
@@ -258,6 +285,46 @@ export async function cambiarEstadoComercio(formData: FormData): Promise<void> {
   revalidatePath(`/admin/comercios/${id}`)
   updateTag('publico')
   redirect(`/admin/comercios/${id}`)
+}
+
+export type VisibilidadState = { error?: string }
+
+/**
+ * Muestra u oculta el comercio en UN portal (07/11/2026): `visible_publico`
+ * o `visible_miembros`. No toca `activo` ni la caja. Suelta la caché de la
+ * fachada para que se note al momento, y el sitemap (una ficha oculta del
+ * Portal Público no se anuncia a los buscadores).
+ */
+export async function cambiarVisibilidadComercio(
+  _prev: VisibilidadState,
+  formData: FormData,
+): Promise<VisibilidadState> {
+  const actorId = await exigirSuperAdmin()
+  if (!actorId) return { error: 'No tienes permiso para realizar esta acción.' }
+
+  const id = Number(formData.get('id'))
+  const portal = String(formData.get('portal') ?? '') as Portal
+  const visible = String(formData.get('visible') ?? '') === 'true'
+  if (!Number.isInteger(id) || id < 1) return { error: 'Falta el identificador del comercio.' }
+  if (portal !== 'publico' && portal !== 'miembros') return { error: 'No sabemos en qué portal cambiarlo.' }
+
+  const admin = createAdminClient()
+  const cambio = portal === 'publico' ? { visible_publico: visible } : { visible_miembros: visible }
+  const { error } = await admin
+    .from('comercios')
+    .update({ updated_by: actorId, ...cambio })
+    .eq('id', id)
+    .is('deleted_at', null)
+  if (faltaColumnaVisibilidad(error)) {
+    return { error: 'Falta aplicar en Supabase la migración 20261107120000_comercios_visibilidad.sql.' }
+  }
+  if (error) return { error: mensajeDeError('No se pudo cambiar dónde se ve', error) }
+
+  revalidatePath('/admin/comercios')
+  revalidatePath(`/admin/comercios/${id}`)
+  revalidatePath('/sitemap.xml')
+  updateTag('publico')
+  return {}
 }
 
 /** Activa o desactiva el acceso a la cuenta del comercio (`perfiles.activo`, D2). */

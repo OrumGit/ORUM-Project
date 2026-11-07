@@ -3,6 +3,7 @@ import { FormCard } from '@/components/ui/form-card'
 import { PageHeader } from '@/components/ui/layout'
 import { AnuncioForm } from '@/app/admin/anuncios/_components/anuncio-form'
 import { ResenasAdmin } from '@/app/admin/comercios/[id]/_components/resenas-admin'
+import { VisibilidadComercio } from '@/app/admin/comercios/[id]/_components/visibilidad-comercio'
 import { EditarComercioForm } from '@/app/admin/comercios/[id]/editar/_components/editar-comercio-form'
 import { GestorImagenes } from '@/app/admin/comercios/[id]/imagenes/_components/gestor-imagenes'
 import { PromocionForm } from '@/app/admin/comercios/[id]/promociones/_components/promocion-form'
@@ -76,6 +77,26 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
         }}
         categorias={CATEGORIAS}
       />
+    ),
+  },
+  visibilidad: {
+    titulo: 'Ficha del comercio · Dónde se ve',
+    enPanel: true,
+    contenido: (
+      <div className={ficha.estados}>
+        <VisibilidadComercio
+          comercioId={1}
+          visible={{ publico: false, miembros: true }}
+          disponible
+          aliadoActivo
+        />
+        <VisibilidadComercio
+          comercioId={1}
+          visible={{ publico: true, miembros: true }}
+          disponible={false}
+          aliadoActivo
+        />
+      </div>
     ),
   },
   'comercio-nuevo': { titulo: 'Nuevo comercio', contenido: <ComercioForm categorias={CATEGORIAS} /> },
