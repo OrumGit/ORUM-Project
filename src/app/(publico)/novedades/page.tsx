@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, BadgePercent, Store } from 'lucide-react'
-import { obtenerAnunciosPublicos } from '@/lib/publico/datos-publicos'
+import { obtenerAnunciosPublicos, obtenerWhatsappSoporteEstricto } from '@/lib/publico/datos-publicos'
 import { ListaNovedades } from '@/components/novedades/lista-novedades'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import { HREF_UNETE } from '../_components/anclas'
@@ -13,7 +13,17 @@ export const metadata: Metadata = {
   description: 'Beneficios nuevos y actualizaciones del club.',
 }
 
-export const dynamic = 'force-dynamic'
+/*
+  EL HTML SE GUARDA 5 MINUTOS (08/11/2026; antes `force-dynamic`). Esta página
+  no lee sesión: sale de la capa de datos cacheada (etiqueta `publico`), y las
+  acciones del panel sueltan `updateTag('publico')`, que invalida también este
+  HTML. `revalidate` es un literal a propósito: Next no lo lee de una constante.
+
+  Un fallo de la base no puede quedar guardado: las novedades ya lanzan si la
+  lectura falla, y el pie —que el layout pide con respaldo— se comprueba aquí
+  en estricto (ver `obtenerWhatsappSoporteEstricto`).
+*/
+export const revalidate = 300
 
 /*
   NOVEDADES  ·  rediseño del 21/10/2026 («se ve muy vacío»)
@@ -24,7 +34,8 @@ export const dynamic = 'force-dynamic'
   fachada, no en una columna de 640px.
 */
 export default async function NovedadesPublicas() {
-  const anuncios = await obtenerAnunciosPublicos()
+  // El número no se pinta aquí: se pide solo para que un fallo no se guarde (ver arriba).
+  const [anuncios] = await Promise.all([obtenerAnunciosPublicos(), obtenerWhatsappSoporteEstricto()])
 
   return (
     <div className={estilos.pagina}>

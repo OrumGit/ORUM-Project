@@ -4,7 +4,12 @@ import { FichaComercio } from '@/components/comercios/ficha-comercio'
 import estilos from '@/components/comercios/ficha-comercio.module.css'
 import { Button } from '@/components/ui/button'
 import { WhatsAppButton } from '@/components/ui/whatsapp-button'
-import { obtenerFichaPublica, obtenerWhatsappSoporte } from '@/lib/publico/datos-publicos'
+import {
+  obtenerFichaPublica,
+  obtenerFichaPublicaEstricta,
+  obtenerWhatsappSoporte,
+  obtenerWhatsappSoporteEstricto,
+} from '@/lib/publico/datos-publicos'
 import { detalleComercio } from '@/lib/publico/directorio'
 import { URL_SITIO } from '@/lib/publico/sitio'
 import { MENSAJE_WHATSAPP_PUBLICO } from '@/lib/publico/whatsapp'
@@ -36,7 +41,8 @@ function idOnulo(valor: string): number | null {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const numero = idOnulo(id)
-  const ficha = numero ? await obtenerFichaPublica(numero) : null
+  // Estricta: un fallo de la base no debe guardarse como «Comercio no disponible».
+  const ficha = numero ? await obtenerFichaPublicaEstricta(numero) : null
   /* El mismo título para los tres casos fatales: no se filtra por la pestaña
      lo que la página calla. */
   if (!ficha) {
@@ -92,7 +98,34 @@ function datosEstructurados(ficha: NonNullable<Awaited<ReturnType<typeof obtener
   return JSON.stringify(json).replace(/</g, '\\u003c')
 }
 
-export const dynamic = 'force-dynamic'
+/*
+  EL HTML SE GUARDA 5 MINUTOS (08/11/2026; antes `force-dynamic`).
+
+  Esta página no lee sesión ni nada por petición: la ficha sale de la capa de
+  datos cacheada (etiqueta `publico`), así que renderizarla en cada visita solo
+  gastaba una ejecución de función para llegar al mismo resultado. Las
+  acciones del panel sueltan `updateTag('publico')`, que invalida también este
+  HTML: el tope de 5 minutos solo cuenta si algo se les escapa.
+
+  Un fallo de la base NO puede guardarse. Por eso, fuera del overlay, lee con
+  las variantes ESTRICTAS (lanzan en vez de devolver vacío): «no disponible»
+  solo sale cuando el comercio de verdad no existe. En el overlay —una carga
+  de cliente, que no se guarda como HTML— se mantiene el respaldo de siempre.
+
+  `revalidate` tiene que ser un literal: Next no lo lee de una constante. Es el
+  mismo valor que `OPCIONES_CACHE` en `datos-publicos.ts`.
+*/
+export const revalidate = 300
+
+/*
+  Sin esto Next trata la ruta con parámetro como dinámica pura y no guarda su
+  HTML aunque tenga `revalidate`. Vacía a propósito: nada se genera en el
+  build (no depende de que la base responda entonces) y cada ficha se guarda
+  la primera vez que alguien la pide. `dynamicParams` sigue en `true`.
+*/
+export function generateStaticParams() {
+  return []
+}
 
 export default async function FichaPublicaPage({
   params,
@@ -105,10 +138,11 @@ export default async function FichaPublicaPage({
   const numero = idOnulo(id)
   if (numero === null) notFound()
 
-  const [ficha, soporte] = await Promise.all([
-    obtenerFichaPublica(numero),
-    obtenerWhatsappSoporte(),
-  ])
+  const [ficha, soporte] = await Promise.all(
+    enOverlay
+      ? [obtenerFichaPublica(numero), obtenerWhatsappSoporte()]
+      : [obtenerFichaPublicaEstricta(numero), obtenerWhatsappSoporteEstricto()],
+  )
   if (!ficha) notFound()
 
   const detalle = detalleComercio(ficha.categorias, ficha.ciudades)

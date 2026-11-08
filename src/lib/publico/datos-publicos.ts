@@ -101,12 +101,25 @@ function exigir<T>(
   return resultado.data
 }
 
+/**
+ * La lectura con su reintento único, SIN respaldo: si vuelve a fallar, lanza.
+ *
+ * Es la que usan las páginas cuyo HTML se guarda (`revalidate`, 08/11/2026:
+ * `/novedades` y la ficha de un comercio). Ahí un vacío de respaldo NO se
+ * serviría a una sola petición: quedaría pegado en el HTML hasta 5 minutos
+ * —una ficha «no disponible» que sí existe—. Una página que lanza no se
+ * guarda, y si ya había una buena, Next sigue sirviendo esa.
+ */
+function sinRespaldo<T>(leer: () => Promise<T>): Promise<T> {
+  return conReintentoUnico(leer, {
+    // Con el circuito abierto insistir no sirve: es justo lo que se evita.
+    noReintentar: (e) => e instanceof CortacircuitoAbierto,
+  })
+}
+
 async function conRespaldo<T>(leer: () => Promise<T>, respaldo: T, que: string): Promise<T> {
   try {
-    return await conReintentoUnico(leer, {
-      // Con el circuito abierto insistir no sirve: es justo lo que se evita.
-      noReintentar: (e) => e instanceof CortacircuitoAbierto,
-    })
+    return await sinRespaldo(leer)
   } catch (e) {
     console.error(`[publico] ${que}: no se pudo leer, se sirve vacío sin cachear`, e)
     return respaldo
@@ -706,6 +719,10 @@ const fichaEnCache = unstable_cache(
 export const obtenerFichaPublica = cache((id: number) =>
   conRespaldo(() => fichaEnCache(id), null, `la ficha ${id}`),
 )
+/** Como `obtenerFichaPublica`, pero un fallo de la base LANZA (ver `sinRespaldo`). `null` = no existe. */
+export const obtenerFichaPublicaEstricta = cache((id: number) =>
+  sinRespaldo(() => fichaEnCache(id)),
+)
 
 /**
  * Los comercios cuya ficha puede salir en buscadores, para el sitemap.
@@ -793,6 +810,16 @@ const whatsappEnCache = unstable_cache(
 export const obtenerWhatsappSoporte = cache(() =>
   conRespaldo(() => whatsappEnCache(), null as string | null, 'el WhatsApp de soporte'),
 )
+/**
+ * Como `obtenerWhatsappSoporte`, pero un fallo de la base LANZA (ver `sinRespaldo`).
+ * `null` sigue significando «no hay número configurado».
+ *
+ * El layout público pide el número con respaldo (lo comparten páginas que se
+ * renderizan en cada petición). Las páginas con `revalidate` lo piden TAMBIÉN
+ * en estricto: si la lectura falla, la página falla entera en vez de guardar un
+ * pie sin WhatsApp durante 5 minutos.
+ */
+export const obtenerWhatsappSoporteEstricto = cache(() => sinRespaldo(() => whatsappEnCache()))
 
 /* ==========================================================================
    LAS NOVEDADES PÚBLICAS
