@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { RolCodigo } from '@/lib/supabase/database.types'
@@ -19,9 +20,17 @@ export type PerfilActual = {
  * sesión válida (o el perfil está inactivo / no existe).
  *
  * Se apoya en `supabase.auth.getUser()`, que valida el token contra Supabase
- * (no confía solo en la cookie).
+ * (no confía solo en la cookie). A propósito NO es `getClaims()`: este es el
+ * punto donde se decide el acceso, y `getClaims()` no ve un cierre de sesión
+ * ni un bloqueo hasta que el token caduca.
+ *
+ * Va envuelta en `cache()` de React (08/11/2026): el layout de cada portal y su
+ * página piden el perfil en la misma petición, y cada pedido repetía la
+ * llamada a Auth y las dos consultas (`perfiles`, `roles`). `cache()` solo
+ * deduplica DENTRO de una petición, así que no reutiliza nada entre usuarios
+ * ni entre peticiones: la validación sigue haciéndose en cada una.
  */
-export async function getPerfilActual(): Promise<PerfilActual | null> {
+export const getPerfilActual = cache(async (): Promise<PerfilActual | null> => {
   const supabase = await createClient()
 
   const {
@@ -54,7 +63,7 @@ export async function getPerfilActual(): Promise<PerfilActual | null> {
     rolNombre: rol.nombre,
     activo: perfil.activo,
   }
-}
+})
 
 /**
  * Exige que haya un usuario autenticado, activo y con uno de los roles

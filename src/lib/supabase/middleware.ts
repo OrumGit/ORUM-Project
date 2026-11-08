@@ -30,9 +30,17 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: no ejecutes código entre createServerClient y getUser().
+  // IMPORTANTE: no ejecutes código entre createServerClient y getClaims().
   // Esta llamada refresca el token si ha expirado.
-  await supabase.auth.getUser()
+  //
+  // `getClaims()` y no `getUser()` (08/11/2026): el proxy solo refresca la
+  // sesión, no decide quién entra. `getUser()` es una llamada de red a Auth en
+  // CADA petición —también las públicas con cookie— y Auth tiene 10
+  // conexiones; `getClaims()` valida la firma del token en local (el proyecto
+  // firma con ES256, clave asimétrica). El acceso lo sigue decidiendo
+  // `getPerfilActual` con `getUser()`, que sí consulta a Auth: una sesión
+  // revocada o un usuario bloqueado no pasa por esto.
+  await supabase.auth.getClaims()
 
   return supabaseResponse
 }
