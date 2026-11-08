@@ -43,7 +43,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: 'Comercio no disponible · ORUM', robots: { index: false, follow: false } }
   }
   const titulo = `${ficha.nombre} · Comercio aliado de ORUM`
-  const descripcion = ficha.descripcion ?? undefined
+  /* Sin descripción propia, el layout pondría el texto genérico del sitio en
+     todas las fichas vacías (duplicado). Se arma una con lo que sí se sabe. */
+  const detalle = detalleComercio(ficha.categorias, ficha.ciudades)
+  const descripcion =
+    ficha.descripcion?.trim() ||
+    `${ficha.nombre}${detalle ? `: ${detalle}` : ''}. Comercio aliado de ORUM con beneficios exclusivos para socios.`
   const imagen = ficha.portadaUrl ?? ficha.logoUrl ?? undefined
   return {
     title: titulo,

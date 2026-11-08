@@ -30,7 +30,7 @@ const ORGANIZACION_JSONLD = JSON.stringify({
   '@type': 'Organization',
   name: NOMBRE_SITIO,
   url: URL_SITIO,
-  logo: `${URL_SITIO}/icon.svg`,
+  logo: `${URL_SITIO}/icon.png`,
   description:
     'Club de beneficios por membresía. Una red de valor que conecta personas con los mejores comercios y experiencias locales.',
 }).replace(/</g, '\\u003c')
