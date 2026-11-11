@@ -13,6 +13,8 @@ import { PasswordForm } from '@/app/admin/cuenta/password/_components/password-f
 import { RenovarForm } from '@/app/admin/miembros/[id]/_components/renovar-form'
 import { EditarMiembroForm } from '@/app/admin/miembros/[id]/editar/_components/editar-miembro-form'
 import { RevocarForm } from '@/app/admin/miembros/[id]/revocar/_components/revocar-form'
+import { ComprasMiembro } from '@/app/admin/miembros/[id]/_components/compras-miembro'
+import type { CompraPanel } from '@/lib/miembros/compras-miembro-datos'
 import { MiembroForm } from '@/app/admin/miembros/_components/miembro-form'
 import { CargarRangoForm } from '@/app/admin/miembros/numeros/_components/cargar-rango-form'
 import { PlanForm } from '@/app/admin/planes/_components/plan-form'
@@ -56,6 +58,30 @@ const TIPOS = [
 ]
 const FOTO = '/icons/socio-512.png'
 
+/* Compras inventadas para «Compras en comercios» de la ficha del miembro. */
+const COMPRAS: CompraPanel[] = Array.from({ length: 31 }, (_, i) => {
+  const comercio = [
+    { id: 1, nombre: 'Artesana 43', sede: 'Centro', promo: '10% en toda la carta' },
+    { id: 2, nombre: 'Absurdo Sport Bar', sede: 'Norte', promo: '2x1 en cervezas' },
+    { id: 3, nombre: 'Anthali Spa - Wellness Therapy', sede: 'Principal', promo: '15% en masajes' },
+  ][i % 3]
+  const valorCompra = 40000 + ((i * 17000) % 120000)
+  const ahorro = Math.round(valorCompra * (i % 3 === 2 ? 0.15 : 0.1))
+  return {
+    id: 100 - i,
+    fechaHora: new Date(Date.UTC(2026, 10, 11, 20) - i * 3 * 86400000).toISOString(),
+    comercioId: comercio.id,
+    comercio: comercio.nombre,
+    logoUrl: null,
+    sucursal: comercio.sede,
+    promocion: i % 7 === 6 ? null : comercio.promo,
+    valorCompra,
+    ahorro,
+    valorFinal: valorCompra - ahorro,
+    metodo: i % 4 === 0 ? 'qr' : 'numero',
+  }
+})
+
 const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPanel?: boolean }> = {
   'comercio-datos': {
     titulo: 'Ficha del comercio · Datos',
@@ -76,6 +102,32 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
           correo: 'contacto@absurdo.co',
         }}
         categorias={CATEGORIAS}
+      />
+    ),
+  },
+  compras: {
+    titulo: 'Ficha del miembro · Compras',
+    enPanel: true,
+    contenido: (
+      <ComprasMiembro
+        miembroId={1}
+        nombre="María"
+        rango={{ periodo: 'todo', desde: null, hasta: null }}
+        compras={COMPRAS}
+        pagina={1}
+      />
+    ),
+  },
+  'compras-vacio': {
+    titulo: 'Ficha del miembro · Sin compras',
+    enPanel: true,
+    contenido: (
+      <ComprasMiembro
+        miembroId={1}
+        nombre="María"
+        rango={{ periodo: 'semana', desde: '2026-11-09', hasta: '2026-11-11' }}
+        compras={[]}
+        pagina={1}
       />
     ),
   },

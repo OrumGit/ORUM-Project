@@ -32,7 +32,8 @@ type Props<T> = {
   columns: ReadonlyArray<Column<T>>
   getKey: (item: T) => string | number
   /** Convierte la fila entera en un enlace (con un solo `<a>` real). */
-  rowHref?: (item: T) => string
+  /** La fila abre esta dirección; `undefined` = esa fila no lleva enlace. */
+  rowHref?: (item: T) => string | undefined
   /** Acciones por fila. En escritorio se revelan al pasar por encima. */
   actions?: (item: T) => ReactNode
   /** Mantiene las acciones siempre visibles (útil si son la acción principal). */
@@ -149,6 +150,7 @@ export function DataList<T>({
             >
               {columns.map((col) => {
                 const contenido = col.cell(item)
+                const destino = col.primary ? rowHref?.(item) : undefined
 
                 return (
                   <td
@@ -165,8 +167,8 @@ export function DataList<T>({
                     // etiqueta de esta celda dentro de la tarjeta.
                     data-label={col.header}
                   >
-                    {col.primary && rowHref ? (
-                      <Link href={rowHref(item)} className={styles.enlace}>
+                    {destino ? (
+                      <Link href={destino} className={styles.enlace}>
                         {contenido}
                       </Link>
                     ) : (

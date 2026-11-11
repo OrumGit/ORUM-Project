@@ -635,6 +635,26 @@ desde hoy. Cuándo y por qué quedan en la bitácora (`accion: 'revocacion'`,
 con su pestaña «Revocaciones»), y la ficha lo dice en el estado y en el
 historial («Revocada el … · motivo»). Vista previa: `/dev/revocar`.
 
+**La ficha del miembro enseña sus COMPRAS** (11/11/2026: «cuántas
+compras ha realizado, en qué comercio y toda la información importante de
+la venta; cuánto se ha ahorrado en el mes, semana, año y más filtros, y
+cuánto se ha gastado»). Sección «Compras en comercios»
+(`admin/miembros/[id]/_components/compras-miembro.tsx`), entre los datos y
+el historial de membresías: el periodo en `Pestanas` (Todo · Esta semana
+—desde el LUNES de Bogotá— · Este mes · Últimos 30 días · Este año) y
+«Ver entre fechas» (`?desde=&hasta=`); cuatro cifras —Compras (en N
+comercios) · Gastó (`valor_final`) · Se ahorró (`valor_descuento`, con su
+% de lo que habría pagado) · Sin ORUM habría pagado (`valor_compra`)—;
+«Dónde compra» (un renglón por comercio, enlaza a su ficha) y «Todas las
+compras» de a 25 (fecha y hora, comercio y sede con cómo lo encontró la
+caja, beneficio, ahorro, y lo pagado con el precio debajo). La tabla tiene
+CINCO columnas a propósito: con siete se cortaban a 1024 px con la barra
+lateral. Lógica pura y probada en `lib/miembros/compras-miembro.ts`
+(`leerPeriodoCompras`, `resumirCompras`, `comprasPorComercio`); lectura en
+`compras-miembro-datos.ts` (clave de servicio, por páginas de 1000, también
+las compras de comercios ya retirados). Las cifras, el ranking y la tabla
+salen de las MISMAS filas. Vista previa: `/dev/panel-movil?f=compras`.
+
 **Los planes ya no se crean ni se retiran** (29/10/2026: «quitar la
 funcionalidad de añadir o quitar planes de membresía»). `/admin/planes`
 solo los lista y edita su DESCRIPCIÓN (07/11/2026: «al administrador

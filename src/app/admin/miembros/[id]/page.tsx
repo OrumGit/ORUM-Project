@@ -15,6 +15,10 @@ import { EmptyState } from '@/components/ui/feedback'
 import { PageHeader, Section, Stack } from '@/components/ui/layout'
 import { ReenviarActivacion } from '../../_components/reenviar-activacion'
 import { cuentaPendienteDeActivar } from '@/lib/auth/activacion'
+import { leerPeriodoCompras } from '@/lib/miembros/compras-miembro'
+import { cargarComprasMiembro } from '@/lib/miembros/compras-miembro-datos'
+import { leerPagina } from '@/lib/miembros/listado'
+import { ComprasMiembro } from './_components/compras-miembro'
 import styles from './ficha.module.css'
 
 export const metadata = { title: 'Ficha de miembro · ORUM' }
@@ -100,12 +104,16 @@ function formatearPrecio(valor: number): string {
 
 export default async function FichaMiembroPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  /** El periodo y la página de «Compras en comercios» (11/11/2026). */
+  searchParams: Promise<{ periodo?: string; desde?: string; hasta?: string; pagina?: string }>
 }) {
   const actor = await requireRol('super_admin', 'empleado')
-  const { id } = await params
+  const [{ id }, consulta] = await Promise.all([params, searchParams])
   const miembroId = Number(id)
+  const rangoCompras = leerPeriodoCompras(consulta, hoyISO())
 
   const admin = createAdminClient()
   const { data: miembro } = await admin
@@ -124,7 +132,7 @@ export default async function FichaMiembroPage({
     pedía en cada carga y se tiraba. La de planes alimentaba el formulario de
     renovación incrustado, que ahora es un overlay con su propia consulta.
   */
-  const [{ data: membresias }, { data: ciudad }, { data: eventos }] = await Promise.all([
+  const [{ data: membresias }, { data: ciudad }, { data: eventos }, compras] = await Promise.all([
     admin
       .from('membresias')
       .select('id, tipo, estado, fecha_inicio, fecha_fin, precio_pagado, es_cortesia, plan_id')
@@ -140,6 +148,7 @@ export default async function FichaMiembroPage({
       .eq('entidad_id', miembroId)
       .order('fecha_hora', { ascending: false })
       .limit(50),
+    cargarComprasMiembro(miembroId, rangoCompras),
   ])
 
   // Los planes activos no bastan para nombrar el historial: una membresía
@@ -326,6 +335,15 @@ export default async function FichaMiembroPage({
             </div>
           </Card>
         </Section>
+
+        {/* Cuántas compras, dónde, cuánto gastó y cuánto se ahorró (11/11/2026). */}
+        <ComprasMiembro
+          miembroId={miembro.id}
+          nombre={miembro.nombres}
+          rango={rangoCompras}
+          compras={compras}
+          pagina={leerPagina(consulta.pagina)}
+        />
 
         <Section title="Historial de membresías">
           <Card padding={historial.length === 0 ? 'none' : 'lg'}>

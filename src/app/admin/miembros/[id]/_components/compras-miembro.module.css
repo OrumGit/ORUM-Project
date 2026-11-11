@@ -1,0 +1,127 @@
+/* ==========================================================================
+   LAS COMPRAS DEL MIEMBRO  ·  en su ficha del panel
+   ========================================================================== */
+
+/* La sección es el ancla de la paginación y del rango de fechas: llega
+   debajo de la barra pegada de arriba, no detrás de ella. */
+.ancla {
+  scroll-margin-top: calc(var(--space-10) + var(--space-6));
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.rango {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.campo {
+  min-width: 150px;
+}
+
+.etiqueta {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--t-caption-size);
+  font-weight: 600;
+  letter-spacing: var(--t-caption-tracking);
+  color: var(--text-3);
+}
+
+.periodo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Los montos se comparan hacia abajo: cifras tabulares, sin partirse. */
+.monto {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Lo ahorrado en el verde de «bien», siempre con su columna que lo nombra
+   («Descuento», «Se ahorró»): el color no va solo. */
+.ahorro {
+  color: var(--success);
+}
+
+.fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.apagado {
+  color: var(--text-2);
+}
+
+/* Un dato con su aclaración debajo (el día y la hora; lo pagado y el precio). */
+.dosLineas {
+  display: inline-flex;
+  flex-direction: column;
+  gap: calc(var(--space-1) / 2);
+}
+
+.linea2 {
+  font-size: var(--t-caption-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* El comercio de una fila: su nombre y, debajo, la sede o la última compra. */
+.nombreComercio {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.linea2Libre {
+  font-size: var(--t-caption-size);
+  color: var(--text-2);
+}
+
+/* Estrecho: los dos campos de fecha se reparten la fila. */
+@container contenido (max-width: 560px) {
+  .rango {
+    flex: 1 1 100%;
+  }
+
+  .campo {
+    flex: 1 1 130px;
+    min-width: 0;
+  }
+}
