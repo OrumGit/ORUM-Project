@@ -7,6 +7,7 @@ import {
   agruparMembresiasPorEmpleado,
   agruparVentasPorComercio,
   agruparVentasPorMiembroYComercio,
+  POR_PAGINA_METRICAS,
   type ResumenComercio,
   type ResumenEmpleado,
   type ResumenUsoMiembro,
@@ -20,6 +21,10 @@ import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { Input } from '@/components/ui/input'
 import { Grid, PageHeader, Section, Stack } from '@/components/ui/layout'
+import { Paginacion } from '@/components/ui/paginacion'
+import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
+import { paginar } from '@/lib/shared/paginacion'
+import { leerPagina } from '@/lib/miembros/listado'
 import styles from './metricas.module.css'
 
 export const metadata = { title: 'Métricas · ORUM' }
@@ -89,27 +94,38 @@ const COL_USO: ReadonlyArray<Column<ResumenUsoMiembro>> = [
   { key: 'veces', header: 'Veces usada', numeric: true, width: '140px', cell: (r) => r.veces },
 ]
 
+/** La página de cada tabla vive en la URL, cada una con su nombre corto. */
+type Params = { desde?: string; hasta?: string; pe?: string; pc?: string; pu?: string }
+
 export default async function MetricasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ desde?: string; hasta?: string }>
+  searchParams: Promise<Params>
 }) {
   await requireRol('super_admin')
-  const { desde: desdeParam, hasta: hastaParam } = await searchParams
+  const params = await searchParams
+  const { desde: desdeParam, hasta: hastaParam } = params
   const defecto = rangoUltimosDias(30)
   const desde = desdeParam || defecto.desde
   const hasta = hastaParam || defecto.hasta
 
   const admin = createAdminClient()
 
+  /*
+    RENDIMIENTO (11/11/2026). Las membresías y las ventas del periodo se
+    leen ENTERAS por lotes de 1000 (`leerEnPaginas`): PostgREST corta cada
+    respuesta en 1000 filas en silencio, y con un club grande las cifras, la
+    gráfica y los rankings habrían salido cortos sin avisar. Y ya no se pide
+    la tabla ENTERA de miembros para nombrar «Uso de la membresía»: solo los
+    10 de la página que se ve, más abajo.
+  */
   const [
     { count: miembrosNuevosCount },
-    { data: membresiasVendidas },
+    membresiasVendidas,
     { data: empleados },
-    { data: ventas },
+    ventas,
     { data: sucursales },
     { data: comercios },
-    { data: miembros },
   ] = await Promise.all([
     admin
       .from('miembros')
@@ -124,30 +140,66 @@ export default async function MetricasPage({
       */
       .gte('fecha_registro', inicioDiaBogota(desde))
       .lte('fecha_registro', finDiaBogota(hasta)),
-    admin
-      .from('membresias')
-      .select('vendido_por, precio_pagado, es_cortesia')
-      .gte('fecha_inicio', desde)
-      .lte('fecha_inicio', hasta),
+    leerEnPaginas((inicio, fin) =>
+      admin
+        .from('membresias')
+        .select('vendido_por, precio_pagado, es_cortesia')
+        .gte('fecha_inicio', desde)
+        .lte('fecha_inicio', hasta)
+        .order('id', { ascending: true })
+        .range(inicio, fin),
+    ),
     admin.from('empleados').select('id, nombres, apellidos').is('deleted_at', null),
-    admin
-      .from('ventas')
-      .select('sucursal_id, miembro_id, valor_final, valor_descuento, fecha_hora')
-      .gte('fecha_hora', inicioDiaBogota(desde))
-      .lte('fecha_hora', finDiaBogota(hasta)),
+    leerEnPaginas((inicio, fin) =>
+      admin
+        .from('ventas')
+        .select('sucursal_id, miembro_id, valor_final, valor_descuento, fecha_hora')
+        .gte('fecha_hora', inicioDiaBogota(desde))
+        .lte('fecha_hora', finDiaBogota(hasta))
+        .order('id', { ascending: true })
+        .range(inicio, fin),
+    ),
     admin.from('sucursales').select('id, comercio_id'),
     admin.from('comercios').select('id, nombre'),
-    admin.from('miembros').select('id, nombres, apellidos').is('deleted_at', null),
   ])
 
-  const porEmpleado = agruparMembresiasPorEmpleado(membresiasVendidas ?? [], empleados ?? [])
-  const porComercio = agruparVentasPorComercio(ventas ?? [], sucursales ?? [], comercios ?? [])
-  const porMiembroComercio = agruparVentasPorMiembroYComercio(
-    ventas ?? [],
-    sucursales ?? [],
-    comercios ?? [],
-    miembros ?? [],
+  const porEmpleado = agruparMembresiasPorEmpleado(membresiasVendidas, empleados ?? [])
+  const porComercio = agruparVentasPorComercio(ventas, sucursales ?? [], comercios ?? [])
+
+  /* Las tres tablas, de a 10 y cada una con su página en la URL. */
+  const paginaEmpleados = paginar(porEmpleado, leerPagina(params.pe), POR_PAGINA_METRICAS)
+  const paginaComercios = paginar(porComercio, leerPagina(params.pc), POR_PAGINA_METRICAS)
+  const paginaUsoSinNombres = paginar(
+    agruparVentasPorMiembroYComercio(ventas, sucursales ?? [], comercios ?? [], []),
+    leerPagina(params.pu),
+    POR_PAGINA_METRICAS,
   )
+  // Los nombres, solo de los miembros de la página que se ve.
+  const idsUso = [...new Set(paginaUsoSinNombres.filas.map((r) => r.miembroId))]
+  const { data: miembrosUso } = idsUso.length
+    ? await admin.from('miembros').select('id, nombres, apellidos').in('id', idsUso)
+    : { data: [] as { id: number; nombres: string; apellidos: string }[] }
+  const nombreMiembro = new Map(
+    (miembrosUso ?? []).map((m) => [m.id, `${m.nombres} ${m.apellidos}`.trim()]),
+  )
+  const paginaUso = {
+    ...paginaUsoSinNombres,
+    filas: paginaUsoSinNombres.filas.map((r) => ({
+      ...r,
+      miembroNombre: nombreMiembro.get(r.miembroId) ?? r.miembroNombre,
+    })),
+  }
+
+  /** La dirección de una página de una tabla: conserva el periodo y las otras dos. */
+  const hrefPagina = (tabla: 'pe' | 'pc' | 'pu', ancla: string) => (n: number) => {
+    const p = new URLSearchParams({ desde, hasta })
+    const actuales = { pe: paginaEmpleados.pagina, pc: paginaComercios.pagina, pu: paginaUso.pagina }
+    for (const clave of ['pe', 'pc', 'pu'] as const) {
+      const valor = clave === tabla ? n : actuales[clave]
+      if (valor > 1) p.set(clave, String(valor))
+    }
+    return `/admin/metricas?${p.toString()}#${ancla}`
+  }
 
   /*
     Los totales se derivan de lo ya agrupado en lugar de pedir otra consulta:
@@ -163,7 +215,7 @@ export default async function MetricasPage({
     como la vista exacta: las ventas en el tiempo, quién vendió más
     membresías y qué comercios vendieron más.
   */
-  const serie = serieVentas(ventas ?? [], desde, hasta)
+  const serie = serieVentas(ventas, desde, hasta)
   const maxVentas = Math.max(...serie.puntos.map((p) => p.cantidad), 0)
   const ventasTexto = (n: number) => (n === 1 ? '1 venta' : `${n.toLocaleString('es-CO')} ventas`)
   const barrasEmpleados = primerosYOtros(
@@ -311,10 +363,11 @@ export default async function MetricasPage({
           </Section>
         </Grid>
 
+        <div id="por-empleado" className={styles.ancla}>
         <Section title="Membresías vendidas por empleado">
           <DataList
             caption="Membresías vendidas por empleado en el periodo"
-            items={porEmpleado}
+            items={paginaEmpleados.filas}
             columns={COL_EMPLEADO}
             getKey={(r) => r.empleadoId ?? 'super_admin'}
             empty={
@@ -325,12 +378,17 @@ export default async function MetricasPage({
               />
             }
           />
+          {paginaEmpleados.total > 0 && (
+            <Paginacion {...paginaEmpleados} nombre="empleados" href={hrefPagina('pe', 'por-empleado')} />
+          )}
         </Section>
+        </div>
 
+        <div id="por-comercio" className={styles.ancla}>
         <Section title="Ventas por comercio">
           <DataList
             caption="Ventas registradas por comercio aliado en el periodo"
-            items={porComercio}
+            items={paginaComercios.filas}
             columns={COL_COMERCIO}
             getKey={(r) => r.comercioId}
             rowHref={(r) =>
@@ -344,12 +402,17 @@ export default async function MetricasPage({
               />
             }
           />
+          {paginaComercios.total > 0 && (
+            <Paginacion {...paginaComercios} nombre="comercios" href={hrefPagina('pc', 'por-comercio')} />
+          )}
         </Section>
+        </div>
 
+        <div id="uso" className={styles.ancla}>
         <Section title="Uso de la membresía">
           <DataList
-            caption="Veces que cada miembro usó su membresía en cada comercio (20 primeros)"
-            items={porMiembroComercio}
+            caption="Veces que cada miembro usó su membresía en cada comercio"
+            items={paginaUso.filas}
             columns={COL_USO}
             getKey={(r) => `${r.miembroId}-${r.comercioId}`}
             empty={
@@ -360,7 +423,15 @@ export default async function MetricasPage({
               />
             }
           />
+          {paginaUso.total > 0 && (
+            <Paginacion
+              {...paginaUso}
+              nombre={paginaUso.total === 1 ? 'combinación miembro y comercio' : 'combinaciones miembro y comercio'}
+              href={hrefPagina('pu', 'uso')}
+            />
+          )}
         </Section>
+        </div>
       </Stack>
     </>
   )

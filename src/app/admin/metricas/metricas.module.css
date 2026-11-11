@@ -59,3 +59,9 @@
   font-size: var(--t-footnote-size);
   color: var(--text-2);
 }
+
+/* Cada tabla es el ancla de su paginación: al pasar de página se llega a
+   ella, debajo de la barra pegada de arriba, no al principio de Métricas. */
+.ancla {
+  scroll-margin-top: calc(var(--space-10) + var(--space-6));
+}

@@ -12,6 +12,9 @@ import { EmptyState } from '@/components/ui/feedback'
 import { Input } from '@/components/ui/input'
 import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { PageHeader } from '@/components/ui/layout'
+import { Paginacion } from '@/components/ui/paginacion'
+import { leerPagina } from '@/lib/miembros/listado'
+import { rangoDePagina } from '@/lib/shared/paginacion'
 import styles from './bitacora.module.css'
 
 export const metadata = { title: 'Bitácora · ORUM' }
@@ -140,10 +143,10 @@ const ACCIONES: { valor: string; etiqueta: string; tono?: TonoPestana }[] = [
 export default async function BitacoraPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; desde?: string; hasta?: string; accion?: string }>
+  searchParams: Promise<{ q?: string; desde?: string; hasta?: string; accion?: string; pagina?: string }>
 }) {
   await requireRol('super_admin')
-  const { q, desde, hasta, accion } = await searchParams
+  const { q, desde, hasta, accion, pagina: paginaParam } = await searchParams
   const busqueda = (q ?? '').trim()
   const hayFiltros = Boolean(busqueda || desde || hasta || accion)
 
@@ -167,26 +170,57 @@ export default async function BitacoraPage({
     miembroIds = (miembrosCoincidentes ?? []).map((m) => m.id)
   }
 
-  let query = admin
-    .from('bitacora_actividad')
-    .select('id, actor_id, entidad_id, accion, datos_anteriores, datos_nuevos, fecha_hora')
-    .eq('entidad', 'miembro')
-    .order('fecha_hora', { ascending: false })
-    .limit(200)
-
-  if (miembroIds) query = query.in('entidad_id', miembroIds.length > 0 ? miembroIds : [-1])
   /*
-    Offset explícito de Bogotá, no una cadena suelta: `fecha_hora` es
-    timestamptz y Postgres leería `'2026-08-12 23:59:59'` en la zona de la
-    sesión (UTC). Con Bogotá cinco horas por detrás, todo lo ocurrido después
-    de las 7pm caía en el día siguiente en UTC y se salía del filtro — el
-    mismo fallo que backend encontró en métricas contra la base real.
+    POR PÁGINAS DE 25 (11/11/2026, revisión de rendimiento). Antes se
+    pintaban hasta 200 eventos de una vez y, pasado ese tope, lo anterior no
+    se podía ver. Ahora la base devuelve SOLO la página pedida (`.range`) y
+    cuenta el total (`count: 'exact'`), así que se llega a cualquier evento.
   */
-  if (desde) query = query.gte('fecha_hora', inicioDiaBogota(desde))
-  if (hasta) query = query.lte('fecha_hora', finDiaBogota(hasta))
-  if (accion) query = query.eq('accion', accion)
+  const consultar = (inicio: number, fin: number) => {
+    let query = admin
+      .from('bitacora_actividad')
+      .select('id, actor_id, entidad_id, accion, datos_anteriores, datos_nuevos, fecha_hora', {
+        count: 'exact',
+      })
+      .eq('entidad', 'miembro')
 
-  const { data: eventos } = await query
+    if (miembroIds) query = query.in('entidad_id', miembroIds.length > 0 ? miembroIds : [-1])
+    /*
+      Offset explícito de Bogotá, no una cadena suelta: `fecha_hora` es
+      timestamptz y Postgres leería `'2026-08-12 23:59:59'` en la zona de la
+      sesión (UTC). Con Bogotá cinco horas por detrás, todo lo ocurrido después
+      de las 7pm caía en el día siguiente en UTC y se salía del filtro — el
+      mismo fallo que backend encontró en métricas contra la base real.
+    */
+    if (desde) query = query.gte('fecha_hora', inicioDiaBogota(desde))
+    if (hasta) query = query.lte('fecha_hora', finDiaBogota(hasta))
+    if (accion) query = query.eq('accion', accion)
+
+    return query
+      .order('fecha_hora', { ascending: false })
+      // Desempate: dos eventos del mismo instante no bailan entre páginas.
+      .order('id', { ascending: false })
+      .range(inicio, fin)
+  }
+
+  const pedida = leerPagina(paginaParam)
+  const primera = rangoDePagina(Number.MAX_SAFE_INTEGER, pedida)
+  let respuesta = await consultar(primera.inicio, primera.fin)
+  const pagina = rangoDePagina(respuesta.count ?? 0, pedida)
+  // Una página pasada del final (la URL de ayer) se lleva a la última.
+  if (pagina.pagina !== pedida && pagina.total > 0) respuesta = await consultar(pagina.inicio, pagina.fin)
+  const eventos = respuesta.data
+
+  const hrefPagina = (n: number) => {
+    const p = new URLSearchParams()
+    if (busqueda) p.set('q', busqueda)
+    if (desde) p.set('desde', desde)
+    if (hasta) p.set('hasta', hasta)
+    if (accion) p.set('accion', accion)
+    if (n > 1) p.set('pagina', String(n))
+    const qs = p.toString()
+    return qs ? `/admin/bitacora?${qs}` : '/admin/bitacora'
+  }
 
   const idsMiembros = Array.from(
     new Set(
@@ -248,7 +282,7 @@ export default async function BitacoraPage({
     <>
       <PageHeader
         title="Bitácora de actividad"
-        description="Quién hizo qué y cuándo sobre los miembros. Se muestran los 200 eventos más recientes que cumplan los filtros."
+        description="Quién hizo qué y cuándo sobre los miembros, del más reciente al más antiguo."
       />
 
       {/*
@@ -316,13 +350,6 @@ export default async function BitacoraPage({
         </div>
       </form>
 
-      {filas.length > 0 && (
-        <p className={styles.resumen}>
-          {filas.length} {filas.length === 1 ? 'evento' : 'eventos'}
-          {filas.length === 200 && ' (límite alcanzado: acota el rango de fechas)'}
-        </p>
-      )}
-
       <ContenidoPestana etiqueta="Filtrar por acción" clave={accion ?? ''}>
         <DataList
           caption="Eventos registrados sobre miembros"
@@ -350,6 +377,9 @@ export default async function BitacoraPage({
             )
           }
         />
+        {pagina.total > 0 && (
+          <Paginacion {...pagina} nombre={pagina.total === 1 ? 'evento' : 'eventos'} href={hrefPagina} />
+        )}
       </ContenidoPestana>
     </>
   )

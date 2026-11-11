@@ -52,12 +52,6 @@
   gap: var(--space-2);
 }
 
-.resumen {
-  margin-bottom: var(--space-4);
-  font-size: var(--t-footnote-size);
-  color: var(--text-2);
-}
-
 /*
   La fecha es el eje de lectura de un registro: se fija en tabulares para que
   los dígitos queden en columna y el ojo baje en línea recta.

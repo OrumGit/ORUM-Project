@@ -2,7 +2,7 @@ import { BarChart3 } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { inicioDiaBogota, finDiaBogota } from '@/lib/shared/fecha'
 import {
-  LIMITE_VENTAS_DETALLE,
+  POR_PAGINA_METRICAS,
   detallarVentas,
   totalesVentas,
   type DetalleVenta,
@@ -11,6 +11,9 @@ import { Cifra } from '@/components/ui/cifra'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { Grid } from '@/components/ui/layout'
+import { Paginacion } from '@/components/ui/paginacion'
+import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
+import { rangoDePagina } from '@/lib/shared/paginacion'
 import styles from './detalle-ventas-comercio.module.css'
 
 /** Pesos colombianos sin decimales: aquí nadie cobra centavos. */
@@ -78,11 +81,16 @@ const COLUMNAS: ReadonlyArray<Column<DetalleVenta>> = [
  * Ventas de un comercio en un periodo. Lo comparten la página real y su gemela
  * interceptada bajo `@modal`, así que el título y el contenedor los pone quien
  * lo usa. Devuelve `null` si el comercio no existe.
+ *
+ * De a 10 (11/11/2026). Los totales se leen ENTEROS por lotes
+ * (`leerEnPaginas`: antes una sola consulta se cortaba en 1000 filas y la
+ * cifra salía corta) y la tabla pide a la base SOLO su página (`.range`).
  */
 export async function cargarDetalleVentasComercio(
   comercioId: number,
   desde: string,
   hasta: string,
+  paginaPedida = 1,
 ) {
   const admin = createAdminClient()
 
@@ -95,9 +103,25 @@ export async function cargarDetalleVentasComercio(
 
   const sucursalIds = (sucursales ?? []).map((s) => s.id)
 
-  const [{ data: ultimas }, { data: importes }] = sucursalIds.length
-    ? await Promise.all([
+  // Totales de TODO el periodo, no solo de la página visible.
+  const importes = sucursalIds.length
+    ? await leerEnPaginas((inicio, fin) =>
         admin
+          .from('ventas')
+          .select('valor_final, valor_descuento')
+          .in('sucursal_id', sucursalIds)
+          .gte('fecha_hora', inicioDiaBogota(desde))
+          .lte('fecha_hora', finDiaBogota(hasta))
+          .order('id', { ascending: true })
+          .range(inicio, fin),
+      )
+    : []
+  const totales = totalesVentas(importes)
+  const pagina = rangoDePagina(totales.cantidad, paginaPedida, POR_PAGINA_METRICAS)
+
+  const { data: ultimas } =
+    sucursalIds.length && totales.cantidad > 0
+      ? await admin
           .from('ventas')
           .select(
             'id, miembro_id, sucursal_id, promocion_id, valor_compra, valor_descuento, valor_final, fecha_hora',
@@ -106,16 +130,10 @@ export async function cargarDetalleVentasComercio(
           .gte('fecha_hora', inicioDiaBogota(desde))
           .lte('fecha_hora', finDiaBogota(hasta))
           .order('fecha_hora', { ascending: false })
-          .limit(LIMITE_VENTAS_DETALLE),
-        // Totales de TODO el periodo, no solo de las filas visibles.
-        admin
-          .from('ventas')
-          .select('valor_final, valor_descuento')
-          .in('sucursal_id', sucursalIds)
-          .gte('fecha_hora', inicioDiaBogota(desde))
-          .lte('fecha_hora', finDiaBogota(hasta)),
-      ])
-    : [{ data: [] }, { data: [] }]
+          // Desempate: dos ventas del mismo instante no bailan entre páginas.
+          .order('id', { ascending: false })
+          .range(pagina.inicio, pagina.fin)
+      : { data: [] }
 
   const filas = ultimas ?? []
   const miembroIds = [...new Set(filas.map((v) => v.miembro_id))]
@@ -136,7 +154,8 @@ export async function cargarDetalleVentasComercio(
     comercio,
     desde,
     hasta,
-    totales: totalesVentas(importes ?? []),
+    totales,
+    pagina,
     ventas: detallarVentas(filas, sucursales ?? [], miembros ?? [], promociones ?? []),
   }
 }
@@ -146,8 +165,8 @@ export type DetalleVentasComercioDatos = NonNullable<
 >
 
 export function DetalleVentasComercio({ datos }: { datos: DetalleVentasComercioDatos }) {
-  const { totales, ventas, desde, hasta } = datos
-  const hayMas = totales.cantidad > ventas.length
+  const { totales, ventas, desde, hasta, pagina, comercio } = datos
+  const base = `/admin/metricas/comercio/${comercio.id}?desde=${desde}&hasta=${hasta}`
 
   return (
     <>
@@ -162,7 +181,7 @@ export function DetalleVentasComercio({ datos }: { datos: DetalleVentasComercioD
       </Grid>
 
       <DataList
-        caption={`Ventas registradas por ${datos.comercio.nombre} en el periodo`}
+        caption={`Ventas registradas por ${comercio.nombre} en el periodo`}
         items={ventas}
         columns={COLUMNAS}
         getKey={(r) => r.id}
@@ -175,10 +194,12 @@ export function DetalleVentasComercio({ datos }: { datos: DetalleVentasComercioD
         }
       />
 
-      {hayMas && (
-        <p className={styles.aviso}>
-          Se muestran las {ventas.length} ventas más recientes de {totales.cantidad.toLocaleString('es-CO')}.
-        </p>
+      {totales.cantidad > 0 && (
+        <Paginacion
+          {...pagina}
+          nombre={totales.cantidad === 1 ? 'venta' : 'ventas'}
+          href={(n) => (n > 1 ? `${base}&pagina=${n}` : base)}
+        />
       )}
     </>
   )

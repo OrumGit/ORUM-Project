@@ -1547,6 +1547,9 @@ paleta:
   con «N reseñas por revisar», las tres más recientes (estrellas, comercio,
   el mensaje en una línea) y «Revisar» (a `?ver=por_revisar`). Solo sale
   si hay alguna; el icono se balancea una vez al entrar.
+- **Métricas pagina sus tablas de a 10** y lee el periodo entero por
+  lotes (11/11/2026): ver «Ninguna consulta pasa de 1000 filas» en
+  Arquitectura.
 - **Métricas tiene gráficas** (29/10/2026: «gráficas simples para ver
   gráficamente todos los datos»), sin librería y pintadas en el servidor
   (`components/ui/graficas.tsx`): las ventas por día —por semana si el
@@ -2149,6 +2152,33 @@ piezas del panel con datos falsos (`?f=` para uno); se mira a 320, 360, 375,
 CONTENIDO del padre, no contra su borde— que nada pase de su caja ni de la
 pantalla. Las páginas de servidor del panel no se pueden montar sin sesión:
 lo nuevo que vaya en ellas se lleva a esta vista previa.
+
+### Ninguna consulta pasa de 1000 filas sin darse cuenta
+
+**PostgREST corta CADA respuesta en 1000 filas, en silencio** (revisión de
+rendimiento del 11/11/2026: «la página puede hacerse demasiado grande y
+Métricas puede ser muy larga»). Métricas sumaba las ventas y las membresías
+del periodo con UNA consulta cada una: con un club grande, sus cifras, la
+gráfica y los rankings habrían salido cortos sin avisar. Las reglas:
+
+- **Lo que se SUMA o se AGRUPA se lee entero, por lotes**, con
+  `leerEnPaginas` (`lib/shared/leer-en-paginas.ts`, probado): de 1000 en
+  1000, ordenado por `id` (sin orden, dos lotes repiten o saltan filas), y
+  LANZA si la base falla o si pasa de 50.000 filas (a esa escala la cuenta
+  la hace la base, con una función). Lo usan Métricas, el detalle de ventas
+  de un comercio y la lista de miembros.
+- **Lo que se MUESTRA se pide por páginas a la base** (`.range` +
+  `count: 'exact'`, `rangoDePagina`), no se trae todo para enseñar 25.
+  Así van la Bitácora (de a 25; antes, 200 de una vez y lo anterior no se
+  podía ver) y el detalle de ventas de un comercio (de a 10; antes, las 100
+  más recientes).
+- **Las tablas de Métricas van de a 10** (`POR_PAGINA_METRICAS`): «Membresías
+  por empleado», «Ventas por comercio» y «Uso de la membresía» (antes cortada
+  en 20). Cada una con su página en la URL (`?pe=`, `?pc=`, `?pu=`) que
+  conserva el periodo y las otras dos, y un ancla para que pasar de página
+  lleve a SU tabla. Las listas del panel siguen en 25.
+- **No se pide una tabla entera para poner nombres**: Métricas pedía TODOS
+  los miembros para nombrar 20 filas; ahora solo los de la página que se ve.
 
 ### Fechas
 

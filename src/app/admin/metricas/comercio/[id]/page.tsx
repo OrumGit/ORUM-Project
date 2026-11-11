@@ -14,17 +14,17 @@ export default async function VentasComercioPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ desde?: string; hasta?: string }>
+  searchParams: Promise<{ desde?: string; hasta?: string; pagina?: string }>
 }) {
   await requireRol('super_admin')
   const { id } = await params
-  const { desde, hasta } = await searchParams
+  const { desde, hasta, pagina } = await searchParams
   const rango = normalizarRango(desde, hasta)
 
   const comercioId = Number(id)
   if (!Number.isInteger(comercioId)) notFound()
 
-  const datos = await cargarDetalleVentasComercio(comercioId, rango.desde, rango.hasta)
+  const datos = await cargarDetalleVentasComercio(comercioId, rango.desde, rango.hasta, Number(pagina ?? 1))
   if (!datos) notFound()
 
   return (

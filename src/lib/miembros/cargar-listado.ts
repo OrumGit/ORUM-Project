@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hoyISO } from '@/lib/shared/fecha'
+import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
 import { derivarEstadoMembresia, type EstadoMembresia } from './membresias'
 import type { FilaMiembro } from './listado'
 
@@ -19,20 +20,10 @@ import type { FilaMiembro } from './listado'
   por una vista o una función en la base que devuelva ya el estado.
 */
 
-const PAGINA = 1000
-
 type Admin = ReturnType<typeof createAdminClient>
 
-async function todas<T>(pedir: (desde: number, hasta: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
-  const filas: T[] = []
-  for (let desde = 0; ; desde += PAGINA) {
-    const { data, error } = await pedir(desde, desde + PAGINA - 1)
-    if (error) throw error
-    filas.push(...(data ?? []))
-    if (!data || data.length < PAGINA) break
-  }
-  return filas
-}
+// `leerEnPaginas` (lib/shared): de 1000 en 1000, con tope y lanzando si falla.
+const todas = leerEnPaginas
 
 export type PlanFiltro = { id: number; nombre: string }
 
