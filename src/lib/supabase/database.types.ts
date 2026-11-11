@@ -763,6 +763,190 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['configuracion']['Insert']>
         Relationships: []
       }
+      suscripciones_mercadopago: {
+        Row: {
+          created_at: string
+          estado_mp: string
+          gracia_hasta: string | null
+          id: number
+          membresia_id: number | null
+          miembro_id: number
+          plan_id: number | null
+          preapproval_id: string
+          renovacion_activa: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado_mp: string
+          gracia_hasta?: string | null
+          id?: never
+          membresia_id?: number | null
+          miembro_id: number
+          plan_id?: number | null
+          preapproval_id: string
+          renovacion_activa?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado_mp?: string
+          gracia_hasta?: string | null
+          id?: never
+          membresia_id?: number | null
+          miembro_id?: number
+          plan_id?: number | null
+          preapproval_id?: string
+          renovacion_activa?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suscripciones_mercadopago_membresia_id_fkey"
+            columns: ["membresia_id"]
+            isOneToOne: false
+            referencedRelation: "membresias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripciones_mercadopago_membresia_id_fkey"
+            columns: ["membresia_id"]
+            isOneToOne: false
+            referencedRelation: "v_membresias_por_vencer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripciones_mercadopago_miembro_id_fkey"
+            columns: ["miembro_id"]
+            isOneToOne: false
+            referencedRelation: "miembros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripciones_mercadopago_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "planes_membresia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+
+      pagos_mercadopago: {
+        Row: {
+          estado_mp: string
+          id: number
+          membresia_id: number | null
+          miembro_id: number
+          moneda: string
+          monto: number
+          payment_id: string
+          periodo_desde: string | null
+          periodo_hasta: string | null
+          procesado_at: string | null
+          recibido_at: string
+          status_detail: string | null
+          suscripcion_id: number | null
+        }
+        Insert: {
+          estado_mp: string
+          id?: never
+          membresia_id?: number | null
+          miembro_id: number
+          moneda?: string
+          monto: number
+          payment_id: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          procesado_at?: string | null
+          recibido_at?: string
+          status_detail?: string | null
+          suscripcion_id?: number | null
+        }
+        Update: {
+          estado_mp?: string
+          id?: never
+          membresia_id?: number | null
+          miembro_id?: number
+          moneda?: string
+          monto?: number
+          payment_id?: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          procesado_at?: string | null
+          recibido_at?: string
+          status_detail?: string | null
+          suscripcion_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_mercadopago_membresia_id_fkey"
+            columns: ["membresia_id"]
+            isOneToOne: false
+            referencedRelation: "membresias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_mercadopago_membresia_id_fkey"
+            columns: ["membresia_id"]
+            isOneToOne: false
+            referencedRelation: "v_membresias_por_vencer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_mercadopago_miembro_id_fkey"
+            columns: ["miembro_id"]
+            isOneToOne: false
+            referencedRelation: "miembros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_mercadopago_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones_mercadopago"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+
+      eventos_mercadopago: {
+        Row: {
+          accion: string | null
+          error: string | null
+          firma_valida: boolean
+          id: number
+          id_notificacion: string
+          live_mode: boolean
+          procesado_at: string | null
+          recibido_at: string
+          tipo: string
+        }
+        Insert: {
+          accion?: string | null
+          error?: string | null
+          firma_valida: boolean
+          id?: never
+          id_notificacion: string
+          live_mode?: boolean
+          procesado_at?: string | null
+          recibido_at?: string
+          tipo: string
+        }
+        Update: {
+          accion?: string | null
+          error?: string | null
+          firma_valida?: boolean
+          id?: never
+          id_notificacion?: string
+          live_mode?: boolean
+          procesado_at?: string | null
+          recibido_at?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+
     }
     Views: Record<string, never>
     Functions: {
@@ -893,6 +1077,29 @@ export type Database = {
         Args: { p_comercio_id: number }
         Returns: boolean
       }
+      registrar_cobro_mp: {
+        Args: {
+          p_estado_mp: string
+          p_moneda: string
+          p_monto: number
+          p_payment_id: string
+          p_periodo_desde: string | null
+          p_periodo_hasta: string | null
+          p_preapproval_id: string
+          p_status_detail: string | null
+        }
+        Returns: Record<string, unknown>
+      }
+
+      espejar_estado_suscripcion: {
+        Args: {
+          p_estado_mp: string
+          p_preapproval_id: string
+          p_renovacion_activa: boolean
+        }
+        Returns: boolean
+      }
+
     }
     Enums: {
       tipo_membresia: 'nueva' | 'renovada'

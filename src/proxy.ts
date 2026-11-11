@@ -20,6 +20,6 @@ export const config = {
      *   y `offline` tiene que poder servirse justamente cuando no hay
      *   conexión con Supabase.
      */
-    '/((?!_next/static|_next/image|favicon.ico|dev/|sw\\.js|manifest-[a-z]+\\.webmanifest|offline|apple-icon|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|dev/|api/mercadopago/|sw\\.js|manifest-[a-z]+\\.webmanifest|offline|apple-icon|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
