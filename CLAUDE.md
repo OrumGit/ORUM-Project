@@ -1515,6 +1515,32 @@ paleta:
   sueltan la caché `publico`. Nuevo/editar sucursal o promoción siguen
   abriéndose encima. WhatsApp e Instagram del boceto NO están: la tabla
   `comercios` no tiene esas columnas.
+- **La ficha del comercio tiene pestaña «Ventas»** (11/11/2026: «esos
+  datos para los comercios: cuánto han vendido, cuánto dinero ha entrado,
+  cuánto ha sido de descuento»), la otra cara de las compras del miembro:
+  el MISMO periodo (`lib/shared/periodo.ts`, que comparten las dos), cuatro
+  cifras —Ventas (a N socios) · Dinero que entró (`valor_final`, con la
+  venta promedio) · Descuento entregado (`valor_descuento`, con su %) ·
+  Valor sin descuento (`valor_compra`)—, «Por sede», «Por beneficio» y
+  todas las ventas de a 10 (`?pv=`), con el socio enlazado a su ficha.
+  Lógica pura y probada en `lib/comercios/ventas-comercio.ts`; lectura por
+  lotes en `ventas-comercio-datos.ts` (todas sus sedes, también las dadas de
+  baja). Las dos vistas comparten la hoja `src/styles/periodo-panel.module.css`.
+  Sin `.panel` alrededor: sus cifras ya son tarjetas.
+- **El PUNTAJE de las reseñas, solo en el panel** (11/11/2026: «una media
+  y una clasificación en estrellas, para darle perspectiva al
+  administrador»). `PuntajeResenas` (`components/resenas/`): el promedio en
+  el serif de la marca, sus estrellas, lo que significa —las palabras del
+  selector del socio: Malo · Regular · Bueno · Muy bueno · Excelente,
+  `clasificacionPromedio`— y cuántas hay de cada estrella, de 5 a 1, con
+  barras en `--gold-600` (una ESCALA, no un ancho). Sale en la pestaña
+  «Reseñas» de la ficha del comercio, arriba de `/admin/resenas` (todo el
+  club), en la cabecera de la ficha («★ 4,3 · Muy bueno · 12 reseñas»,
+  enlaza a la pestaña) y como columna «Calificación» en la lista de
+  comercios. Lógica pura y probada en `lib/resenas/puntaje.ts`; las
+  estrellas se leen con `leerEstrellas` (`datos-panel.ts`, por lotes, `null`
+  sin tabla). Los portales de socios y comercios NO lo llevan: siguen con
+  `ResumenResenas`.
 - **Los formularios del panel VALIDAN campo a campo** (15/10/2026: «sus
   formularios no tienen excepciones»). Las reglas son puras y probadas
   (`lib/validacion/reglas.ts`: obligatorio, largo, nombre de persona, cédula,

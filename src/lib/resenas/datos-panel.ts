@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { rangoDePagina } from '@/lib/shared/paginacion'
+import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
 import { esTablaAusente } from './resenas'
 import { panelDeFila, type FilaPanel, type ResenaPanel } from './mapeo'
 import { UMBRAL_REVISION, type FiltroResenas } from './moderacion'
@@ -137,5 +138,24 @@ export async function obtenerAlertaResenas(): Promise<AlertaResenas> {
   } catch (e) {
     console.error('[resenas] obtenerAlertaResenas:', e)
     return { total: 0, recientes: [] }
+  }
+}
+
+/**
+ * Las estrellas de las reseñas (todas, o las de un comercio), por lotes:
+ * de aquí salen el puntaje y la distribución del panel (11/11/2026). `null`
+ * si la tabla no existe o la base falla: la pantalla sigue sin el puntaje.
+ */
+export async function leerEstrellas(comercioId?: number): Promise<{ comercio_id: number; estrellas: number }[] | null> {
+  const admin = createAdminClient()
+  try {
+    return await leerEnPaginas((inicio, fin) => {
+      let consulta = admin.from('resenas').select('comercio_id, estrellas')
+      if (comercioId !== undefined) consulta = consulta.eq('comercio_id', comercioId)
+      return consulta.order('id', { ascending: true }).range(inicio, fin)
+    })
+  } catch (e) {
+    if (!esTablaAusente(e as { code?: string })) console.error('[resenas] leerEstrellas:', e)
+    return null
   }
 }

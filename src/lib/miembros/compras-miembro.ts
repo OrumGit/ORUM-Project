@@ -22,99 +22,24 @@
 
 import type { Movimiento } from './movimientos'
 
-export type PeriodoCompras = 'todo' | 'semana' | 'mes' | 'anio' | '30dias' | 'rango'
+/*
+  El periodo vive en `lib/shared/periodo.ts` desde el 11/11/2026: lo
+  comparten las ventas de un comercio. Aquí se re-exporta con los nombres de
+  siempre.
+*/
+import { textoPeriodo as textoPeriodoBase, type RangoPeriodo } from '../shared/periodo'
 
-/** Las pestañas, en su orden. «Entre fechas» se elige con el formulario. */
-export const PERIODOS: readonly { clave: Exclude<PeriodoCompras, 'rango'>; etiqueta: string }[] = [
-  { clave: 'todo', etiqueta: 'Todo' },
-  { clave: 'semana', etiqueta: 'Esta semana' },
-  { clave: 'mes', etiqueta: 'Este mes' },
-  { clave: '30dias', etiqueta: 'Últimos 30 días' },
-  { clave: 'anio', etiqueta: 'Este año' },
-]
+export {
+  PERIODOS,
+  esFechaCivil,
+  leerPeriodo as leerPeriodoCompras,
+  type Periodo as PeriodoCompras,
+  type RangoPeriodo as RangoCompras,
+} from '../shared/periodo'
 
-export type RangoCompras = {
-  periodo: PeriodoCompras
-  /** Primer día incluido, o `null` = desde el principio. */
-  desde: string | null
-  /** Último día incluido, o `null` = hasta hoy. */
-  hasta: string | null
-}
-
-const FECHA = /^\d{4}-\d{2}-\d{2}$/
-
-/** Un 'YYYY-MM-DD' que existe de verdad (no «2026-02-31»). */
-export function esFechaCivil(valor: unknown): valor is string {
-  if (typeof valor !== 'string' || !FECHA.test(valor)) return false
-  const [a, m, d] = valor.split('-').map(Number)
-  const f = new Date(Date.UTC(a, m - 1, d))
-  return f.getUTCFullYear() === a && f.getUTCMonth() === m - 1 && f.getUTCDate() === d
-}
-
-function sumarDias(iso: string, dias: number): string {
-  const [a, m, d] = iso.split('-').map(Number)
-  return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10)
-}
-
-/** El lunes de la semana de `hoy` (la semana colombiana empieza el lunes). */
-function lunesDe(hoy: string): string {
-  const [a, m, d] = hoy.split('-').map(Number)
-  const diaSemana = new Date(Date.UTC(a, m - 1, d)).getUTCDay() // 0 = domingo
-  return sumarDias(hoy, -((diaSemana + 6) % 7))
-}
-
-/**
- * El periodo que pide la URL (`?periodo=mes`, o `?desde=&hasta=` para un
- * rango). Es entrada del usuario: lo que no se entienda vuelve a «Todo».
- */
-export function leerPeriodoCompras(
-  params: { periodo?: string; desde?: string; hasta?: string },
-  hoy: string,
-): RangoCompras {
-  const desde = esFechaCivil(params.desde) ? params.desde : null
-  const hasta = esFechaCivil(params.hasta) ? params.hasta : null
-  if (desde || hasta) {
-    // Al revés se entiende igual: se ordenan.
-    if (desde && hasta && desde > hasta) return { periodo: 'rango', desde: hasta, hasta: desde }
-    return { periodo: 'rango', desde, hasta }
-  }
-
-  switch (params.periodo) {
-    case 'semana':
-      return { periodo: 'semana', desde: lunesDe(hoy), hasta: hoy }
-    case 'mes':
-      return { periodo: 'mes', desde: `${hoy.slice(0, 8)}01`, hasta: hoy }
-    case '30dias':
-      return { periodo: '30dias', desde: sumarDias(hoy, -29), hasta: hoy }
-    case 'anio':
-      return { periodo: 'anio', desde: `${hoy.slice(0, 4)}-01-01`, hasta: hoy }
-    default:
-      return { periodo: 'todo', desde: null, hasta: null }
-  }
-}
-
-const FECHA_LARGA = new Intl.DateTimeFormat('es-CO', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-})
-
-function fechaLegible(iso: string): string {
-  const [a, m, d] = iso.split('-').map(Number)
-  return FECHA_LARGA.format(new Date(Date.UTC(a, m - 1, d)))
-}
-
-/** «Del 1 de noviembre de 2026 al 11 de noviembre de 2026», «Desde siempre». */
-export function textoPeriodo(rango: RangoCompras): string {
-  const { desde, hasta } = rango
-  if (!desde && !hasta) return 'Desde que es miembro'
-  if (desde && hasta) {
-    return desde === hasta
-      ? `El ${fechaLegible(desde)}`
-      : `Del ${fechaLegible(desde)} al ${fechaLegible(hasta)}`
-  }
-  return desde ? `Desde el ${fechaLegible(desde)}` : `Hasta el ${fechaLegible(hasta!)}`
+/** «Del 1 de … al …», o «Desde que es miembro» sin límites. */
+export function textoPeriodo(rango: RangoPeriodo): string {
+  return textoPeriodoBase(rango, 'Desde que es miembro')
 }
 
 /** Redondeo a 2 decimales al final: la coma flotante no acaba impresa. */

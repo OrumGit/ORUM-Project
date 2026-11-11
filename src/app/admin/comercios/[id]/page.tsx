@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MapPin, MoreHorizontal, Pencil, Tag } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
@@ -26,6 +27,16 @@ import { obtenerResenasParaAdmin } from '@/lib/resenas/datos'
 import { ReenviarActivacion } from '../../_components/reenviar-activacion'
 import { VisibilidadComercio } from './_components/visibilidad-comercio'
 import { leerVisibilidad, textoVisibilidad } from '@/lib/comercios/visibilidad'
+import { VentasComercio } from './_components/ventas-comercio'
+import { cargarVentasComercio } from '@/lib/comercios/ventas-comercio-datos'
+import { leerPeriodo } from '@/lib/shared/periodo'
+import { hoyISO } from '@/lib/shared/fecha'
+import { leerPagina } from '@/lib/miembros/listado'
+import { leerEstrellas } from '@/lib/resenas/datos-panel'
+import { clasificacionPromedio, conteosDe } from '@/lib/resenas/puntaje'
+import { formatearPromedio, resumenDeConteos } from '@/lib/resenas/resenas'
+import { PuntajeResenas } from '@/components/resenas/puntaje-resenas'
+import { EstrellasLectura } from '@/components/ui/estrellas-lectura'
 import { cuentaPendienteDeActivar } from '@/lib/auth/activacion'
 import styles from './ficha.module.css'
 
@@ -49,9 +60,9 @@ type Promocion = {
   franjas_horarias?: unknown
 }
 
-type Parte = 'datos' | 'sucursales' | 'promociones' | 'imagenes' | 'resenas'
+type Parte = 'datos' | 'ventas' | 'sucursales' | 'promociones' | 'imagenes' | 'resenas'
 
-const PARTES: readonly Parte[] = ['datos', 'sucursales', 'promociones', 'imagenes', 'resenas']
+const PARTES: readonly Parte[] = ['datos', 'ventas', 'sucursales', 'promociones', 'imagenes', 'resenas']
 
 /*
   LA FICHA DEL COMERCIO  ·  rediseño del panel (15/10/2026)
@@ -68,12 +79,22 @@ export default async function FichaComercioPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ pestana?: string; pagina?: string }>
+  /** `periodo`, `desde`, `hasta` y `pv` son de la pestaña «Ventas» (11/11/2026). */
+  searchParams: Promise<{
+    pestana?: string
+    pagina?: string
+    periodo?: string
+    desde?: string
+    hasta?: string
+    pv?: string
+  }>
 }) {
   await requireRol('super_admin')
-  const [{ id }, { pestana: pestanaRaw, pagina: paginaRaw }] = await Promise.all([params, searchParams])
+  const [{ id }, consulta] = await Promise.all([params, searchParams])
+  const { pestana: pestanaRaw, pagina: paginaRaw } = consulta
   const comercioId = Number(id)
   const parte: Parte = PARTES.includes(pestanaRaw as Parte) ? (pestanaRaw as Parte) : 'datos'
+  const rangoVentas = leerPeriodo(consulta, hoyISO())
 
   const admin = createAdminClient()
   const { data: comercio } = await admin
@@ -95,7 +116,8 @@ export default async function FichaComercioPage({
     { count: fotosGaleria },
     imagenes,
     resenas,
-    { count: cuentaResenas },
+    estrellas,
+    ventas,
   ] = await Promise.all([
     cargarCategoriasConSubcategorias(admin),
     cargarFilasCategoria(admin, comercioId),
@@ -121,8 +143,13 @@ export default async function FichaComercioPage({
     // pestaña es una consulta barata (head). Si la tabla aún no existe, el
     // error se ignora y el recuento queda en 0.
     parte === 'resenas' ? obtenerResenasParaAdmin(comercioId, Number.parseInt(paginaRaw ?? '1', 10)) : Promise.resolve(null),
-    admin.from('resenas').select('id', { count: 'exact', head: true }).eq('comercio_id', comercioId),
+    // Las estrellas de TODAS sus reseñas: el puntaje de la cabecera, el
+    // recuento de la pestaña y la distribución (11/11/2026). `null` sin tabla.
+    leerEstrellas(comercioId),
+    parte === 'ventas' ? cargarVentasComercio(comercioId, rangoVentas) : Promise.resolve(null),
   ])
+  const conteosResenas = conteosDe((estrellas ?? []).map((e) => e.estrellas))
+  const puntaje = resumenDeConteos(conteosResenas)
 
   // Cadena vacía y no '—': el valor va directo a un campo de formulario.
   let correo = ''
@@ -223,6 +250,16 @@ export default async function FichaComercioPage({
                 {textoVisibilidad(visibilidad)}
               </Badge>
             )}
+            {/* El puntaje de sus reseñas, de un vistazo (11/11/2026). */}
+            {puntaje.total > 0 && (
+              <Link href={`${base}?pestana=resenas`} className={styles.puntajeCabecera}>
+                <EstrellasLectura valor={puntaje.promedio} total={puntaje.total} />
+                <span>
+                  <strong>{formatearPromedio(puntaje.promedio)}</strong> · {clasificacionPromedio(puntaje.promedio)} ·{' '}
+                  {puntaje.total === 1 ? '1 reseña' : `${puntaje.total} reseñas`}
+                </span>
+              </Link>
+            )}
             <span>
               {[etiquetaCategorias, `${activas} ${activas === 1 ? 'sucursal activa' : 'sucursales activas'}`]
                 .filter(Boolean)
@@ -236,6 +273,7 @@ export default async function FichaComercioPage({
         etiqueta="Partes del comercio"
         items={[
           { href: base, etiqueta: 'Datos', activa: parte === 'datos' },
+          { href: `${base}?pestana=ventas`, etiqueta: 'Ventas', activa: parte === 'ventas' },
           {
             href: `${base}?pestana=sucursales`,
             etiqueta: 'Sucursales',
@@ -257,7 +295,7 @@ export default async function FichaComercioPage({
           {
             href: `${base}?pestana=resenas`,
             etiqueta: 'Reseñas',
-            cuenta: resenas?.disponible ? resenas.total : (cuentaResenas ?? 0),
+            cuenta: resenas?.disponible ? resenas.total : puntaje.total,
             activa: parte === 'resenas',
           },
         ]}
@@ -482,15 +520,27 @@ export default async function FichaComercioPage({
           </section>
         )}
 
+        {parte === 'ventas' && (
+          // Sin `.panel`: sus cifras ya son tarjetas (nada de tarjetas dentro de una tarjeta).
+          <section aria-label="Ventas del comercio">
+            <VentasComercio
+              comercioId={comercio.id}
+              nombre={comercio.nombre}
+              rango={rangoVentas}
+              ventas={ventas}
+              pagina={leerPagina(consulta.pv)}
+            />
+          </section>
+        )}
+
         {parte === 'resenas' && (
-          <section className={styles.panel} aria-label="Reseñas del comercio">
+          <section className={[styles.panel, styles.panelResenas].join(' ')} aria-labelledby="titulo-resenas">
             {resenas?.disponible ? (
               <>
-              <ResenasAdmin
-                comercioId={comercio.id}
-                resumen={{ total: resenas.total, promedio: resenas.promedio }}
-                resenas={resenas.resenas}
-              />
+              <TituloSeccion id="titulo-resenas" como="h2" tamano="bloque" texto="Reseñas de los socios" />
+              {/* El puntaje: promedio, clasificación y cuántas de cada estrella (11/11/2026). */}
+              <PuntajeResenas conteos={conteosResenas} etiqueta={`Puntaje de ${comercio.nombre}`} />
+              <ResenasAdmin comercioId={comercio.id} resenas={resenas.resenas} />
               <Paginacion
                 pagina={resenas.pagina}
                 paginas={resenas.paginas}

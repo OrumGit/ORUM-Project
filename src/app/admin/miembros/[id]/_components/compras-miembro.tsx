@@ -22,7 +22,7 @@ import {
 import type { CompraPanel } from '@/lib/miembros/compras-miembro-datos'
 import { paginar } from '@/lib/shared/paginacion'
 import lista from '@/styles/lista-panel.module.css'
-import styles from './compras-miembro.module.css'
+import styles from '@/styles/periodo-panel.module.css'
 
 /*
   LAS COMPRAS DEL MIEMBRO  ·  en su ficha del panel (11/11/2026)

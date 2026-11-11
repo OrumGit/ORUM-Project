@@ -13,6 +13,10 @@ import {
 import { leerPagina } from '@/lib/miembros/listado'
 import { cargarFilasCategoriaDeTodos } from '@/lib/comercios/categorias-admin'
 import { contarImagenes, leerVisibilidad, textoVisibilidad, textoVisibilidadCorto } from '@/lib/comercios/visibilidad'
+import { leerEstrellas } from '@/lib/resenas/datos-panel'
+import { calificacionPorComercio, clasificacionPromedio } from '@/lib/resenas/puntaje'
+import { formatearPromedio } from '@/lib/resenas/resenas'
+import { Star } from 'lucide-react'
 import { Badge, type BadgeTone } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
@@ -63,28 +67,28 @@ const COLUMNAS: ReadonlyArray<Column<FilaComercio>> = [
     key: 'sucursales',
     header: 'Sucursales',
     numeric: true,
-    width: '120px',
+    width: '105px',
     cell: (c) => <Cifra n={c.sucursales} />,
   },
   {
     key: 'promociones',
     header: 'Promociones',
     numeric: true,
-    width: '130px',
+    width: '115px',
     cell: (c) => <Cifra n={c.promociones} />,
   },
   {
     key: 'imagenes',
     header: 'Imágenes',
     numeric: true,
-    width: '110px',
+    width: '95px',
     // Portada + galería, sin el logotipo (07/11/2026).
     cell: (c) => <Cifra n={c.imagenes} />,
   },
   {
     key: 'visible',
     header: 'Se ve en',
-    width: '140px',
+    width: '125px',
     cell: (c) =>
       // Un aliado retirado no se ve en ningún sitio: lo dice la columna de al lado.
       c.activo ? (
@@ -95,6 +99,25 @@ const COLUMNAS: ReadonlyArray<Column<FilaComercio>> = [
         </span>
       ) : (
         <span className={styles.cifraCero}>—</span>
+      ),
+  },
+  {
+    key: 'calificacion',
+    header: 'Calificación',
+    width: '120px',
+    // El puntaje de sus reseñas (11/11/2026): la estrella, el promedio y cuántas.
+    cell: (c) =>
+      c.calificacion.total > 0 ? (
+        <span
+          className={styles.calificacion}
+          title={`${clasificacionPromedio(c.calificacion.promedio)} · ${c.calificacion.total} ${c.calificacion.total === 1 ? 'reseña' : 'reseñas'}`}
+        >
+          <Star size={14} aria-hidden="true" className={styles.estrella} />
+          <strong>{formatearPromedio(c.calificacion.promedio)}</strong>
+          <span className={styles.cifraCero}>({c.calificacion.total})</span>
+        </span>
+      ) : (
+        <span className={styles.cifraCero}>Sin reseñas</span>
       ),
   },
   {
@@ -144,6 +167,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
     { data: subcategorias },
     filasCategoria,
     { data: imagenes },
+    estrellas,
   ] = await Promise.all([
       admin
         .from('comercios')
@@ -157,6 +181,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
       cargarFilasCategoriaDeTodos(admin),
       // Una fila por foto de galería (ocho por comercio como mucho).
       admin.from('comercio_imagenes').select('comercio_id').limit(5000),
+      leerEstrellas(),
     ])
 
   const contar = (filas: { comercio_id: number }[] | null) => {
@@ -167,6 +192,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
   const nSucursales = contar(sucursales)
   const nPromociones = contar(promociones)
   const nGaleria = contar(imagenes)
+  const calificaciones = calificacionPorComercio(estrellas ?? [])
   const nombreCategoria = new Map((categorias ?? []).map((c) => [c.id, c.nombre.trim()]))
   const nombreSubcategoria = new Map((subcategorias ?? []).map((s) => [s.id, s.subcategoria.trim()]))
 
@@ -187,6 +213,7 @@ export default async function ComerciosPage({ searchParams }: { searchParams: Pr
     promociones: nPromociones.get(c.id) ?? 0,
     imagenes: contarImagenes(c.portada_url, nGaleria.get(c.id) ?? 0),
     visible: leerVisibilidad(c),
+    calificacion: calificaciones.get(c.id) ?? { total: 0, promedio: null },
   }))
 
   const busqueda = (params.q ?? '').trim()

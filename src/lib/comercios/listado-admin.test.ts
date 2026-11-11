@@ -17,6 +17,7 @@ const fila = (f: Partial<FilaComercio>): FilaComercio => ({
   promociones: 1,
   imagenes: 0,
   visible: { publico: true, miembros: true },
+  calificacion: { total: 0, promedio: null },
   ...f,
 })
 

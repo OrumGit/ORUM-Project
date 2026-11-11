@@ -5,7 +5,9 @@ import { PageHeader, Stack } from '@/components/ui/layout'
 import { Paginacion } from '@/components/ui/paginacion'
 import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { ResenasAdmin } from '@/app/admin/comercios/[id]/_components/resenas-admin'
-import { obtenerResenasDelPanel } from '@/lib/resenas/datos-panel'
+import { leerEstrellas, obtenerResenasDelPanel } from '@/lib/resenas/datos-panel'
+import { conteosDe } from '@/lib/resenas/puntaje'
+import { PuntajeResenas } from '@/components/resenas/puntaje-resenas'
 import { leerFiltroResenas, type FiltroResenas } from '@/lib/resenas/moderacion'
 
 export const metadata = { title: 'Reseñas · ORUM' }
@@ -58,7 +60,11 @@ export default async function ResenasPage({
   await requireRol('super_admin')
   const { ver, pagina } = await searchParams
   const filtro = leerFiltroResenas(ver)
-  const datos = await obtenerResenasDelPanel(filtro, Number.parseInt(pagina ?? '1', 10))
+  const [datos, estrellas] = await Promise.all([
+    obtenerResenasDelPanel(filtro, Number.parseInt(pagina ?? '1', 10)),
+    // El puntaje de TODO el club, arriba (11/11/2026).
+    leerEstrellas(),
+  ])
 
   return (
     <>
@@ -69,6 +75,15 @@ export default async function ResenasPage({
 
       {datos.disponible ? (
         <Stack gap={5}>
+          {estrellas && (
+            <Card padding="lg">
+              <PuntajeResenas
+                conteos={conteosDe(estrellas.map((e) => e.estrellas))}
+                etiqueta="Puntaje de todas las reseñas del club"
+              />
+            </Card>
+          )}
+
           <Pestanas
             etiqueta="Filtrar reseñas"
             items={PESTANAS.map((p) => ({

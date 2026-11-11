@@ -25,6 +25,8 @@ export type FilaComercio = {
   imagenes: number
   /** Dónde se ve (07/11/2026). */
   visible: Visibilidad
+  /** El puntaje de sus reseñas (11/11/2026); `promedio` null sin reseñas. */
+  calificacion: { total: number; promedio: number | null }
 }
 
 /**

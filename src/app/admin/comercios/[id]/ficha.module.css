@@ -44,7 +44,41 @@
   color: var(--text-2);
 }
 
+/* El puntaje de las reseñas en la cabecera: lleva a su pestaña. Al apuntarlo
+   sube 1px, sin fondo (ningún tinte al apuntar). */
+.puntajeCabecera {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  text-decoration: none;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+.puntajeCabecera strong {
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .puntajeCabecera:hover {
+    translate: 0 -1px;
+    color: var(--text);
+  }
+}
+
+.puntajeCabecera:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* --- Las partes ------------------------------------------------------------- */
+
+.panelResenas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
 
 .panel {
   padding: var(--space-6);
