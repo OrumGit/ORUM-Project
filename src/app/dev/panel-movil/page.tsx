@@ -182,7 +182,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
   },
   'miembro-nuevo': {
     titulo: 'Registrar miembro',
-    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={['00090003', '00090004']} />,
+    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={['00090003', '00090004']} puedeCortesia />,
   },
   'miembro-editar': {
     titulo: 'Editar miembro',
@@ -203,7 +203,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
       />
     ),
   },
-  renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} /> },
+  renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia /> },
   revocar: {
     titulo: 'Revocar membresía',
     contenido: (

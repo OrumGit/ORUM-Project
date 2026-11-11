@@ -12,7 +12,7 @@ export default async function RenovarPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireRol('super_admin', 'empleado')
+  const perfil = await requireRol('super_admin', 'empleado')
   const { id } = await params
   const miembroId = Number(id)
 
@@ -41,7 +41,11 @@ export default async function RenovarPage({
         description={`${miembro.nombres} ${miembro.apellidos}`.trim()}
       />
       <FormCard>
-        <RenovarForm miembroId={miembro.id} planes={planes ?? []} />
+        <RenovarForm
+          miembroId={miembro.id}
+          planes={planes ?? []}
+          puedeCortesia={perfil.rolCodigo === 'super_admin'}
+        />
       </FormCard>
     </>
   )

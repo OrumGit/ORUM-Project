@@ -32,9 +32,12 @@ const ETIQUETAS: Record<string, string> = { plan_id: 'Plan', precio_pagado: 'Pre
 export function RenovarForm({
   miembroId,
   planes,
+  puedeCortesia,
 }: {
   miembroId: number
   planes: PlanOpcion[]
+  /** Solo el super_admin puede dar cortesías; al empleado la casilla no se pinta. */
+  puedeCortesia: boolean
 }) {
   const [state, formAction, pending] = useActionState(renovarMembresia, estadoInicial)
   const [precio, setPrecio] = useState(planes[0] ? String(planes[0].precio) : '')
@@ -99,14 +102,16 @@ export function RenovarForm({
         )}
       </div>
 
-      <Checkbox
-        name="es_cortesia"
-        label="Renovación de cortesía"
-        description="No se cobra: queda registrada como cortesía y no suma a los ingresos ni a las ventas."
-        checked={esCortesia}
-        onChange={(e) => setEsCortesia(e.target.checked)}
-        disabled={sinPlanes}
-      />
+      {puedeCortesia && (
+        <Checkbox
+          name="es_cortesia"
+          label="Renovación de cortesía"
+          description="No se cobra: queda registrada como cortesía y no suma a los ingresos ni a las ventas."
+          checked={esCortesia}
+          onChange={(e) => setEsCortesia(e.target.checked)}
+          disabled={sinPlanes}
+        />
+      )}
 
       <Button
         type="submit"

@@ -20,7 +20,7 @@ export default async function RenovarInterceptado({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireRol('super_admin', 'empleado')
+  const perfil = await requireRol('super_admin', 'empleado')
   const { id } = await params
   const miembroId = Number(id)
 
@@ -49,7 +49,11 @@ export default async function RenovarInterceptado({
       width="520px"
       detent="medium"
     >
-      <RenovarForm miembroId={miembro.id} planes={planes ?? []} />
+      <RenovarForm
+        miembroId={miembro.id}
+        planes={planes ?? []}
+        puedeCortesia={perfil.rolCodigo === 'super_admin'}
+      />
     </OverlayRuta>
   )
 }

@@ -69,6 +69,8 @@ export function MiembroForm(props: {
   ciudades: Opcion[]
   planes: PlanOpcion[]
   numerosDisponibles: string[]
+  /** Solo el super_admin puede dar cortesías; al empleado la casilla no se pinta. */
+  puedeCortesia: boolean
 }) {
   const [instancia, setInstancia] = useState(0)
   return (
@@ -84,11 +86,13 @@ function FormularioMiembro({
   ciudades,
   planes,
   numerosDisponibles,
+  puedeCortesia,
   onRegistrarOtro,
 }: {
   ciudades: Opcion[]
   planes: PlanOpcion[]
   numerosDisponibles: string[]
+  puedeCortesia: boolean
   onRegistrarOtro: () => void
 }) {
   const cerrar = useCerrarOverlay()
@@ -235,14 +239,16 @@ function FormularioMiembro({
               )}
             </div>
 
-            <Checkbox
-              name="es_cortesia"
-              label="Membresía de cortesía"
-              description="No se cobra: queda registrada como cortesía y no suma a los ingresos ni a las ventas."
-              checked={esCortesia}
-              onChange={(e) => setEsCortesia(e.target.checked)}
-              disabled={sinPlanes}
-            />
+            {puedeCortesia && (
+              <Checkbox
+                name="es_cortesia"
+                label="Membresía de cortesía"
+                description="No se cobra: queda registrada como cortesía y no suma a los ingresos ni a las ventas."
+                checked={esCortesia}
+                onChange={(e) => setEsCortesia(e.target.checked)}
+                disabled={sinPlanes}
+              />
+            )}
 
             <p className={styles.nota}>
               Al guardar se asigna el número elegido y se envía un correo para que

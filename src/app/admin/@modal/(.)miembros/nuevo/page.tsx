@@ -17,7 +17,7 @@ import { MiembroForm } from '@/app/admin/miembros/_components/miembro-form'
  * cuando el contenido solo es útil a pantalla completa.
  */
 export default async function NuevoMiembroInterceptado() {
-  await requireRol('super_admin', 'empleado')
+  const perfil = await requireRol('super_admin', 'empleado')
 
   const admin = createAdminClient()
   const [{ data: ciudades }, { data: planes }, numerosDisponibles] = await Promise.all([
@@ -44,6 +44,7 @@ export default async function NuevoMiembroInterceptado() {
         ciudades={ciudades ?? []}
         planes={planes ?? []}
         numerosDisponibles={numerosDisponibles}
+        puedeCortesia={perfil.rolCodigo === 'super_admin'}
       />
     </OverlayRuta>
   )

@@ -8,7 +8,7 @@ import { MiembroForm } from '../_components/miembro-form'
 export const metadata = { title: 'Registrar miembro · ORUM' }
 
 export default async function NuevoMiembroPage() {
-  await requireRol('super_admin', 'empleado')
+  const perfil = await requireRol('super_admin', 'empleado')
 
   const admin = createAdminClient()
   const [{ data: ciudades }, { data: planes }, numerosDisponibles] = await Promise.all([
@@ -33,6 +33,7 @@ export default async function NuevoMiembroPage() {
           ciudades={ciudades ?? []}
           planes={planes ?? []}
           numerosDisponibles={numerosDisponibles}
+          puedeCortesia={perfil.rolCodigo === 'super_admin'}
         />
       </FormCard>
     </>

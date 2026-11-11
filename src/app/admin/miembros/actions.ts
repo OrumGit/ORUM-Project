@@ -73,8 +73,9 @@ export async function registrarMiembro(
   const ciudad_id = ciudadRaw ? Number(ciudadRaw) : null
   const plan_id = Number(formData.get('plan_id'))
   // Cortesía: la membresía existe pero no es una venta. El precio que llegue se
-  // ignora: una cortesía no se cobra.
-  const es_cortesia = formData.get('es_cortesia') === 'on'
+  // ignora: una cortesía no se cobra. Solo el super_admin puede darla; al
+  // empleado la casilla no le llega ni se le pinta.
+  const es_cortesia = actor.rolCodigo === 'super_admin' && formData.get('es_cortesia') === 'on'
   const precio_pagado = es_cortesia ? 0 : leerPesos(formData.get('precio_pagado'))
   const numero_registro = String(formData.get('numero_registro') ?? '').trim()
 
@@ -282,7 +283,8 @@ export async function renovarMembresia(
 
   const miembro_id = Number(formData.get('miembro_id'))
   const plan_id = Number(formData.get('plan_id'))
-  const es_cortesia = formData.get('es_cortesia') === 'on'
+  // Solo el super_admin puede dar cortesías (ver registrarMiembro).
+  const es_cortesia = actor.rolCodigo === 'super_admin' && formData.get('es_cortesia') === 'on'
   const precio_pagado = es_cortesia ? 0 : leerPesos(formData.get('precio_pagado'))
   if (!Number.isInteger(miembro_id) || miembro_id < 1) return { error: 'Falta el identificador del miembro.' }
   if (!Number.isInteger(plan_id) || plan_id < 1) return { error: 'Selecciona un plan de membresía.' }
