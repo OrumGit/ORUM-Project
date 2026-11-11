@@ -1437,7 +1437,11 @@ paleta:
   (`lib/shared/volver-panel.ts`: `anotarVisita` corta al volver a un lugar
   ya visitado, así cerrar una ventana encima no la deja como «anterior»;
   `rutaPadre` sube al lugar que contiene un formulario, y lo de la ficha del
-  comercio vuelve a SU pestaña) y vive en `sessionStorage`. Sin pila (enlace
+  comercio vuelve a SU pestaña) y vive en `sessionStorage`. **Solo se anotan
+  LUGARES** (11/11/2026, visto en producción: el detalle de ventas de
+  Métricas, que abre encima, quedaba como «anterior» y «Volver» lo reabría a
+  pantalla completa): una ventana encima no entra en la pila, y desde un
+  formulario a pantalla completa «Volver» va al último lugar. Sin pila (enlace
   directo), sube al lugar de arriba; el servidor pinta ese enlace. **Una
   sección o ficha nueva del panel se añade a `LUGARES` y a `NOMBRES`.**
 - **La barra de arriba, blanca y pegada**: «Panel / sección», el

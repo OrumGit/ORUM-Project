@@ -43,6 +43,38 @@ describe('anotarVisita', () => {
   })
 })
 
+describe('ventanas encima (visto en producción el 11/11/2026)', () => {
+  it('una ventana encima no se anota como lugar', () => {
+    const pila = ['/admin/metricas?desde=2026-01-01']
+    expect(anotarVisita(pila, '/admin/metricas/comercio/61?desde=2026-01-01')).toEqual(pila)
+    expect(anotarVisita(['/admin/miembros/12'], '/admin/miembros/12/editar')).toEqual(['/admin/miembros/12'])
+  })
+
+  it('limpia las ventanas que una versión anterior dejó anotadas', () => {
+    expect(anotarVisita(['/admin/metricas', '/admin/metricas/comercio/61'], '/admin/bitacora')).toEqual([
+      '/admin/metricas',
+      '/admin/bitacora',
+    ])
+  })
+
+  it('Métricas → detalle de un comercio → Bitácora: «Volver» va a Métricas, no al detalle', () => {
+    let pila: string[] = []
+    for (const url of ['/admin/metricas?desde=2026-01-01', '/admin/metricas/comercio/61', '/admin/bitacora']) {
+      pila = anotarVisita(pila, url)
+    }
+    expect(destinoVolver(pila, '/admin/bitacora')).toBe('/admin/metricas?desde=2026-01-01')
+  })
+
+  it('un formulario a pantalla completa vuelve al lugar desde el que se abrió', () => {
+    expect(destinoVolver(['/admin', '/admin/miembros?ver=vigentes'], '/admin/miembros/nuevo')).toBe(
+      '/admin/miembros?ver=vigentes',
+    )
+    // Sin pila (enlace directo), al lugar que lo contiene.
+    expect(destinoVolver([], '/admin/miembros/nuevo')).toBe('/admin/miembros')
+    expect(destinoVolver([], '/admin/metricas/comercio/61')).toBe('/admin/metricas')
+  })
+})
+
 describe('destinoVolver', () => {
   it('vuelve al lugar anterior tal como se dejó, con sus filtros', () => {
     const pila = ['/admin', '/admin/comercios?estado=ocultos&pagina=2', '/admin/comercios/43']

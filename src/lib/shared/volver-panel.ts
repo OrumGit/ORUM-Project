@@ -31,9 +31,16 @@ export function rutaDe(url: string): string {
 
 export function anotarVisita(pila: Pila, url: string): string[] {
   const ruta = rutaDe(url)
-  const i = pila.findIndex((u) => rutaDe(u) === ruta)
-  if (i >= 0) return [...pila.slice(0, i), url]
-  return [...pila, url].slice(-TOPE_PILA)
+  /* Solo se anotan LUGARES. Una ventana encima (un formulario, el detalle de
+     ventas de Métricas) no es un sitio al que volver: si se anotaba, al
+     cerrarla e ir a otra sección «Volver» la reabría a pantalla completa
+     (visto en producción el 11/11/2026). */
+  // Y se limpian las que una versión anterior dejó en la pila del navegador.
+  const lugares = pila.filter((u) => esLugar(rutaDe(u)))
+  if (!esLugar(ruta)) return lugares
+  const i = lugares.findIndex((u) => rutaDe(u) === ruta)
+  if (i >= 0) return [...lugares.slice(0, i), url]
+  return [...lugares, url].slice(-TOPE_PILA)
 }
 
 /**
@@ -47,7 +54,6 @@ const LUGARES: readonly RegExp[] = [
   /^\/admin\/comercios\/\d+$/,
   /^\/admin\/miembros\/\d+$/,
   /^\/admin\/miembros\/numeros$/,
-  /^\/admin\/metricas\/comercio\/\d+$/,
 ]
 
 const esLugar = (ruta: string) => LUGARES.some((r) => r.test(ruta))
@@ -69,9 +75,17 @@ export function rutaPadre(url: string): string {
   return '/admin'
 }
 
-/** Adónde lleva «Volver» desde `actual`. */
+/**
+ * Adónde lleva «Volver» desde `actual`. Desde un lugar, al anterior de la
+ * pila. Desde lo que no es un lugar (un formulario abierto a pantalla
+ * completa), al lugar desde el que se abrió —el último anotado—.
+ */
 export function destinoVolver(pila: Pila, actual: string): string {
   const ruta = rutaDe(actual)
+  if (!esLugar(ruta)) {
+    const ultimo = pila[pila.length - 1]
+    return ultimo && rutaDe(ultimo) !== ruta ? ultimo : rutaPadre(actual)
+  }
   const i = pila.findIndex((u) => rutaDe(u) === ruta)
   if (i > 0) return pila[i - 1]
   return rutaPadre(actual)
@@ -97,7 +111,6 @@ export function textoVolver(destino: string): string {
   if (NOMBRES[ruta]) return NOMBRES[ruta]
   if (/^\/admin\/comercios\/\d+$/.test(ruta)) return 'Volver al comercio'
   if (/^\/admin\/miembros\/\d+$/.test(ruta)) return 'Volver al miembro'
-  if (/^\/admin\/metricas\/comercio\/\d+$/.test(ruta)) return 'Volver al detalle de ventas'
   return 'Volver'
 }
 
