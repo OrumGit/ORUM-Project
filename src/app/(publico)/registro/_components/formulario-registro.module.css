@@ -1,0 +1,8 @@
+/* Aviso de un campo que no es un Field (la casilla de términos). Mismo color
+   de error que el resto de formularios: texto en peligro, con su icono en
+   Alert. Aquí solo el texto, en tamaño pequeño. */
+.error {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--danger-text, #b42318);
+}

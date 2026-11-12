@@ -6,22 +6,26 @@ import { getPerfilActual } from '@/lib/auth/auth'
 import { ERROR_TURNSTILE, verificarTurnstileDeFormulario } from '@/lib/auth/turnstile-request'
 import { cupoDeLogin, ERROR_LIMITE_LOGIN, reiniciarLogin } from '@/lib/auth/limitador'
 import { resolverCorreoPorNumeroMembresia } from '@/lib/miembros/auth-miembro'
+import { clasificarIdentificador } from '@/lib/miembros/identificador-acceso'
 
 export type LoginMiembroState = { error?: string }
 
+const ERROR_CREDENCIALES = 'Número de socio, correo o contraseña incorrectos.'
+
 /**
- * Inicia sesión con número de membresía + contraseña (RF-06). El número se
- * resuelve al correo real por debajo; nunca se pide el correo directamente.
+ * Inicia sesión con número de socio o correo, más contraseña (RF-06). Un número
+ * se resuelve al correo real de Auth; un correo entra directamente. Los dos
+ * caminos responden lo mismo si la cuenta no existe o la contraseña no coincide.
  */
 export async function iniciarSesionMiembro(
   _prevState: LoginMiembroState,
   formData: FormData,
 ): Promise<LoginMiembroState> {
-  const numeroMembresia = String(formData.get('numero_membresia') ?? '').trim()
   const password = String(formData.get('password') ?? '')
+  const identificador = clasificarIdentificador(String(formData.get('identificador') ?? ''))
 
-  if (!numeroMembresia || !password) {
-    return { error: 'Ingresa tu número de membresía y tu contraseña.' }
+  if (!identificador || !password) {
+    return { error: 'Ingresa tu número de socio o tu correo, y tu contraseña.' }
   }
 
   const captcha = await verificarTurnstileDeFormulario(formData)
@@ -29,23 +33,24 @@ export async function iniciarSesionMiembro(
     return { error: ERROR_TURNSTILE }
   }
 
-  // La cuenta se identifica por el número tecleado, antes de resolverlo: así el
-  // tope cuenta igual exista o no, y no delata cuáles números son reales.
-  if (!(await cupoDeLogin(numeroMembresia))) {
+  // La cuenta se identifica por lo tecleado, antes de resolverlo: así el tope
+  // cuenta igual exista o no, y no delata cuáles números o correos son reales.
+  if (!(await cupoDeLogin(identificador.valor))) {
     return { error: ERROR_LIMITE_LOGIN }
   }
 
-  const correo = await resolverCorreoPorNumeroMembresia(numeroMembresia)
-  if (!correo) {
-    return { error: 'Número de membresía o contraseña incorrectos.' }
+  let correo: string | null = identificador.valor
+  if (identificador.tipo === 'numero') {
+    correo = await resolverCorreoPorNumeroMembresia(identificador.valor)
+    if (!correo) return { error: ERROR_CREDENCIALES }
   }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email: correo, password })
   if (error) {
-    return { error: 'Número de membresía o contraseña incorrectos.' }
+    return { error: ERROR_CREDENCIALES }
   }
-  await reiniciarLogin(numeroMembresia)
+  await reiniciarLogin(identificador.valor)
 
   const perfil = await getPerfilActual()
   if (!perfil || !perfil.activo) {

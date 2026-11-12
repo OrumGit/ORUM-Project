@@ -1,3 +1,9 @@
 {
-  "regions": ["yul1"]
+  "regions": ["yul1"],
+  "crons": [
+    {
+      "path": "/api/cron/limpiar-pendientes",
+      "schedule": "0 5 * * *"
+    }
+  ]
 }

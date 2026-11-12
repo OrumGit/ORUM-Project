@@ -141,3 +141,13 @@ Móvil: hoja inferior con detents `medium`.
 6. Banda de gracia y estados de vencimiento (§4 completo).
 7. Ajustes del panel (§9).
 8. Pruebas de interfaz con socio real, accesibilidad y pulido de movimiento.
+
+## 12. Flujo de registro y pago (decidido 11/11/2026)
+
+Resuelve §8.1 («Revisa tu correo» primero) y amplía §3.1:
+
+1. **Formulario** (§3.1): datos, términos y contraseña. Al enviar, `iniciarRegistro` (`src/app/(publico)/registro/actions.ts`) crea el usuario sin confirmar y envía el correo. La ventana pasa a «Revisa tu correo», con el plan elegido arriba.
+2. **Ruta de confirmación** `/registro/confirmar?token_hash=…&type=signup`: al abrirla no canjea nada (un escáner de correo no debe gastar el enlace). La persona pulsa **«Confirmar mi correo»** y solo entonces se canjea el token y se abre sesión.
+3. **Pantalla «Completa tu membresía»** (miembros, sin ficha): para quien entra sin haber pagado. Muestra el plan y el botón **Pagar**, que crea una suscripción nueva en Mercado Pago. Solo se muestra si `puedeAbrirPago` lo permite (correo confirmado y registro pendiente).
+4. **Enlace vencido o ya usado:** mensaje claro y la vía para entrar con correo y contraseña. El reenvío del correo queda pendiente.
+5. **Login de socios:** acepta número de socio o correo en el mismo campo.

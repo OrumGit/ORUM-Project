@@ -1,7 +1,7 @@
 # Mercado Pago · Plan de backend
 
 - **Fecha:** 2026-11-09
-- **Estado:** Planeación. Nada implementado. Depende de las decisiones de §1 y de las preguntas de §9.
+- **Estado (11/11/2026):** en curso. Commit `82f4b30` en `feat/mercadopago-backend`, sin subir. Hechos los pasos 1, 2 y 4 de §10 y el paso 3 escrito pero sin probar contra Mercado Pago real. Pendientes los pasos 5 a 9 y las preguntas de §9.
 - **Par:** [`2026-11-09-mercado-pago-frontend.md`](2026-11-09-mercado-pago-frontend.md)
 - **Antecedente:** [`docs/mercado-pago-suscripciones.md`](../../mercado-pago-suscripciones.md) (investigación).
 
@@ -196,14 +196,48 @@ Módulo existente `src/lib/correo/correo.ts`. Se añaden tres constructores puro
 
 ## 10. Orden sugerido de implementación
 
-1. Migración y verificación SQL (§2) — sin tocar código de usuario.
-2. Módulo puro `src/lib/mercadopago/` con pruebas (§3.1).
-3. Webhook con firma, idempotencia y bitácora (§4), contra el entorno de pruebas.
-4. Funciones de base de datos de cobro (§2.3) y su conexión con el webhook.
-5. Registro público sin membresía (§3.3).
-6. Acciones del socio (§3.2) y cancelación con acceso hasta `fecha_fin`.
-7. Job de cortes de gracia (§5).
-8. Correos (§6).
-9. Pruebas de punta a punta con MP de prueba (§8).
+Estado al 11/11/2026 (✅ hecho · 🟡 escrito, sin probar · ⬜ pendiente):
+
+1. ✅ Migración y verificación SQL (§2). Aplicadas en la base. El script `supabase/verificacion/mercadopago_verificacion.sql` **todavía no existe** (§2.5 pendiente).
+2. ✅ Módulo puro `src/lib/mercadopago/` con pruebas (§3.1). `cliente.ts` usa REST en lugar del SDK (decisión documentada en el archivo).
+3. 🟡 Webhook con firma, idempotencia y bitácora (§4). Compila y pasa `next build`, pero **sin probar** contra Mercado Pago: faltan las credenciales de prueba. Formatos de `authorized_payments` y de `metadata.preapproval_id` sin confirmar.
+4. ✅ Funciones de base de datos de cobro (§2.3) conectadas al webhook. Un cobro aprobado fallará con `suscripcion_sin_plan` hasta que el alta asigne `plan_id`.
+5. ⬜ Registro público sin membresía (§3.3).
+6. ⬜ Acciones del socio (§3.2) y cancelación con acceso hasta `fecha_fin`.
+7. ⬜ Job de cortes de gracia (§5).
+8. ⬜ Correos (§6).
+9. ⬜ Pruebas de punta a punta con MP de prueba (§8).
 
 El frontend (`2026-11-09-mercado-pago-frontend.md`) se monta sobre el paso 5 en adelante.
+
+## 10. Registro previo al pago (decidido 11/11/2026)
+
+Flujo acordado con el propietario:
+
+1. La persona elige un plan, llena el formulario (datos, términos y contraseña) y se crea el **usuario de autenticación** de inmediato. Sin ficha de socio y sin número.
+2. Sigue al pago de Mercado Pago. Solo si el cobro se aprueba se crean la **ficha**, el **número** (`asignar_numero_mercadopago()`), la **membresía** con `origen = 'mercado_pago'` y el **correo de vinculación**.
+3. Si el pago se cancela o queda pendiente, la persona entra con **número de socio o correo** (el login de socios acepta ambos) y ve «Completa tu membresía» con el botón de pagar. Cada intento crea una suscripción nueva; la anterior se marca como cancelada.
+4. **Limpieza:** se borran los usuarios de autenticación que cumplan **las tres condiciones**:
+   - no tienen ficha de socio (sin número de membresía);
+   - no completaron ningún pago;
+   - tienen **más de 10 días** desde su creación.
+   Se ejecuta una vez al día desde una ruta de la app con `CRON_SECRET`, usando la API de administración de Supabase (`auth.admin.deleteUser`). Las cuentas con número, incluidas las vencidas, nunca se borran.
+
+**Consecuencia de esquema pendiente:** `suscripciones_mercadopago.miembro_id` es obligatorio, y en este flujo no existe ficha hasta el pago. Las suscripciones de intentos sin pagar necesitan una tabla propia (`registros_pendientes`, ligada al usuario de autenticación) o que ese campo sea opcional. Decidir antes de implementar.
+
+## 11. Confirmación de correo antes del pago (decidido 11/11/2026)
+
+Orden del registro público:
+
+1. Formulario: datos, términos y contraseña. Correo normalizado con `correoParaRegistro` (minúsculas, sin espacios, validación de «Quiero ser aliado»). Antes de crear nada, comprobación de `lower(email)` contra `auth.users` y de la cédula y el correo contra `registros_pendientes`.
+2. Se crea el usuario de autenticación **sin confirmar** y su fila en `registros_pendientes` (`estado = 'pendiente'`). Se envía el correo de confirmación de Supabase con `emailRedirectTo` a la ruta de confirmación.
+3. La persona abre el enlace. La ruta de confirmación canjea el enlace, marca el correo como confirmado y lleva a la pantalla de elegir plan y pagar.
+4. Sin correo confirmado no se crea ninguna suscripción de Mercado Pago. La regla se comprueba en el servidor, no solo en la pantalla.
+5. Lo demás no cambia: el número, la ficha y la membresía nacen con el cobro aprobado (§10).
+
+Dependencias antes de programar:
+- **Confirmación de correo activada** en Supabase (Authentication → Sign In / Providers → Email). Lo activa el propietario del proyecto, no se puede desde el código.
+- **Límite de correos de Auth:** con el SMTP por defecto de Supabase el tope es muy bajo. Sin SMTP propio (Google Workspace, ya pendiente en las notas), la confirmación fallará con muchos registros a la vez.
+- **Caducidad del enlace de confirmación** (plazo de Supabase) frente a la limpieza de 10 días de §10.
+
+**Corrección (11/11/2026):** el correo de confirmación **no depende** de activar el correo de Supabase ni de su SMTP. La app ya envía sus correos de activación y de recuperación por Gmail (`src/lib/correo/correo.ts`, con `GMAIL_SMTP_*`, presentes en `.env.local`): Supabase genera el enlace con `generateLink` y la app lo manda. La confirmación del registro sigue ese mismo camino, con `generateLink({ type: 'signup', … })`. Pendiente de verificar en pruebas que `signup` crea el usuario sin confirmar y devuelve el enlace sin depender del interruptor del panel.

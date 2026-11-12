@@ -33,15 +33,14 @@ export function LoginMiembroForm({ mensajeInicial }: { mensajeInicial?: string }
         </Alert>
       )}
 
-      <Field label="Número de membresía">
+      <Field label="Número de socio o correo">
         <Input
-          name="numero_membresia"
+          name="identificador"
           type="text"
-          /* Teclado numérico en móvil, pero `type="text"`: el número puede
-             llevar ceros a la izquierda y `type="number"` los descarta. */
-          inputMode="numeric"
+          /* Texto y no número: el número puede llevar ceros a la izquierda y el
+             correo lleva letras. El teclado del móvil se deja en el general. */
           autoComplete="username"
-          placeholder="00012345"
+          placeholder="00012345 o tu correo"
           required
           autoFocus
         />

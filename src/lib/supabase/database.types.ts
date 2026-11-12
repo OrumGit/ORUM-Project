@@ -348,6 +348,66 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['miembros']['Insert']>
         Relationships: []
       }
+      registros_pendientes: {
+        Row: {
+          apellidos: string
+          auth_user_id: string
+          cedula: string
+          ciudad_id: number | null
+          correo: string
+          created_at: string
+          direccion: string | null
+          estado: 'pendiente' | 'completado' | 'cancelado'
+          id: number
+          miembro_id: number | null
+          mp_preapproval_id: string | null
+          nombres: string
+          plan_id: number
+          telefono: string | null
+          terminos_aceptados_at: string
+          terminos_version: string
+          updated_at: string
+        }
+        Insert: {
+          apellidos: string
+          auth_user_id: string
+          cedula: string
+          ciudad_id?: number | null
+          correo: string
+          created_at?: string
+          direccion?: string | null
+          estado?: 'pendiente' | 'completado' | 'cancelado'
+          id?: never
+          miembro_id?: number | null
+          mp_preapproval_id?: string | null
+          nombres: string
+          plan_id: number
+          telefono?: string | null
+          terminos_aceptados_at: string
+          terminos_version: string
+          updated_at?: string
+        }
+        Update: {
+          apellidos?: string
+          auth_user_id?: string
+          cedula?: string
+          ciudad_id?: number | null
+          correo?: string
+          created_at?: string
+          direccion?: string | null
+          estado?: 'pendiente' | 'completado' | 'cancelado'
+          id?: never
+          miembro_id?: number | null
+          mp_preapproval_id?: string | null
+          nombres?: string
+          plan_id?: number
+          telefono?: string | null
+          terminos_aceptados_at?: string
+          terminos_version?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       numeros_registro: {
         Row: {
           numero: string

@@ -7,6 +7,7 @@
 import 'server-only'
 
 import type { CobroRecurrenteMP, PagoMP, SuscripcionMP } from './notificacion'
+import type { CuerpoSuscripcion } from './suscripcion-pendiente'
 
 const BASE = 'https://api.mercadopago.com'
 const TIEMPO_MAXIMO_MS = 10_000
@@ -50,4 +51,37 @@ export function obtenerCobroRecurrente(id: string): Promise<CobroRecurrenteMP> {
 /** Suscripción (`/preapproval/{id}`). */
 export function obtenerSuscripcion(id: string): Promise<SuscripcionMP> {
   return leer<SuscripcionMP>(`/preapproval/${encodeURIComponent(id)}`)
+}
+
+async function escribir<T>(metodo: 'POST' | 'PUT', ruta: string, cuerpo: unknown): Promise<T> {
+  const token = process.env.MP_ACCESS_TOKEN
+  if (!token) throw new Error('Falta MP_ACCESS_TOKEN.')
+
+  const respuesta = await fetch(`${BASE}${ruta}`, {
+    method: metodo,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cuerpo),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(TIEMPO_MAXIMO_MS),
+  })
+  if (!respuesta.ok) {
+    throw new ErrorMercadoPago(respuesta.status, `Mercado Pago respondió ${respuesta.status} en ${ruta}`)
+  }
+  return (await respuesta.json()) as T
+}
+
+/** Crea una suscripción en `pending` y devuelve su id y el enlace de pago (`init_point`). */
+export function crearSuscripcion(
+  cuerpo: CuerpoSuscripcion,
+): Promise<{ id: string; init_point: string; status: string }> {
+  return escribir('POST', '/preapproval', cuerpo)
+}
+
+/** Cancela una suscripción (p. ej. un intento de pago que la persona reemplaza). */
+export function cancelarSuscripcion(id: string): Promise<{ id: string; status: string }> {
+  return escribir('PUT', `/preapproval/${encodeURIComponent(id)}`, { status: 'cancelled' })
 }
