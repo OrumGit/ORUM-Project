@@ -164,7 +164,7 @@ export async function editarSucursal(_prev: SucursalState, formData: FormData): 
 /** Activa o desactiva una sucursal (`sucursales.activo`). */
 export async function cambiarEstadoSucursal(formData: FormData): Promise<void> {
   const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
+  if (!actorId) redirect('/')
 
   const id = Number(formData.get('id'))
   const comercioId = Number(formData.get('comercio_id'))

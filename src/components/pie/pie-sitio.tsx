@@ -36,8 +36,8 @@ const PUERTAS = [
   /*
     «Administro ORUM» se RETIRÓ (29/09/2026, encargo del propietario): el pie
     es público y la puerta del panel de administración no debe anunciarse a
-    cualquiera que visite la web. El acceso sigue existiendo en `/login` para
-    quien lo conoce; simplemente no se enlaza desde aquí.
+    cualquiera que visite la web. Desde el 11/11/2026 la puerta vive además
+    en una dirección secreta (`lib/auth/ruta-panel.ts`) y `/login` da 404.
   */
 ] as const
 

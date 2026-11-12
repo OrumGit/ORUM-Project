@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { rutaAccesoPanel } from '@/lib/auth/ruta-panel'
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilActual } from '@/lib/auth/auth'
 import { cupoDeLogin, ERROR_LIMITE_LOGIN, reiniciarLogin } from '@/lib/auth/limitador'
@@ -63,10 +64,11 @@ export async function iniciarSesion(
 }
 
 /**
- * Cierra la sesión actual y vuelve al login.
+ * Cierra la sesión actual y vuelve a la puerta del panel, en su dirección
+ * secreta (`lib/auth/ruta-panel.ts`): quien la cierra es del equipo.
  */
 export async function cerrarSesion() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect('/login')
+  redirect(rutaAccesoPanel())
 }

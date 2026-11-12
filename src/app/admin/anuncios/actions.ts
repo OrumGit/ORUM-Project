@@ -276,7 +276,7 @@ export async function editarAnuncio(_prev: AnuncioState, formData: FormData): Pr
 /** Activa o desactiva un anuncio (anuncios.activo). Calcado de cambiarEstadoPlan. */
 export async function cambiarEstadoAnuncio(formData: FormData): Promise<void> {
   const actor = await exigirSuperAdmin()
-  if (!actor) redirect('/login?error=sin_permiso')
+  if (!actor) redirect('/')
 
   const id = Number(formData.get('id'))
   const activar = String(formData.get('activar') ?? '') === 'true'

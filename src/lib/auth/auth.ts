@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { RolCodigo } from '@/lib/supabase/database.types'
 
@@ -67,8 +67,11 @@ export const getPerfilActual = cache(async (): Promise<PerfilActual | null> => {
 
 /**
  * Exige que haya un usuario autenticado, activo y con uno de los roles
- * permitidos. Si no se cumple, redirige a `/login`. Devuelve el perfil cuando
- * todo está en orden (útil para usarlo en la misma página).
+ * permitidos. Si no se cumple, «página no encontrada» (11/11/2026): antes
+ * redirigía a `/login`, y así cualquiera que escribiera `/admin` descubría
+ * la puerta del panel, que ahora vive en una dirección secreta
+ * (`lib/auth/ruta-panel.ts`). Devuelve el perfil cuando todo está en orden
+ * (útil para usarlo en la misma página).
  *
  * Uso típico al inicio de un Server Component:
  *   const perfil = await requireRol('super_admin')
@@ -79,12 +82,12 @@ export async function requireRol(
   const perfil = await getPerfilActual()
 
   if (!perfil || !perfil.activo) {
-    redirect('/login')
+    notFound()
   }
 
   if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(perfil.rolCodigo)) {
-    // Autenticado pero sin permiso para esta sección.
-    redirect('/login?error=sin_permiso')
+    // Autenticado pero sin permiso para esta sección: tampoco se le cuenta que existe.
+    notFound()
   }
 
   return perfil

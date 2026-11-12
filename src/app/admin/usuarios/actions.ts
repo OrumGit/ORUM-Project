@@ -189,7 +189,7 @@ export async function editarUsuario(
 /** Activa o desactiva el acceso de un usuario (perfiles.activo). */
 export async function cambiarEstadoAcceso(formData: FormData): Promise<void> {
   const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
+  if (!actorId) redirect('/')
 
   const perfilId = String(formData.get('perfil_id') ?? '')
   const activar = String(formData.get('activar') ?? '') === 'true'

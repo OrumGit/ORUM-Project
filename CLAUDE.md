@@ -1427,6 +1427,21 @@ paleta:
   probaron y no gustaron). Al pasar, el texto se aclara y el icono se
   desliza. **El plateado es el acento del cromo negro** («juega mucho más
   con el plateado»); el oro queda para la acción principal.
+- **La puerta del panel NO es `/login`** (11/11/2026: «la gente puede ver
+  cluborum.com/login; que la ruta del administrador sea más segura y
+  difícil de encontrar»). Vive en una dirección LARGA Y ALEATORIA
+  (`lib/auth/ruta-panel.ts`, `RUTA_PANEL_POR_DEFECTO`; se cambia sin tocar
+  código con la variable `ORUM_RUTA_PANEL` en Vercel) que el `proxy`
+  reescribe por dentro a la página real (`app/login`); `/login` escrita a
+  mano da 404. Para que nada la delate: `requireRol` da 404 (`notFound()`)
+  sin sesión o sin permiso —antes redirigía a `/login`, y escribir `/admin`
+  enseñaba la puerta—, las acciones del panel sin permiso mandan a `/`,
+  `robots.txt` no la lista, `activar-cuenta` no enlaza la del equipo y el
+  módulo NUNCA se importa desde un componente de cliente (comprobado: la
+  dirección no aparece en `.next/static`). Cerrar sesión vuelve a ella.
+  **No la escribas en un enlace, un correo, un documento ni este archivo.**
+  Esconde la puerta; lo que la cierra sigue siendo la cuenta del equipo,
+  Turnstile y el límite de intentos (`limitador`).
 - **«Volver» arriba de CADA pantalla del panel** salvo la portada
   (07/11/2026: «la funcionalidad para ir atrás, en todos los apartados»;
   `VolverPanel`, que monta `AppShell` encima del contenido). No es el atrás
@@ -1805,7 +1820,7 @@ Handlers que salen de `lib/shared/manifiesto-app.ts`: nombres, colores,
 iconos, atajos) y su `id`, así que son aplicaciones distintas en el
 teléfono. Las enlaza el layout de cada portal y de su acceso
 (`miembros/layout.tsx` y `comercios/layout.tsx`, que no pintan nada;
-`admin/layout.tsx`; `login/page.tsx`), con su `apple-icon.png` en la misma
+`admin/layout.tsx`; `login/page.tsx`, servida en la dirección secreta), con su `apple-icon.png` en la misma
 carpeta (iOS). ⚠️ **Ya no existe `app/manifest.ts`**: lo enlazaba TODO el
 sitio, también la portada pública, que NO se instala; no lo vuelvas a
 crear. El socio conserva su `id` (`/miembros`): las instaladas siguen

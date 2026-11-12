@@ -6,8 +6,15 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Se invoca desde src/middleware.ts. Es necesario para que la autenticación
  * funcione correctamente en Server Components (que no pueden escribir cookies).
  */
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+export async function updateSession(
+  request: NextRequest,
+  /** Si llega, la respuesta REESCRIBE a esta dirección (la puerta del panel). */
+  reescribirA?: URL,
+) {
+  // La misma respuesta, sigas o reescribas: las cookies refrescadas viajan igual.
+  const responder = () =>
+    reescribirA ? NextResponse.rewrite(reescribirA, { request }) : NextResponse.next({ request })
+  let supabaseResponse = responder()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +28,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = responder()
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )

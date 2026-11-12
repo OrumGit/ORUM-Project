@@ -16,7 +16,8 @@ export default function robots(): MetadataRoute.Robots {
         '/admin',
         '/miembros',
         '/comercios',
-        '/login',
+        // Ni `/login` (ya no existe: da 404) ni la puerta secreta del panel:
+        // `robots.txt` es público, y listarla aquí sería anunciarla.
         '/activar-cuenta',
         '/dev',
         '/offline',

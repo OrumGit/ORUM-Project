@@ -97,7 +97,7 @@ export async function cargarRangoNumeros(
  * es su número de carné y no se puede borrar desde aquí.
  */
 export async function eliminarNumeroRegistro(formData: FormData): Promise<void> {
-  if (!(await esSuperAdmin())) redirect('/login?error=sin_permiso')
+  if (!(await esSuperAdmin())) redirect('/')
 
   const numero = String(formData.get('numero') ?? '').trim()
   if (!numero) redirect(RUTA)

@@ -32,9 +32,11 @@ const DESTINO_POR_ROL: Record<string, string> = {
  * ninguno.
  */
 const LOGIN_POR_ROL: Record<string, string> = {
-  staff: '/login',
   comercio: '/comercios/login',
 }
+// El equipo (`staff`) NO tiene enlace aquí (11/11/2026): la puerta del panel
+// vive en una dirección secreta, y esto es código de cliente que cualquiera
+// puede leer. Se queda con el aviso; su dirección la tiene el administrador.
 
 type Errores = {
   password?: string
@@ -47,7 +49,7 @@ export function ActivarForm() {
   const searchParams = useSearchParams()
   const rol = searchParams.get('rol') ?? ''
   const destino = DESTINO_POR_ROL[rol] ?? '/miembros'
-  const login = LOGIN_POR_ROL[rol] ?? '/miembros/login'
+  const login = rol === 'staff' ? null : (LOGIN_POR_ROL[rol] ?? '/miembros/login')
   // Activar una invitación o restablecer una contraseña: mismo formulario,
   // otros textos (`?modo=recuperar`).
   const textos = textosActivacion(searchParams.get('modo') ?? undefined)
@@ -203,9 +205,11 @@ export function ActivarForm() {
           {mensajeInvalido}
         </Alert>
 
-        <Button href={login} variant="secondary" size="lg" pildora fullWidth>
-          Ir a iniciar sesión
-        </Button>
+        {login && (
+          <Button href={login} variant="secondary" size="lg" pildora fullWidth>
+            Ir a iniciar sesión
+          </Button>
+        )}
       </div>
     )
   }

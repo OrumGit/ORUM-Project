@@ -216,7 +216,7 @@ export async function editarPromocion(_prev: PromocionState, formData: FormData)
 /** Activa o desactiva una promoción (`promociones.activo`). */
 export async function cambiarEstadoPromocion(formData: FormData): Promise<void> {
   const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
+  if (!actorId) redirect('/')
 
   const id = Number(formData.get('id'))
   const comercioId = Number(formData.get('comercio_id'))

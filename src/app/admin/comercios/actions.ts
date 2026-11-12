@@ -272,7 +272,7 @@ export async function editarComercio(
 /** Activa o desactiva el comercio como aliado (`comercios.activo`, D2). */
 export async function cambiarEstadoComercio(formData: FormData): Promise<void> {
   const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
+  if (!actorId) redirect('/')
 
   const id = Number(formData.get('id'))
   const activar = String(formData.get('activar') ?? '') === 'true'
@@ -330,7 +330,7 @@ export async function cambiarVisibilidadComercio(
 /** Activa o desactiva el acceso a la cuenta del comercio (`perfiles.activo`, D2). */
 export async function cambiarEstadoAccesoComercio(formData: FormData): Promise<void> {
   const actorId = await exigirSuperAdmin()
-  if (!actorId) redirect('/login?error=sin_permiso')
+  if (!actorId) redirect('/')
 
   const id = Number(formData.get('id'))
   const perfilId = String(formData.get('perfil_id') ?? '')
