@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RUTA_PANEL_POR_DEFECTO, esAccesoInternoDirecto, normalizarRutaPanel } from './ruta-panel'
+import { RUTA_PANEL_POR_DEFECTO, esAccesoInternoDirecto, normalizarRutaPanel, rutaPanelCanonica } from './ruta-panel'
 
 describe('normalizarRutaPanel', () => {
   it('sin variable, la de serie', () => {
@@ -37,5 +37,23 @@ describe('esAccesoInternoDirecto', () => {
     expect(esAccesoInternoDirecto('/loginx')).toBe(false)
     expect(esAccesoInternoDirecto('/miembros/login')).toBe(false)
     expect(esAccesoInternoDirecto('/comercios/login')).toBe(false)
+  })
+})
+
+describe('rutaPanelCanonica', () => {
+  it('lleva las minúsculas a /OrumAdminLogin, con lo que cuelgue', () => {
+    expect(rutaPanelCanonica('/orumadminlogin')).toBe('/OrumAdminLogin')
+    expect(rutaPanelCanonica('/ORUMADMINLOGIN/miembros/12')).toBe('/OrumAdminLogin/miembros/12')
+  })
+
+  it('no toca lo que ya está bien ni lo que no es del panel', () => {
+    expect(rutaPanelCanonica('/OrumAdminLogin')).toBeNull()
+    expect(rutaPanelCanonica('/OrumAdminLogin/comercios')).toBeNull()
+    expect(rutaPanelCanonica('/admin')).toBeNull()
+    expect(rutaPanelCanonica('/orumadminloginx')).toBeNull()
+  })
+
+  it('la puerta secreta no puede llamarse como el panel', () => {
+    expect(normalizarRutaPanel('/orumadminlogin')).toBe(RUTA_PANEL_POR_DEFECTO)
   })
 })

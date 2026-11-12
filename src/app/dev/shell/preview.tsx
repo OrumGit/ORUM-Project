@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { InicioPanel } from '@/app/admin/_components/inicio-panel'
-import { ListaMiembros } from '@/app/admin/miembros/_components/lista-miembros'
+import { InicioPanel } from '@/app/OrumAdminLogin/_components/inicio-panel'
+import { ListaMiembros } from '@/app/OrumAdminLogin/miembros/_components/lista-miembros'
 import type { FilaMiembro } from '@/lib/miembros/listado'
 import { AppShell } from '@/components/shell/app-shell'
 import { Badge, StatusBadge, VenceEn } from '@/components/ui/badge'
@@ -17,7 +17,7 @@ import type { RolCodigo } from '@/lib/supabase/database.types'
 /*
   Vista previa del app shell con datos falsos.
 
-  Existe porque el shell real vive en `/admin`, que exige sesión de Supabase:
+  Existe porque el shell real vive en `/OrumAdminLogin`, que exige sesión de Supabase:
   sin credenciales no habría forma de revisar la navegación, el indicador
   activo, la barra inferior ni la paleta. Es la misma razón por la que existe
   `/dev/ui`, y por eso el shell recibe sus datos por props en vez de leerlos
@@ -92,7 +92,7 @@ const FILAS_FALSAS: FilaMiembro[] = Array.from({ length: 63 }, (_, i) => {
 
 export function ShellPreview() {
   const [rol, setRol] = useState<RolCodigo>('super_admin')
-  const [ruta, setRuta] = useState('/admin')
+  const [ruta, setRuta] = useState('/OrumAdminLogin')
 
   return (
     <AppShell
@@ -124,10 +124,10 @@ export function ShellPreview() {
           />
           <SegmentedControl
             options={[
-              { value: '/admin', label: 'Inicio' },
-              { value: '/admin/miembros', label: 'Miembros' },
-              { value: '/admin/metricas', label: 'Métricas' },
-              { value: '/admin/anuncios', label: 'Novedades' },
+              { value: '/OrumAdminLogin', label: 'Inicio' },
+              { value: '/OrumAdminLogin/miembros', label: 'Miembros' },
+              { value: '/OrumAdminLogin/metricas', label: 'Métricas' },
+              { value: '/OrumAdminLogin/anuncios', label: 'Novedades' },
             ]}
             value={ruta}
             onChange={setRuta}
@@ -136,7 +136,7 @@ export function ShellPreview() {
           />
         </Stack>
 
-      {ruta === '/admin/miembros' ? (
+      {ruta === '/OrumAdminLogin/miembros' ? (
         <ListaMiembros
           filas={FILAS_FALSAS}
           planes={[
@@ -146,7 +146,7 @@ export function ShellPreview() {
           params={{}}
           esSuperAdmin={rol === 'super_admin'}
         />
-      ) : ruta === '/admin' ? (
+      ) : ruta === '/OrumAdminLogin' ? (
         <InicioPanel
           esSuperAdmin={rol === 'super_admin'}
           saludo="Buenas tardes"

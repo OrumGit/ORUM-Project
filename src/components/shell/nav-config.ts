@@ -33,7 +33,7 @@ export type NavItem = {
   icon: LucideIcon
   /**
    * Prefijo que marca este ítem como activo. Por defecto es `href`.
-   * `/admin` necesita coincidencia exacta o estaría siempre activo.
+   * `/OrumAdminLogin` necesita coincidencia exacta o estaría siempre activo.
    */
   match?: string
   exact?: boolean
@@ -51,16 +51,16 @@ export type TabItem =
   | { kind: 'search'; label: string; icon: LucideIcon }
   | { kind: 'more'; label: string; icon: LucideIcon }
 
-const INICIO: NavItem = { href: '/admin', label: 'Inicio', icon: Home, exact: true }
-const MIEMBROS: NavItem = { href: '/admin/miembros', label: 'Miembros', icon: Users }
-const COMERCIOS: NavItem = { href: '/admin/comercios', label: 'Comercios', icon: Store }
-const USUARIOS: NavItem = { href: '/admin/usuarios', label: 'Usuarios', icon: UserCog }
-const PLANES: NavItem = { href: '/admin/planes', label: 'Planes', icon: CreditCard }
-const ANUNCIOS: NavItem = { href: '/admin/anuncios', label: 'Novedades', icon: Megaphone }
-const RESENAS: NavItem = { href: '/admin/resenas', label: 'Reseñas', icon: MessageSquareText }
-const PUBLICIDAD: NavItem = { href: '/admin/publicidad', label: 'Publicidad', icon: Images }
-const METRICAS: NavItem = { href: '/admin/metricas', label: 'Métricas', icon: BarChart3 }
-const BITACORA: NavItem = { href: '/admin/bitacora', label: 'Bitácora', icon: ScrollText }
+const INICIO: NavItem = { href: '/OrumAdminLogin', label: 'Inicio', icon: Home, exact: true }
+const MIEMBROS: NavItem = { href: '/OrumAdminLogin/miembros', label: 'Miembros', icon: Users }
+const COMERCIOS: NavItem = { href: '/OrumAdminLogin/comercios', label: 'Comercios', icon: Store }
+const USUARIOS: NavItem = { href: '/OrumAdminLogin/usuarios', label: 'Usuarios', icon: UserCog }
+const PLANES: NavItem = { href: '/OrumAdminLogin/planes', label: 'Planes', icon: CreditCard }
+const ANUNCIOS: NavItem = { href: '/OrumAdminLogin/anuncios', label: 'Novedades', icon: Megaphone }
+const RESENAS: NavItem = { href: '/OrumAdminLogin/resenas', label: 'Reseñas', icon: MessageSquareText }
+const PUBLICIDAD: NavItem = { href: '/OrumAdminLogin/publicidad', label: 'Publicidad', icon: Images }
+const METRICAS: NavItem = { href: '/OrumAdminLogin/metricas', label: 'Métricas', icon: BarChart3 }
+const BITACORA: NavItem = { href: '/OrumAdminLogin/bitacora', label: 'Bitácora', icon: ScrollText }
 
 /*
   "Mi contraseña" NO está aquí a propósito.
@@ -121,7 +121,7 @@ export function tabsPara(rol: RolCodigo): TabItem[] {
     buscar,
     {
       kind: 'link',
-      href: '/admin/miembros/nuevo',
+      href: '/OrumAdminLogin/miembros/nuevo',
       label: 'Vender',
       icon: UserPlus,
     },
@@ -132,7 +132,7 @@ export function tabsPara(rol: RolCodigo): TabItem[] {
 /**
  * ¿Está activa esta ruta?
  *
- * Coincidencia por prefijo para que `/admin/miembros/123/editar` mantenga
+ * Coincidencia por prefijo para que `/OrumAdminLogin/miembros/123/editar` mantenga
  * "Miembros" resaltado, salvo cuando el ítem pide coincidencia exacta.
  */
 export function esRutaActiva(item: NavItem, pathname: string): boolean {

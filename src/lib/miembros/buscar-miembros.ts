@@ -8,7 +8,7 @@ import { hoyISO } from '@/lib/shared/fecha'
 
 /*
   Búsqueda de miembros compartida por la paleta de comandos y la lista de
-  `/admin/miembros`. Vive aquí para que exista UNA sola definición de qué
+  `/OrumAdminLogin/miembros`. Vive aquí para que exista UNA sola definición de qué
   significa buscar un miembro y de cómo se calcula su estado.
 */
 

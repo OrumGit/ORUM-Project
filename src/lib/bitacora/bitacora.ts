@@ -21,7 +21,7 @@ function formatearValor(valor: unknown): string {
 
 /**
  * Arma el texto legible de un evento de bitácora, reutilizado tanto en la
- * ficha del miembro como en el listado global (`/admin/bitacora`).
+ * ficha del miembro como en el listado global (`/OrumAdminLogin/bitacora`).
  */
 export function resumirEventoBitacora(
   accion: string,

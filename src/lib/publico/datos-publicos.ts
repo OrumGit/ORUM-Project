@@ -468,7 +468,7 @@ export const obtenerVitrinaPublica = cache(async (): Promise<DatosVitrina> => {
 /* ==========================================================================
    LA PUBLICIDAD  ·  las imágenes del carrusel de la portada (13/10/2026)
    --------------------------------------------------------------------------
-   Las sube y ordena el administrador (`/admin/publicidad`); ya no salen de
+   Las sube y ordena el administrador (`/OrumAdminLogin/publicidad`); ya no salen de
    las portadas de los comercios.
 
    DEVUELVE `null` SI LA TABLA TODAVÍA NO EXISTE. El esquema se aplica a mano

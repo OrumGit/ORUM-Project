@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from 'react'
 import { RefreshCw, Search, X } from 'lucide-react'
-import { buscarMiembrosAction } from '@/app/admin/actions'
+import { buscarMiembrosAction } from '@/app/OrumAdminLogin/actions'
 import { Avatar } from '@/components/ui/avatar'
 import { StatusBadge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
@@ -100,7 +100,7 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
   /* Una lista plana para recorrer con las flechas: miembros y acciones. */
   const destinos = useMemo(
     () => [
-      ...miembrosVisibles.map((m) => `/admin/miembros/${m.id}`),
+      ...miembrosVisibles.map((m) => `/OrumAdminLogin/miembros/${m.id}`),
       ...acciones.map((a) => a.href),
     ],
     [miembrosVisibles, acciones],
@@ -280,7 +280,7 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
                   className={styles.fila}
                 >
                   <Link
-                    href={`/admin/miembros/${m.id}`}
+                    href={`/OrumAdminLogin/miembros/${m.id}`}
                     className={styles.filaPrincipal}
                     onClick={() => {
                       cerrar()
@@ -298,7 +298,7 @@ export function BuscadorPanel({ rol, buscar = buscarMiembrosAction, className }:
                   </Link>
                   {conviveRenovar(m) && (
                     <Link
-                      href={`/admin/miembros/${m.id}/renovar`}
+                      href={`/OrumAdminLogin/miembros/${m.id}/renovar`}
                       className={styles.atajo}
                       onClick={() => {
                         cerrar()

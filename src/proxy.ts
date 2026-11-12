@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
-import { RUTA_INTERNA_ACCESO, esAccesoInternoDirecto, rutaAccesoPanel } from '@/lib/auth/ruta-panel'
+import {
+  RUTA_INTERNA_ACCESO,
+  esAccesoInternoDirecto,
+  rutaAccesoPanel,
+  rutaPanelCanonica,
+} from '@/lib/auth/ruta-panel'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -14,6 +19,13 @@ export async function proxy(request: NextRequest) {
     const destino = request.nextUrl.clone()
     destino.pathname = RUTA_INTERNA_ACCESO
     return await updateSession(request, destino)
+  }
+  // `/orumadminlogin/...` escrita a mano: a la forma correcta, `/OrumAdminLogin/...`.
+  const canonica = rutaPanelCanonica(pathname)
+  if (canonica) {
+    const destino = request.nextUrl.clone()
+    destino.pathname = canonica
+    return NextResponse.redirect(destino, 308)
   }
   if (esAccesoInternoDirecto(pathname)) {
     const noExiste = request.nextUrl.clone()

@@ -81,9 +81,9 @@ function refrescar(comercioId: number): void {
   revalidatePath('/comercios', 'layout')
   revalidatePath('/miembros')
   revalidatePath(`/miembros/comercios/${comercioId}`)
-  revalidatePath('/admin/comercios')
-  revalidatePath(`/admin/comercios/${comercioId}`)
-  revalidatePath(`/admin/comercios/${comercioId}/imagenes`)
+  revalidatePath('/OrumAdminLogin/comercios')
+  revalidatePath(`/OrumAdminLogin/comercios/${comercioId}`)
+  revalidatePath(`/OrumAdminLogin/comercios/${comercioId}/imagenes`)
 }
 
 /* ==========================================================================

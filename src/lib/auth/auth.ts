@@ -68,7 +68,7 @@ export const getPerfilActual = cache(async (): Promise<PerfilActual | null> => {
 /**
  * Exige que haya un usuario autenticado, activo y con uno de los roles
  * permitidos. Si no se cumple, «página no encontrada» (11/11/2026): antes
- * redirigía a `/login`, y así cualquiera que escribiera `/admin` descubría
+ * redirigía a `/login`, y así cualquiera que escribiera la dirección del panel descubría
  * la puerta del panel, que ahora vive en una dirección secreta
  * (`lib/auth/ruta-panel.ts`). Devuelve el perfil cuando todo está en orden
  * (útil para usarlo en la misma página).

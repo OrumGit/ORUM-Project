@@ -1427,6 +1427,16 @@ paleta:
   probaron y no gustaron). Al pasar, el texto se aclara y el icono se
   desliza. **El plateado es el acento del cromo negro** («juega mucho más
   con el plateado»); el oro queda para la acción principal.
+- ⚠️ **EL PANEL VIVE EN `/OrumAdminLogin`, NO EN `/admin`** (11/11/2026,
+  encargo del propietario: «cuando se inicie no sirva tampoco /admin sino
+  /OrumAdminLogin»). La carpeta es `src/app/OrumAdminLogin` (antes
+  `src/app/admin`) y los imports `@/app/OrumAdminLogin/...`; `/admin` da 404.
+  **Donde este documento diga `admin/...` o `/admin`, léase
+  `OrumAdminLogin/...`**: se renombró la carpeta y sus 392 referencias, no
+  cada mención histórica de aquí. Las direcciones distinguen mayúsculas:
+  `rutaPanelCanonica` (`lib/auth/ruta-panel.ts`) lleva `/orumadminlogin/...`
+  a la forma correcta con un 308. Sin sesión, `/OrumAdminLogin` da 404
+  igual que antes `/admin`; y `robots.txt` no la lista.
 - **La puerta del panel NO es `/login`** (11/11/2026: «la gente puede ver
   cluborum.com/login; que la ruta del administrador sea más segura y
   difícil de encontrar»). Vive en una dirección LARGA Y ALEATORIA

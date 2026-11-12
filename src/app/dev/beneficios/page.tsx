@@ -3,7 +3,7 @@ import { FichaComercio, type SedeFicha } from '@/components/comercios/ficha-come
 import { BeneficiosSocio, type BeneficioSocio } from '@/components/comercios/beneficios-socio'
 import fichaEstilos from '@/components/comercios/ficha-comercio.module.css'
 import { AdornoEstrella } from '@/components/ui/marca/marca'
-import { PromocionForm } from '@/app/admin/comercios/[id]/promociones/_components/promocion-form'
+import { PromocionForm } from '@/app/OrumAdminLogin/comercios/[id]/promociones/_components/promocion-form'
 import { cuandoUsarlo, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
 import type { DiaHorario } from '@/lib/comercios/horario'
 import portal from '@/app/miembros/(portal)/portal.module.css'

@@ -11,7 +11,7 @@
 
   Se escribe con `accion: 'edicion'` y los campos en `datos_*` para que
   `resumirEventoBitacora` —que ya alimenta la ficha del miembro y
-  `/admin/bitacora`— lo resuma sin cambios: «Datos editados — logo_url».
+  `/OrumAdminLogin/bitacora`— lo resuma sin cambios: «Datos editados — logo_url».
 
   Best-effort, igual que el resto: la auditoría no puede tumbar la operación
   que la dispara.

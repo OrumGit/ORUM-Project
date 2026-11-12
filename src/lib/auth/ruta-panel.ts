@@ -9,7 +9,7 @@
   conoce el equipo. El `proxy` la reescribe por dentro a la página real
   (`app/login`), y `/login` escrita a mano da «página no encontrada», como
   cualquier dirección inventada. Para que nada la delate:
-    · entrar a `/admin` sin sesión (o con una cuenta que no es del equipo)
+    · entrar al panel (`/OrumAdminLogin`) sin sesión (o con una cuenta que no es del equipo)
       también da 404 (`requireRol`), en vez de mandar a la puerta;
     · no aparece en `robots.txt`, ni en el sitemap, ni en ningún enlace;
     · este módulo NUNCA se importa desde un componente de cliente: lo que
@@ -37,6 +37,7 @@ export const RUTA_INTERNA_ACCESO = '/login'
  * taparía, o al revés.)
  */
 const RESERVADAS = new Set([
+  'orumadminlogin',
   'admin',
   'miembros',
   'comercios',
@@ -70,6 +71,24 @@ export function normalizarRutaPanel(valor: string | undefined | null): string {
 /** La dirección de la puerta del panel. Solo en el servidor. */
 export function rutaAccesoPanel(): string {
   return normalizarRutaPanel(process.env.ORUM_RUTA_PANEL)
+}
+
+/**
+ * EL PANEL VIVE EN `/OrumAdminLogin` (11/11/2026, encargo del propietario:
+ * «cuando se inicie no sirva tampoco /admin sino /OrumAdminLogin»). Es la
+ * carpeta `app/OrumAdminLogin`; `/admin` ya no existe. Las direcciones
+ * distinguen mayúsculas, así que `/orumadminlogin/...` escrita a mano se
+ * lleva a la forma correcta.
+ */
+export const RUTA_PANEL = '/OrumAdminLogin'
+
+/** La misma dirección con las mayúsculas correctas, o `null` si ya lo está o no es del panel. */
+export function rutaPanelCanonica(pathname: string): string | null {
+  const minusculas = RUTA_PANEL.toLowerCase()
+  const pedida = pathname.toLowerCase()
+  const esDelPanel = pedida === minusculas || pedida.startsWith(`${minusculas}/`)
+  if (!esDelPanel || pathname.startsWith(RUTA_PANEL)) return null
+  return RUTA_PANEL + pathname.slice(RUTA_PANEL.length)
 }
 
 /** ¿Es una petición directa a la página interna (`/login`, `/login/…`)? */

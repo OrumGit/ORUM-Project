@@ -8,7 +8,7 @@ export const metadata = {
 /**
  * Vista previa del app shell, solo en desarrollo.
  *
- * El shell real vive en `/admin`, protegido por sesión de Supabase. Aquí se
+ * El shell real vive en `/OrumAdminLogin`, protegido por sesión de Supabase. Aquí se
  * monta con datos falsos para poder revisar navegación, indicador activo,
  * barra inferior y paleta de comandos sin credenciales.
  */

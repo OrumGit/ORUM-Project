@@ -23,7 +23,7 @@ export const TOPE_PILA = 20
 
 export type Pila = readonly string[]
 
-/** La ruta sin la consulta: «/admin/comercios?estado=ocultos» → «/admin/comercios». */
+/** La ruta sin la consulta: «/OrumAdminLogin/comercios?estado=ocultos» → «/OrumAdminLogin/comercios». */
 export function rutaDe(url: string): string {
   const sinConsulta = url.split(/[?#]/)[0] || '/'
   return sinConsulta.length > 1 ? sinConsulta.replace(/\/+$/, '') : sinConsulta
@@ -49,30 +49,30 @@ export function anotarVisita(pila: Pila, url: string): string[] {
  * lugar que lo contiene.
  */
 const LUGARES: readonly RegExp[] = [
-  /^\/admin$/,
-  /^\/admin\/(anuncios|bitacora|comercios|metricas|miembros|planes|publicidad|resenas|usuarios)$/,
-  /^\/admin\/comercios\/\d+$/,
-  /^\/admin\/miembros\/\d+$/,
-  /^\/admin\/miembros\/numeros$/,
+  /^\/OrumAdminLogin$/,
+  /^\/OrumAdminLogin\/(anuncios|bitacora|comercios|metricas|miembros|planes|publicidad|resenas|usuarios)$/,
+  /^\/OrumAdminLogin\/comercios\/\d+$/,
+  /^\/OrumAdminLogin\/miembros\/\d+$/,
+  /^\/OrumAdminLogin\/miembros\/numeros$/,
 ]
 
 const esLugar = (ruta: string) => LUGARES.some((r) => r.test(ruta))
 
 /** Las partes de la ficha del comercio que son una pestaña de ella. */
-const PESTANA_COMERCIO = /^\/admin\/comercios\/(\d+)\/(sucursales|promociones|imagenes|resenas)(\/|$)/
+const PESTANA_COMERCIO = /^\/OrumAdminLogin\/comercios\/(\d+)\/(sucursales|promociones|imagenes|resenas)(\/|$)/
 
 /** El lugar de arriba: el que contiene a esta pantalla. */
 export function rutaPadre(url: string): string {
   const ruta = rutaDe(url)
   const pestana = PESTANA_COMERCIO.exec(ruta)
-  if (pestana) return `/admin/comercios/${pestana[1]}?pestana=${pestana[2]}`
+  if (pestana) return `/OrumAdminLogin/comercios/${pestana[1]}?pestana=${pestana[2]}`
 
   const partes = ruta.split('/').filter(Boolean)
   for (let n = partes.length - 1; n >= 1; n--) {
     const arriba = `/${partes.slice(0, n).join('/')}`
     if (esLugar(arriba)) return arriba
   }
-  return '/admin'
+  return '/OrumAdminLogin'
 }
 
 /**
@@ -92,30 +92,30 @@ export function destinoVolver(pila: Pila, actual: string): string {
 }
 
 const NOMBRES: Record<string, string> = {
-  '/admin': 'Volver al inicio',
-  '/admin/anuncios': 'Volver a Novedades',
-  '/admin/bitacora': 'Volver a Bitácora',
-  '/admin/comercios': 'Volver a Comercios',
-  '/admin/metricas': 'Volver a Métricas',
-  '/admin/miembros': 'Volver a Miembros',
-  '/admin/planes': 'Volver a Planes',
-  '/admin/publicidad': 'Volver a Publicidad',
-  '/admin/resenas': 'Volver a Reseñas',
-  '/admin/usuarios': 'Volver a Usuarios',
-  '/admin/miembros/numeros': 'Volver a Números de registro',
+  '/OrumAdminLogin': 'Volver al inicio',
+  '/OrumAdminLogin/anuncios': 'Volver a Novedades',
+  '/OrumAdminLogin/bitacora': 'Volver a Bitácora',
+  '/OrumAdminLogin/comercios': 'Volver a Comercios',
+  '/OrumAdminLogin/metricas': 'Volver a Métricas',
+  '/OrumAdminLogin/miembros': 'Volver a Miembros',
+  '/OrumAdminLogin/planes': 'Volver a Planes',
+  '/OrumAdminLogin/publicidad': 'Volver a Publicidad',
+  '/OrumAdminLogin/resenas': 'Volver a Reseñas',
+  '/OrumAdminLogin/usuarios': 'Volver a Usuarios',
+  '/OrumAdminLogin/miembros/numeros': 'Volver a Números de registro',
 }
 
 /** Lo que dice el botón: adónde va, cuando se sabe nombrarlo. */
 export function textoVolver(destino: string): string {
   const ruta = rutaDe(destino)
   if (NOMBRES[ruta]) return NOMBRES[ruta]
-  if (/^\/admin\/comercios\/\d+$/.test(ruta)) return 'Volver al comercio'
-  if (/^\/admin\/miembros\/\d+$/.test(ruta)) return 'Volver al miembro'
+  if (/^\/OrumAdminLogin\/comercios\/\d+$/.test(ruta)) return 'Volver al comercio'
+  if (/^\/OrumAdminLogin\/miembros\/\d+$/.test(ruta)) return 'Volver al miembro'
   return 'Volver'
 }
 
 /** En la portada del panel no hay adónde volver. */
 export function hayVolver(url: string): boolean {
   const ruta = rutaDe(url)
-  return ruta.startsWith('/admin/') && ruta !== '/admin'
+  return ruta.startsWith('/OrumAdminLogin/') && ruta !== '/OrumAdminLogin'
 }

@@ -103,7 +103,7 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
       <div className={[cromo.portal, styles.panel].join(' ')} data-theme="light">
         {/* ── LA BARRA LATERAL ────────────────────────────────────────── */}
         <aside className={styles.lateral}>
-          <Link href="/admin" className={styles.marca} aria-label="ORUM, ir al inicio del panel">
+          <Link href="/OrumAdminLogin" className={styles.marca} aria-label="ORUM, ir al inicio del panel">
             <LogoOrum variante="plata" className={styles.logo} preload />
             <span className={styles.marcaPanel} aria-hidden="true">
               Panel
@@ -127,7 +127,7 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
                 </button>
               }
             >
-              <MenuItem href="/admin/cuenta/password" icon={<KeyRound size={16} />}>
+              <MenuItem href="/OrumAdminLogin/cuenta/password" icon={<KeyRound size={16} />}>
                 Mi contraseña
               </MenuItem>
               {/* Acceso PERMANENTE a la instalación de la app. */}
@@ -154,15 +154,15 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
           <header className={styles.barra}>
             {/* En el teléfono no hay barra lateral: el logotipo va aquí,
                 en oro (sobre blanco, oro). */}
-            <Link href="/admin" className={styles.marcaMovil} aria-label="ORUM, ir al inicio del panel">
+            <Link href="/OrumAdminLogin" className={styles.marcaMovil} aria-label="ORUM, ir al inicio del panel">
               <LogoOrum variante="dorado" className={styles.logoMovil} />
             </Link>
 
             <nav className={styles.ruta} aria-label="Dónde estás">
-              <Link href="/admin" className={styles.rutaInicio}>
+              <Link href="/OrumAdminLogin" className={styles.rutaInicio}>
                 Panel
               </Link>
-              {actual && actual.href !== '/admin' && (
+              {actual && actual.href !== '/OrumAdminLogin' && (
                 <>
                   <span className={styles.rutaSeparador} aria-hidden="true">
                     /
@@ -177,7 +177,7 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
             {/* El flujo estrella, a un clic desde cualquier pantalla. En el
                 teléfono queda solo el icono; el nombre lo dice `aria-label`. */}
             <Button
-              href="/admin/miembros/nuevo"
+              href="/OrumAdminLogin/miembros/nuevo"
               variant="brand"
               pildora
               icon={<UserPlus size={16} aria-hidden="true" />}
@@ -228,9 +228,9 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
             {/* En el teléfono no hay menú de la cuenta: esta hoja es la
                 ÚNICA puerta a la cuenta. Se lista aquí a mano. */}
             <Link
-              href="/admin/cuenta/password"
+              href="/OrumAdminLogin/cuenta/password"
               className={styles.masItem}
-              data-activo={pathname.startsWith('/admin/cuenta/password')}
+              data-activo={pathname.startsWith('/OrumAdminLogin/cuenta/password')}
               onClick={() => setMas(false)}
             >
               <KeyRound className={styles.masItemIcono} aria-hidden="true" />

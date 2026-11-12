@@ -643,7 +643,7 @@ function Contenido() {
             items={conError ? [] : MIEMBROS}
             columns={COLUMNAS}
             getKey={(m) => m.id}
-            rowHref={(m) => `/admin/miembros/${m.id}`}
+            rowHref={(m) => `/OrumAdminLogin/miembros/${m.id}`}
             error={conError ? 'No pudimos cargar los miembros.' : null}
             actions={(m) => (
               <DropdownMenu

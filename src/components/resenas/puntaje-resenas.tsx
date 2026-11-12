@@ -14,7 +14,7 @@ import estilos from './puntaje-resenas.module.css'
   a la derecha, cuántas hay de cada número de estrellas, de 5 a 1, con una
   barra en el oro de las gráficas (`--gold-600`) y la cifra en tinta.
 
-  Sin directiva: lo pintan la ficha del comercio y `/admin/resenas`, que
+  Sin directiva: lo pintan la ficha del comercio y `/OrumAdminLogin/resenas`, que
   son del servidor. La barra es una escala (`transform`), nunca un ancho.
 */
 

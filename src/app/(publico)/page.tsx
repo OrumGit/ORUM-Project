@@ -55,7 +55,7 @@ export const metadata: Metadata = {
  *
  * Quien escribe el dominio a secas es, la mayoría de las veces, alguien que
  * TODAVÍA NO ES SOCIO —de eso va tener una landing—. El socio sigue entrando
- * por `/miembros`, quien trabaja en el club por `/admin` o `/comercios`, y el
+ * por `/miembros`, quien trabaja en el club por `/OrumAdminLogin` o `/comercios`, y el
  * `start_url` de la aplicación instalable sigue siendo `/miembros`
  * (`manifest.ts`).
  *
@@ -113,7 +113,7 @@ export default async function LandingPublica() {
       <AvisoNovedad novedad={anuncios[0] ?? null} />
 
       {/* El carrusel es PUBLICIDAD que pone el administrador
-          (`/admin/publicidad`). `null` = su tabla aún no existe: mientras
+          (`/OrumAdminLogin/publicidad`). `null` = su tabla aún no existe: mientras
           tanto, las portadas de los comercios, como hasta hoy. */}
       <QueEsOrum fotos={publicidad ?? vitrina.fotos} />
 

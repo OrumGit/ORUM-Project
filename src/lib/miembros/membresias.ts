@@ -2,7 +2,7 @@
   Aquí vivía `generarNumeroMembresia`, que fabricaba el número al vuelo (4
   dígitos secuenciales + 4 aleatorios) durante el alta. Se retiró: ahora el
   número sale del pozo de números de registro que el administrador precarga por
-  rango (ver `numeros-registro.ts` y `/admin/miembros/numeros`). Si el pozo está
+  rango (ver `numeros-registro.ts` y `/OrumAdminLogin/miembros/numeros`). Si el pozo está
   vacío, el alta se bloquea; no se vuelve a inventar ninguno.
 */
 

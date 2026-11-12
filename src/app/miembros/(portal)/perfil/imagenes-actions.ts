@@ -100,7 +100,7 @@ export async function guardarMiFoto(
   // El carnet vive en el layout del portal: sin esto, al cerrar la ventana
   // seguiría enseñando la foto anterior hasta recargar.
   revalidatePath('/miembros', 'layout')
-  revalidatePath(`/admin/miembros/${miembro.id}`)
+  revalidatePath(`/OrumAdminLogin/miembros/${miembro.id}`)
   return { ok: true, url: resultado.url }
 }
 
@@ -150,6 +150,6 @@ export async function quitarMiFoto(): Promise<EstadoSubida> {
 
   revalidatePath('/miembros/perfil')
   revalidatePath('/miembros', 'layout')
-  revalidatePath(`/admin/miembros/${miembro.id}`)
+  revalidatePath(`/OrumAdminLogin/miembros/${miembro.id}`)
   return { ok: true, url: null }
 }

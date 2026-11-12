@@ -18,7 +18,7 @@ type Estado = 'listo' | 'invalido' | 'guardando'
 
 /** A dónde entra el usuario una vez activada la cuenta. */
 const DESTINO_POR_ROL: Record<string, string> = {
-  staff: '/admin',
+  staff: '/OrumAdminLogin',
   comercio: '/comercios',
 }
 

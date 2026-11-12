@@ -60,7 +60,7 @@ export async function iniciarSesion(
   }
 
   // redirect() lanza internamente; debe ir fuera de cualquier try/catch.
-  redirect('/admin')
+  redirect('/OrumAdminLogin')
 }
 
 /**
