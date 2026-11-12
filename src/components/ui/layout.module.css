@@ -302,19 +302,32 @@
 
 /* --- PageHeader ----------------------------------------------------------- */
 
+/*
+  El título y las acciones COMPARTEN la fila mientras quepan; si no, las
+  acciones bajan a la siguiente (12/11/2026, reportado por el cliente: en la
+  ficha de un miembro hay hasta seis botones, la fila de acciones no se
+  encogía y el nombre quedaba aplastado a una letra por renglón, con el
+  último botón fuera de la pantalla). El título nunca baja de `--titulo-min`;
+  las acciones, al quedar solas en su fila, se alinean a la izquierda (con
+  `space-between`, un elemento solo va al principio) y parten en varias
+  filas si tampoco caben.
+*/
 .pageHeader {
+  --titulo-min: 20rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-5);
+  gap: var(--space-4) var(--space-5);
   margin-bottom: var(--space-6);
 }
 
 .pageTextos {
   display: flex;
+  flex: 1 1 var(--titulo-min);
   flex-direction: column;
   gap: var(--space-2);
-  min-width: 0;
+  min-width: min(var(--titulo-min), 100%);
 }
 
 .pageTitulo {
@@ -354,15 +367,24 @@
 
 .pageAcciones {
   display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 @media (max-width: 640px) {
   .pageHeader {
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
+  }
+
+  /* En columna, la base de 20rem sería una ALTURA: aquí no aplica. */
+  .pageTextos {
+    flex: none;
+    min-width: 0;
   }
 
   .pageAcciones {

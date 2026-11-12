@@ -22,6 +22,8 @@ import { GestorPublicidad } from '@/app/OrumAdminLogin/publicidad/_components/ge
 import { EditarForm } from '@/app/OrumAdminLogin/usuarios/[id]/editar/_components/editar-usuario-form'
 import { UsuarioForm } from '@/app/OrumAdminLogin/usuarios/nuevo/_components/usuario-form'
 import { ToastProvider } from '@/components/ui/toast'
+import { Button } from '@/components/ui/button'
+import { Ban, Camera, CreditCard, MailCheck, Pencil, Trash2 } from 'lucide-react'
 import cromo from '@/app/miembros/(portal)/portal.module.css'
 import shell from '@/components/shell/app-shell.module.css'
 import ficha from '@/app/OrumAdminLogin/comercios/[id]/ficha.module.css'
@@ -102,6 +104,40 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
           correo: 'contacto@absurdo.co',
         }}
         categorias={CATEGORIAS}
+      />
+    ),
+  },
+  /* La cabecera de la ficha del miembro con TODOS sus botones (12/11/2026:
+     el nombre quedaba aplastado a una letra por renglón). */
+  'cabecera-miembro': {
+    titulo: 'Ficha del miembro · Cabecera',
+    enPanel: true,
+    contenido: (
+      <PageHeader
+        title="Katherin Recio Marin"
+        description="Cédula 1116017106"
+        actions={
+          <>
+            <Button href="#" variant="secondary" icon={<Pencil size={16} />}>
+              Editar datos
+            </Button>
+            <Button href="#" variant="secondary" icon={<Camera size={16} />}>
+              Cambiar foto
+            </Button>
+            <Button href="#" variant="secondary" icon={<Trash2 size={16} />}>
+              Retirar foto
+            </Button>
+            <Button href="#" variant="secondary" icon={<MailCheck size={16} />}>
+              Reenviar correo de activación
+            </Button>
+            <Button href="#" variant="secondary" icon={<Ban size={16} />}>
+              Revocar membresía
+            </Button>
+            <Button href="#" icon={<CreditCard size={16} />}>
+              Renovar membresía
+            </Button>
+          </>
+        }
       />
     ),
   },

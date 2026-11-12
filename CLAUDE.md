@@ -1383,6 +1383,14 @@ Es lo que da estructura a una pantalla ancha sin dibujar una línea. La franja `
 sus tokens de texto hacia dentro y es el único sitio del sistema donde el oro
 brillante (`--gold-400`, `--gold-300`) es legal.
 
+**`PageHeader` reparte título y acciones** (12/11/2026, reportado por el
+cliente: en la ficha de un miembro, con sus seis botones, el nombre quedaba
+aplastado a una letra por renglón y «Renovar» se salía de la pantalla). El
+título nunca baja de 20rem (`--titulo-min`); si las acciones no caben a su
+lado, BAJAN a la fila de abajo (alineadas a la izquierda) y parten en
+varias filas. Una pantalla con muchas acciones no necesita nada especial.
+Vista previa: `/dev/panel-movil?f=cabecera-miembro`.
+
 **`<PageHeader display>`** pone el `h1` en el peldaño `hero` a 44–72px (peso
 800). Ya no es una cuestión de familia: es una cuestión de que 72px de titular en
 una pantalla de caja es espacio robado a la tabla.
