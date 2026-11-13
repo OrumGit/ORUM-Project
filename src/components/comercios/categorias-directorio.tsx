@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, RefObject } from 'react'
 import { Check, ChevronLeft, ChevronRight, LayoutGrid, Search } from 'lucide-react'
 import { Agitar } from '@/components/ui/agitar'
@@ -160,6 +160,37 @@ function useDesborde(ref: RefObject<HTMLUListElement | null>): number {
   return useSyncExternalStore(suscribir, leer, () => 0)
 }
 
+/*
+  «HAY MÁS FILTROS SI DESLIZAS» (12/11/2026, encargo del propietario: «pon un
+  efecto para que se sepa que hay más filtros al deslizar»). La primera vez
+  que la tira entra en pantalla con fichas más allá del canto, las fichas se
+  ASOMAN hacia la izquierda y vuelven (`data-insinua`, solo `translate`),
+  como si alguien empezara a deslizarla. Una vez por SESIÓN del navegador
+  —el Inicio del socio se abre muchas veces al día y el gesto solo enseña la
+  primera—, se corta si la persona toca o desliza la tira, y con movimiento
+  reducido no ocurre (queda el desvanecido del canto, que ya estaba).
+*/
+const CLAVE_INSINUADA = 'orum:tira-categorias-insinuada'
+let insinuadaEnEstaCarga = false
+
+function yaSeInsinuo(): boolean {
+  if (insinuadaEnEstaCarga) return true
+  try {
+    return sessionStorage.getItem(CLAVE_INSINUADA) === '1'
+  } catch {
+    return false
+  }
+}
+
+function anotarInsinuada() {
+  insinuadaEnEstaCarga = true
+  try {
+    sessionStorage.setItem(CLAVE_INSINUADA, '1')
+  } catch {
+    /* Sin almacenamiento: vale la marca de esta carga. */
+  }
+}
+
 /** Con cinco fichas o menos, dos filas serían dos medias filas: va en una. */
 const MINIMO_DOS_FILAS = 6
 
@@ -168,6 +199,38 @@ export function CategoriasDirectorio({ opciones, onElegir, total }: Props) {
   const [busqueda, setBusqueda] = useState('')
   const pistaRef = useRef<HTMLUListElement>(null)
   const desborde = useDesborde(pistaRef)
+  const [insinua, setInsinua] = useState(false)
+
+  /* El gesto de «hay más»: al entrar en pantalla, una sola vez (ver arriba). */
+  useEffect(() => {
+    const pista = pistaRef.current
+    if (!pista || yaSeInsinuo()) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const observador = new IntersectionObserver(
+      ([entrada]) => {
+        if (!entrada?.isIntersecting) return
+        const recorrido = pista.scrollWidth - pista.clientWidth
+        // Solo si de verdad queda tira por ver hacia la derecha.
+        if (recorrido <= HOLGURA || pista.scrollLeft >= recorrido - HOLGURA) return
+        observador.disconnect()
+        anotarInsinuada()
+        setInsinua(true)
+      },
+      { threshold: 0.6 },
+    )
+    observador.observe(pista)
+
+    // Si la persona ya está tocando o deslizando la tira, el gesto sobra.
+    const cortar = () => setInsinua(false)
+    pista.addEventListener('pointerdown', cortar, { passive: true })
+    pista.addEventListener('wheel', cortar, { passive: true })
+    return () => {
+      observador.disconnect()
+      pista.removeEventListener('pointerdown', cortar)
+      pista.removeEventListener('wheel', cortar)
+    }
+  }, [])
 
   const { visibles, ocultas } = repartirTira(opciones)
   const fichas = visibles.length + 1 // + «Ver más»
@@ -197,6 +260,10 @@ export function CategoriasDirectorio({ opciones, onElegir, total }: Props) {
           className={estilos.pista}
           data-antes={desborde & HAY_ANTES ? '' : undefined}
           data-despues={desborde & HAY_DESPUES ? '' : undefined}
+          data-insinua={insinua ? '' : undefined}
+          onAnimationEnd={(e) => {
+            if (e.animationName.includes('insinuar')) setInsinua(false)
+          }}
           style={{ '--columnas': columnas } as CSSProperties}
         >
           {visibles.map((o) => (

@@ -1070,7 +1070,12 @@ mientras quepan): abre la ventana con TODAS y un campo para buscar por
 nombre, sin tildes ni mayúsculas. La tira enseña hasta `LIMITE_TIRA` (24,
 `lib/comercios/tira-categorias.ts`, probado), más cualquier ELEGIDA que caiga
 después del corte. Favoritos, Ciudad y Ordenar siguen siendo píldoras, arriba.
-No vuelvas al botón que las escondía.
+No vuelvas al botón que las escondía. **«Hay más si deslizas»** (12/11/2026):
+además del desvanecido del canto, la primera vez que la tira entra en
+pantalla con fichas más allá del borde, las fichas se ASOMAN a la izquierda
+y vuelven (`data-insinua`, solo `translate`, ~1,3 s): una vez por SESIÓN
+(`sessionStorage`), se corta si la persona toca o desliza la tira y no
+ocurre con movimiento reducido.
 
 **Las SUBCATEGORÍAS afinan la categoría elegida** (20/10/2026: «se
 agregaron más, son categorías y subcategorías; ajusta el diseño»). No van en

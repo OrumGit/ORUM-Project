@@ -149,6 +149,31 @@
   );
 }
 
+/*
+  EL GESTO DE «HAY MÁS» (12/11/2026). Todas las fichas se asoman a la vez
+  hacia la izquierda —lo que hay tras el canto entra un poco por la máscara—
+  y vuelven a su sitio. Solo `translate` (no mueve el desplazamiento real ni
+  pelea con el dedo) y solo sin movimiento reducido; lo dispara el
+  componente una vez por sesión (`data-insinua`).
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .pista[data-insinua] > li {
+    animation: insinuar calc(var(--dur-page) * 3) var(--ease-in-out) var(--dur-slow) both;
+  }
+}
+
+@keyframes insinuar {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  40%,
+  62% {
+    translate: calc(var(--space-8) * -1) 0;
+  }
+}
+
 /* --- Las flechas -----------------------------------------------------------
    Un disco blanco con su sombra en cada canto, a media altura. Solo con
    ratón: en táctil la tira se desliza con el dedo y un botón encima de las
