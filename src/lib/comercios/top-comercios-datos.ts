@@ -3,6 +3,7 @@ import type { Database } from '@/lib/supabase/database.types'
 import {
   armarTopCalificados,
   armarTopVentas,
+  mezclarTop,
   type ComercioDelTop,
   type TopComercios,
 } from './top-comercios'
@@ -33,10 +34,11 @@ export async function leerTopComercios(
     const fallaVentas = ventas.error !== null || !ventas.data
     if (fallaCalificados && fallaVentas) return null
 
-    return {
+    // Mezcladas: el socio ve QUIÉNES son, nunca en qué orden quedaron.
+    return mezclarTop({
       calificados: fallaCalificados ? [] : armarTopCalificados(calificados.data ?? [], porId),
       ventas: fallaVentas ? [] : armarTopVentas(ventas.data ?? [], porId),
-    }
+    })
   } catch {
     return null
   }

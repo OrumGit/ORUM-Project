@@ -131,3 +131,45 @@ export function armarTopVentas(
 export function hayTop(top: TopComercios | null): top is TopComercios {
   return top !== null && (top.calificados.length > 0 || top.ventas.length > 0)
 }
+
+/*
+  EL DESFILE DE LOGOS (12/11/2026, propietario: «no me gusta que sea un top;
+  como un carrusel que vayan pasando los logos, para no tener preferencias;
+  pero que sí sean los 5 más vendidos, y lo mismo con los más calificados»).
+  Las listas se siguen armando igual —los cinco que más se usaron y los
+  cinco mejor calificados—, pero el socio no ve el orden: cada visita llega
+  MEZCLADA y la pantalla no enseña posición, número ni estrella.
+*/
+
+/**
+ * Baraja una lista (Fisher–Yates) sin tocar la original. `aleatorio` se
+ * inyecta para poder probarla; en la página es `Math.random`.
+ */
+export function mezclar<T>(items: readonly T[], aleatorio: () => number = Math.random): T[] {
+  const copia = [...items]
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(aleatorio() * (i + 1))
+    ;[copia[i], copia[j]] = [copia[j], copia[i]]
+  }
+  return copia
+}
+
+/** Por debajo de esto la cinta no se mueve: un logo dando vueltas solo se ve raro. */
+export const MINIMO_DESFILE = 3
+/** Logos que lleva cada MITAD de la cinta: con menos, en un ordenador ancho quedaría un hueco. */
+export const LOGOS_POR_MITAD = 12
+
+/**
+ * Cuántas veces se repite la lista dentro de cada mitad de la cinta para
+ * llenar `LOGOS_POR_MITAD` (la cinta es la mitad dos veces, para que el
+ * bucle no salte). 0 si la lista está vacía.
+ */
+export function repeticionesDesfile(cantidad: number): number {
+  if (cantidad <= 0) return 0
+  return Math.ceil(LOGOS_POR_MITAD / cantidad)
+}
+
+/** Las dos listas, cada una mezclada. */
+export function mezclarTop(top: TopComercios, aleatorio: () => number = Math.random): TopComercios {
+  return { calificados: mezclar(top.calificados, aleatorio), ventas: mezclar(top.ventas, aleatorio) }
+}

@@ -1,146 +1,159 @@
 'use client'
 
 import Link from 'next/link'
-import { useId, useState } from 'react'
-import { Star, TrendingUp } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useId, useState, type CSSProperties } from 'react'
+import { Pause, Play, Star, Store } from 'lucide-react'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
-import { SegmentedControl } from '@/components/ui/segmented'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
-import { DIAS_VENTAS, MINIMO_RESENAS, type ItemTop, type TopComercios } from '@/lib/comercios/top-comercios'
+import {
+  MINIMO_DESFILE,
+  repeticionesDesfile,
+  type ItemTop,
+  type TopComercios,
+} from '@/lib/comercios/top-comercios'
 import styles from './top-comercios.module.css'
 
 /*
-  EL TOP DE COMERCIOS  ·  Inicio del socio (29/10/2026; rediseño del 12/11/2026)
+  COMERCIOS DESTACADOS  ·  Inicio del socio
   ---------------------------------------------------------------------------
-  Dos listas de cinco con pestañas: los mejor calificados y los que más
-  ventas hicieron en el último mes. Es el único estado del bloque (qué
-  pestaña se ve) y vive aquí; los datos llegan ya listos del servidor
-  (`leerTopComercios`).
+  29/10/2026 nació como un «Top» con pestañas y posiciones; el 12/11/2026 el
+  propietario lo cambió: «no me gusta el diseño, ni que sea un top; como un
+  carrusel, que vayan pasando los logos, para no tener preferencias; pero
+  que sí sean los 5 más vendidos, y lo mismo con los más calificados;
+  podría ser únicamente el logo».
 
-  El rediseño («valida el diseño de este apartado y mejóralo con el estilo
-  existente»):
-    · el título es el de la marca (`TituloSeccion` de bloque: serif, la
-      estrella y la última palabra en cursiva dorada), como Reseñas o
-      Beneficios, y debajo una línea dice QUÉ mide la lista que se ve;
-    · ABRE EN LA LISTA QUE TIENE DATOS: «Mejor calificados» pide 3 reseñas
-      por comercio y, mientras nadie llega, abrir ahí era enseñar un vacío
-      con la otra lista llena al lado;
-    · el vacío ya no es una línea gris: su icono en el aro dorado, qué falta
-      y, si la otra lista tiene comercios, un botón para verla;
-    · la posición va en un aro dorado (las tres primeras, en oro pleno), y
-      en ancho la lista se reparte en dos columnas.
+  Lo que hay:
+    · UNA CINTA DE LOGOS POR LISTA que pasa sola, despacio: «Donde más se usa
+      ORUM» (los cinco con más ventas del mes) y «Los mejor calificados» (los
+      cinco con mejor promedio, desde 3 reseñas). Una lista vacía no pinta su
+      cinta; hoy nadie llega a 3 reseñas y solo se ve la primera.
+    · SIN ORDEN NI NÚMEROS: las listas llegan mezcladas del servidor
+      (`mezclarTop`) y no se pinta posición, ventas ni estrellas.
+    · SOLO EL LOGO. El nombre lo dice el enlace (lector de pantalla) y un
+      rótulo que aparece al apuntar o enfocar; tocarlo abre la ficha.
 
-  Cada fila es un enlace a la ficha del socio. El dato de la derecha (la
-  estrella y el promedio) se dice con texto, nunca solo con color, y el
-  lector de pantalla oye la versión larga (`datoAccesible`). En «Más
-  ventas» NO hay dato: el propietario no quiere que el socio vea cuántas
-  ventas hizo un comercio (12/11/2026); la lista dice solo el orden.
+  El movimiento:
+    · Solo `transform`, una capa por cinta: la cinta es la lista repetida
+      hasta llenar media cinta (`repeticionesDesfile`) y DOS veces esa
+      mitad, así que desplazarla −50 % vuelve exactamente al principio.
+    · Se detiene al apuntarla o al enfocar un logo, y con el botón de pausa
+      (WCAG 2.2.2: lo que se mueve solo más de 5 s se tiene que poder parar,
+      también sin ratón).
+    · La segunda cinta va al revés, para que las dos no se lean como una.
+    · Con movimiento reducido NO se mueve: queda una fila con un logo por
+      comercio que se desliza con el dedo, y el botón de pausa no sale.
+    · Con menos de 3 logos tampoco se mueve (un logo dando vueltas solo).
 
-  La lista no anima al cambiar de pestaña más que con un fundido corto: es
-  algo que el socio hace a menudo (regla cero de movimiento).
+  Accesibilidad: el primer juego de logos es el real (enlaces con nombre);
+  las repeticiones son `aria-hidden` e `inert`, así el lector y el
+  tabulador recorren cinco logos, no cuarenta.
 */
 
-type Vista = 'calificados' | 'ventas'
-
-const OPCIONES = [
-  { value: 'calificados', label: 'Mejor calificados', icon: <Star size={16} aria-hidden="true" /> },
-  { value: 'ventas', label: 'Más ventas', icon: <TrendingUp size={16} aria-hidden="true" /> },
-] as const
-
-const BAJADA: Record<Vista, string> = {
-  calificados: 'Los que mejor califican los socios.',
-  ventas: `Donde más se usó la membresía en los últimos ${DIAS_VENTAS} días.`,
-}
-
-const VACIO: Record<Vista, { titulo: string; texto: string; otra: string }> = {
-  calificados: {
-    titulo: 'Aún no hay un top de calificaciones',
-    texto: `Un comercio entra aquí cuando reúne ${MINIMO_RESENAS} reseñas o más. Califica los que visitas: tu opinión ayuda a otros socios.`,
-    otra: 'Ver los de más ventas',
-  },
-  ventas: {
-    titulo: 'Aún no hay ventas este mes',
-    texto: `Cuando los socios usen su membresía, aquí verás los comercios con más ventas de los últimos ${DIAS_VENTAS} días.`,
-    otra: 'Ver los mejor calificados',
-  },
+type Cinta = {
+  clave: 'ventas' | 'calificados'
+  titulo: string
+  Icono: typeof Store
+  items: ItemTop[]
 }
 
 export function TopComerciosSocio({ top }: { top: TopComercios }) {
-  // Abre en la lista que tiene algo que enseñar.
-  const [vista, setVista] = useState<Vista>(
-    top.calificados.length === 0 && top.ventas.length > 0 ? 'ventas' : 'calificados',
-  )
   const titulo = useId()
-  const items: ItemTop[] = vista === 'calificados' ? top.calificados : top.ventas
-  const otra: Vista = vista === 'calificados' ? 'ventas' : 'calificados'
-  const otraTieneDatos = (otra === 'calificados' ? top.calificados : top.ventas).length > 0
-  const Icono = vista === 'calificados' ? Star : TrendingUp
+  const [pausado, setPausado] = useState(false)
+
+  const cintas: Cinta[] = [
+    { clave: 'ventas' as const, titulo: 'Donde más se usa ORUM', Icono: Store, items: top.ventas },
+    { clave: 'calificados' as const, titulo: 'Los mejor calificados', Icono: Star, items: top.calificados },
+  ].filter((c) => c.items.length > 0)
+
+  const algunaSeMueve = cintas.some((c) => c.items.length >= MINIMO_DESFILE)
 
   return (
-    <section className={styles.top} aria-labelledby={titulo}>
+    <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
         <div className={styles.textosCabecera}>
-          <TituloSeccion id={titulo} como="h2" tamano="bloque" texto="Top de comercios" />
-          <p className={styles.bajada} aria-live="polite">
-            {BAJADA[vista]}
-          </p>
+          <TituloSeccion id={titulo} como="h2" tamano="bloque" texto="Comercios destacados" />
+          <p className={styles.bajada}>Los que más disfrutan los socios este mes.</p>
         </div>
-        <SegmentedControl
-          options={OPCIONES}
-          value={vista}
-          onChange={setVista}
-          ariaLabel="Ver el top por"
-          size="sm"
-        />
+        {algunaSeMueve && (
+          <button
+            type="button"
+            className={styles.pausa}
+            onClick={() => setPausado((p) => !p)}
+            aria-pressed={pausado}
+            aria-label={pausado ? 'Reanudar el paso de los logos' : 'Pausar el paso de los logos'}
+          >
+            {pausado ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
+          </button>
+        )}
       </div>
 
-      {items.length === 0 ? (
-        <div className={styles.vacio} key={`vacio-${vista}`}>
-          <span className={styles.vacioIcono} aria-hidden="true">
-            <Icono size={20} />
-          </span>
-          <div className={styles.vacioTextos}>
-            <p className={styles.vacioTitulo}>{VACIO[vista].titulo}</p>
-            <p className={styles.vacioTexto}>{VACIO[vista].texto}</p>
-          </div>
-          {otraTieneDatos && (
-            <Button variant="secondary" size="sm" pildora onClick={() => setVista(otra)}>
-              {VACIO[vista].otra}
-            </Button>
-          )}
-        </div>
-      ) : (
-        <ol className={styles.lista} key={vista}>
-          {items.map((item) => (
-            <li key={item.comercioId}>
-              <Link
-                href={`/miembros/comercios/${item.comercioId}`}
-                className={styles.fila}
-                aria-label={[`${item.posicion}. ${item.nombre}`, item.datoAccesible].filter(Boolean).join('. ')}
-              >
-                <span
-                  className={styles.posicion}
-                  data-podio={item.posicion <= 3 || undefined}
-                  aria-hidden="true"
-                >
-                  {item.posicion}
-                </span>
-                <ComercioLogo logoUrl={item.logoUrl} nombre={item.nombre} />
-                <span className={styles.textos}>
-                  <span className={styles.nombre}>{item.nombre}</span>
-                  {item.detalle && <span className={styles.detalle}>{item.detalle}</span>}
-                </span>
-                {item.dato && (
-                  <span className={styles.dato} aria-hidden="true">
-                    {item.dato}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
+      {cintas.map((cinta, i) => (
+        <CintaLogos
+          key={cinta.clave}
+          cinta={cinta}
+          inversa={i % 2 === 1}
+          pausada={pausado}
+        />
+      ))}
     </section>
+  )
+}
+
+function CintaLogos({ cinta, inversa, pausada }: { cinta: Cinta; inversa: boolean; pausada: boolean }) {
+  const rotulo = useId()
+  const { items, Icono } = cinta
+  const mueve = items.length >= MINIMO_DESFILE
+  // Las dos mitades idénticas de la cinta; la primera repetición de la
+  // primera mitad es la única que se lee y se tabula.
+  const repeticiones = mueve ? repeticionesDesfile(items.length) * 2 : 1
+  const juegos = Array.from({ length: repeticiones }, (_, j) => j)
+
+  return (
+    <div className={styles.bloqueCinta}>
+      <p id={rotulo} className={styles.rotuloCinta}>
+        <Icono size={14} aria-hidden="true" />
+        {cinta.titulo}
+      </p>
+      <div
+        className={styles.ventana}
+        data-mueve={mueve || undefined}
+        data-pausada={pausada || undefined}
+      >
+        <ul
+          className={styles.pista}
+          aria-labelledby={rotulo}
+          data-inversa={inversa || undefined}
+          // Una vuelta recorre MEDIA cinta: su duración es la de los logos de
+          // esa mitad, así todas avanzan igual de rápido, tengan 3 o 5.
+          style={{ '--logos-cinta': (repeticiones * items.length) / 2 } as CSSProperties}
+        >
+          {juegos.flatMap((juego) =>
+            items.map((item) => {
+              const copia = juego > 0
+              return (
+                <li
+                  key={`${juego}-${item.comercioId}`}
+                  className={styles.logo}
+                  data-copia={copia || undefined}
+                  aria-hidden={copia || undefined}
+                  inert={copia || undefined}
+                >
+                  <Link
+                    href={`/miembros/comercios/${item.comercioId}`}
+                    className={styles.enlace}
+                    aria-label={item.nombre}
+                  >
+                    <ComercioLogo logoUrl={item.logoUrl} nombre={item.nombre} />
+                    <span className={styles.nombre} aria-hidden="true">
+                      {item.nombre}
+                    </span>
+                  </Link>
+                </li>
+              )
+            }),
+          )}
+        </ul>
+      </div>
+    </div>
   )
 }

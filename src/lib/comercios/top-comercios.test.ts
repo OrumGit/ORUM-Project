@@ -3,6 +3,11 @@ import {
   armarTopCalificados,
   armarTopVentas,
   hayTop,
+  LOGOS_POR_MITAD,
+  MINIMO_DESFILE,
+  mezclar,
+  mezclarTop,
+  repeticionesDesfile,
   TOPE_TOP,
   type ComercioDelTop,
 } from './top-comercios'
@@ -149,5 +154,56 @@ describe('hayTop', () => {
   it('es verdadero si cualquiera de las dos tiene algo', () => {
     expect(hayTop({ calificados: item, ventas: [] })).toBe(true)
     expect(hayTop({ calificados: [], ventas: item })).toBe(true)
+  })
+})
+
+describe('el desfile de logos', () => {
+  // Generador fijo: siempre el mismo «azar», para que la prueba sea estable.
+  const fijo = (valores: number[]) => {
+    let i = 0
+    return () => valores[i++ % valores.length]
+  }
+
+  it('mezclar conserva los mismos elementos y no toca la lista original', () => {
+    const original = [1, 2, 3, 4, 5]
+    const mezclada = mezclar(original, fijo([0.1, 0.7, 0.3, 0.9]))
+    expect(original).toEqual([1, 2, 3, 4, 5])
+    expect([...mezclada].sort()).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('mezclar cambia el orden cuando el azar lo pide', () => {
+    // Con 0 siempre, cada paso cambia el último con el primero.
+    expect(mezclar([1, 2, 3], () => 0)).toEqual([2, 3, 1])
+  })
+
+  it('mezclar aguanta listas vacías y de uno', () => {
+    expect(mezclar([], Math.random)).toEqual([])
+    expect(mezclar(['a'], Math.random)).toEqual(['a'])
+  })
+
+  it('mezclarTop mezcla las dos listas sin perder a nadie', () => {
+    const comercios = new Map([1, 2, 3].map((id) => [id, comercio(id, `C${id}`)]))
+    const top = {
+      calificados: armarTopCalificados([{ comercio_id: 1, promedio: 5, total: 3 }], comercios),
+      ventas: armarTopVentas(
+        [1, 2, 3].map((id) => ({ comercio_id: id, ventas: 10 - id })),
+        comercios,
+      ),
+    }
+    const mezclado = mezclarTop(top, () => 0)
+    expect(mezclado.calificados).toHaveLength(1)
+    expect(mezclado.ventas.map((v) => v.comercioId).sort()).toEqual([1, 2, 3])
+  })
+
+  it('repite la lista hasta llenar media cinta', () => {
+    expect(repeticionesDesfile(0)).toBe(0)
+    expect(repeticionesDesfile(5)).toBe(3)
+    expect(repeticionesDesfile(3)).toBe(4)
+    expect(repeticionesDesfile(5) * 5).toBeGreaterThanOrEqual(LOGOS_POR_MITAD)
+    expect(repeticionesDesfile(LOGOS_POR_MITAD)).toBe(1)
+  })
+
+  it('por debajo del mínimo no hay desfile', () => {
+    expect(MINIMO_DESFILE).toBe(3)
   })
 })
