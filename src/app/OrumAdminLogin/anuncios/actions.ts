@@ -10,6 +10,13 @@ import { BUCKET_IMAGENES_ANUNCIOS, rutaImagenAnuncio } from '@/lib/imagenes/ruta
 import { borrarPorUrlPublica, subirImagen } from '@/lib/imagenes/subir'
 import { LIMITE_IMAGENES_COMERCIOS } from '@/lib/imagenes/validacion'
 import {
+  MENSAJE_FALTA_MIGRACION_VIDEOS,
+  borrarVideo,
+  confirmarVideo,
+  faltaColumnaVideo,
+  videoDe,
+} from '@/lib/videos/servidor'
+import {
   faltanColumnasDeProgramacion,
   instanteBogota,
   revisarProgramacion,
@@ -137,15 +144,48 @@ function archivoDe(formData: FormData): File | null {
   La imagen se sube DESPUÉS de guardar los textos: si Storage falla, la
   novedad queda guardada y el aviso lo dice; la imagen anterior no se toca.
 */
+/*
+  Y DESDE EL 13/11/2026, UN VIDEO. Llega ya subido (`video_ruta`, ver
+  `pedirSubidaVideo`) y su PORTADA viaja como la imagen (`archivo`): la
+  novedad guarda las dos. Con una imagen nueva sin video, el video que
+  hubiera se quita; «Quitar» se lleva los dos.
+*/
 async function aplicarImagen(
   admin: Admin,
   actorId: string,
   anuncioId: number,
   urlAnterior: string | null,
   formData: FormData,
+  videoAnterior: string | null = null,
 ): Promise<string | null> {
   const archivo = archivoDe(formData)
   const quitar = formData.get('quitar_imagen') === '1'
+  const rutaVideo = String(formData.get('video_ruta') ?? '').trim()
+
+  let videoUrl: string | null = null
+  if (rutaVideo) {
+    const confirmado = await confirmarVideo(admin, rutaVideo, 'novedades')
+    if (!confirmado.ok) return `La novedad se guardó, pero el video no: ${confirmado.error}`
+    videoUrl = confirmado.url
+    const { error } = await admin
+      .from('anuncios')
+      .update({ video_url: videoUrl, updated_by: actorId })
+      .eq('id', anuncioId)
+    if (error) {
+      await borrarVideo(admin, videoUrl)
+      return faltaColumnaVideo(error)
+        ? `La novedad se guardó, pero el video no. ${MENSAJE_FALTA_MIGRACION_VIDEOS}`
+        : mensajeDeError('La novedad se guardó, pero no su video', error)
+    }
+    if (videoAnterior && videoAnterior !== videoUrl) await borrarVideo(admin, videoAnterior)
+  } else if (videoAnterior && (archivo || quitar)) {
+    // Imagen nueva sin video, o quitar: el video que había sobra.
+    const { error } = await admin
+      .from('anuncios')
+      .update({ video_url: null, updated_by: actorId })
+      .eq('id', anuncioId)
+    if (!error) await borrarVideo(admin, videoAnterior)
+  }
 
   if (archivo) {
     const subida = await subirImagen(admin, {
@@ -244,7 +284,8 @@ export async function editarAnuncio(_prev: AnuncioState, formData: FormData): Pr
   const admin = createAdminClient()
   const { data: anterior } = await admin
     .from('anuncios')
-    .select('imagen_url')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -268,7 +309,14 @@ export async function editarAnuncio(_prev: AnuncioState, formData: FormData): Pr
   if (error?.code === 'SIN_MIGRACION') return { error: SIN_MIGRACION }
   if (error) return { error: mensajeDeError('No se pudieron guardar los cambios', error) }
 
-  const errorImagen = await aplicarImagen(admin, actor.actorId, id, anterior.imagen_url, formData)
+  const errorImagen = await aplicarImagen(
+    admin,
+    actor.actorId,
+    id,
+    anterior.imagen_url,
+    formData,
+    videoDe(anterior),
+  )
   refrescar()
   return errorImagen ? { error: errorImagen } : { ok: true }
 }

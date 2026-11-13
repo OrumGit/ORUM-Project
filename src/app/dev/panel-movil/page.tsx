@@ -356,7 +356,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
   publicidad: {
     titulo: 'Publicidad',
     enPanel: true,
-    contenido: <GestorPublicidad piezas={[1, 2, 3].map((i) => ({ id: i, url: FOTO, descripcion: `Pieza ${i}`, activa: i !== 2 }))} />,
+    contenido: <GestorPublicidad piezas={[1, 2, 3].map((i) => ({ id: i, url: FOTO, video: i === 3 ? 'video.mp4' : null, descripcion: `Pieza ${i}`, activa: i !== 2 }))} />,
   },
   'usuario-nuevo': { titulo: 'Nuevo usuario', contenido: <UsuarioForm /> },
   'usuario-editar': {

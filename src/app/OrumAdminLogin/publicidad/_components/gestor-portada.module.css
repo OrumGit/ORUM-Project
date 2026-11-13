@@ -217,3 +217,26 @@
   flex-direction: column;
   gap: var(--space-5);
 }
+
+/* Los dos botones de añadir (13/11/2026): video e imagen, juntos. */
+.anadir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* La marca de una pieza de video, abajo a la izquierda de su portada. */
+.esVideo {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--negro-900) 78%, transparent);
+  color: var(--blanco);
+  font-size: var(--t-caption-size);
+  font-weight: 700;
+}

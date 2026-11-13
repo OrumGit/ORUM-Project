@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Alert } from '@/components/ui/alert'
 import { PageHeader } from '@/components/ui/layout'
 import type { PiezaPublicidad } from '@/lib/publicidad/publicidad'
+import { videoDe } from '@/lib/videos/servidor'
 import { GestorPublicidad } from './_components/gestor-portada'
 
 export const metadata = { title: 'Publicidad · ORUM' }
@@ -14,13 +15,15 @@ export default async function PublicidadPage() {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('publicidad')
-    .select('id, imagen_url, descripcion, activo')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
     .order('orden', { ascending: true })
     .order('id', { ascending: true })
 
   const piezas: PiezaPublicidad[] = (data ?? []).map((p) => ({
     id: p.id,
     url: p.imagen_url,
+    video: videoDe(p),
     descripcion: p.descripcion,
     activa: p.activo,
   }))

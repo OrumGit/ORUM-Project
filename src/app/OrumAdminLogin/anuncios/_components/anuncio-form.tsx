@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState, type DragEvent } from 'react'
-import { CalendarClock, Crop, ImagePlus, Megaphone, RefreshCw, Save, Trash2, Undo2 } from 'lucide-react'
+import { CalendarClock, Crop, Film, ImagePlus, Megaphone, RefreshCw, Save, Trash2, Undo2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -13,6 +13,8 @@ import {
   useImagenElegida,
   type OpcionesEncuadre,
 } from '@/components/imagenes/editor-encuadre'
+import { EditorVideo, type VideoListo } from '@/components/videos/editor-video'
+import { TIPOS_ACEPTADOS, urlPublicaVideo } from '@/lib/videos/video'
 import { largo, obligatorio, type Regla } from '@/lib/validacion/reglas'
 import {
   describirProgramacion,
@@ -30,6 +32,8 @@ export type AnuncioInicial = {
   titulo: string
   cuerpo: string
   imagenUrl: string | null
+  /** El MP4 de la novedad, si tiene (su portada es `imagenUrl`). */
+  videoUrl?: string | null
   mostrarPublico: boolean
   mostrarMiembros: boolean
   /** La ventana programada (`null` = sin ese extremo). */
@@ -85,11 +89,19 @@ const OPCIONES_IMAGEN: OpcionesEncuadre = {
   pesoMaximo: 700 * 1024,
 }
 
-/** La imagen que quedará al guardar. */
+/**
+ * Lo que quedará al guardar: una imagen, un VIDEO (13/11/2026) o nada. El
+ * video nuevo ya está subido (`ruta`); su portada viaja como la imagen.
+ */
 type Imagen =
   | { tipo: 'actual'; url: string }
   | { tipo: 'nueva'; archivo: File; url: string }
+  | { tipo: 'videoActual'; url: string; video: string }
+  | { tipo: 'videoNuevo'; ruta: string; portada: File; url: string; video: string; original: File }
   | { tipo: 'ninguna' }
+
+/** El video que se está ajustando en el paso del editor (`n` lo arranca de cero). */
+type VideoEnEdicion = { archivo: File; n: number }
 
 /*
   LA NOVEDAD, EN UNA SOLA VENTANA (21/10/2026: «editar novedad está feo y
@@ -117,9 +129,20 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
   useCerrarCuando(state.ok)
   const v = useValidacion(REGLAS)
 
-  const inicial: Imagen = anuncio?.imagenUrl ? { tipo: 'actual', url: anuncio.imagenUrl } : { tipo: 'ninguna' }
+  const inicial: Imagen =
+    anuncio?.videoUrl && anuncio.imagenUrl
+      ? { tipo: 'videoActual', url: anuncio.imagenUrl, video: anuncio.videoUrl }
+      : anuncio?.imagenUrl
+        ? { tipo: 'actual', url: anuncio.imagenUrl }
+        : { tipo: 'ninguna' }
   const [imagen, setImagen] = useState<Imagen>(inicial)
-  const quitada = inicial.tipo === 'actual' && imagen.tipo === 'ninguna'
+  const quitada = inicial.tipo !== 'ninguna' && imagen.tipo === 'ninguna'
+  const esVideo = imagen.tipo === 'videoActual' || imagen.tipo === 'videoNuevo'
+
+  const selectorVideo = useRef<HTMLInputElement>(null)
+  const [videoEnEdicion, setVideoEnEdicion] = useState<VideoEnEdicion | null>(null)
+  const [abriendoVideo, setAbriendoVideo] = useState(false)
+  const [errorVideo, setErrorVideo] = useState<string | null>(null)
 
   const editor = useImagenElegida()
   const selector = useRef<HTMLInputElement>(null)
@@ -128,7 +151,8 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
   const [largoTitulo, setLargoTitulo] = useState((anuncio?.titulo ?? '').length)
   const [largoCuerpo, setLargoCuerpo] = useState((anuncio?.cuerpo ?? '').length)
 
-  const ajustando = editor.imagen !== null
+  const ajustandoVideo = videoEnEdicion !== null
+  const ajustando = editor.imagen !== null || ajustandoVideo
 
   /* La programación: cada extremo con su interruptor, su día y su hora (de
      Colombia). Controlados, para decir en palabras qué va a pasar. */
@@ -140,9 +164,10 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
   const hasta = programarFin ? instanteBogota(fin.fecha, fin.hora) : null
   const resumen = describirProgramacion(desde, hasta)
 
-  // La vista previa de una imagen nueva vive en memoria: se suelta al cambiarla.
+  // La vista previa de una imagen nueva (o de la portada de un video nuevo)
+  // vive en memoria: se suelta al cambiarla.
   useEffect(() => {
-    if (imagen.tipo !== 'nueva') return
+    if (imagen.tipo !== 'nueva' && imagen.tipo !== 'videoNuevo') return
     return () => URL.revokeObjectURL(imagen.url)
   }, [imagen])
 
@@ -157,6 +182,8 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     if (!campo) return
     const datos = new DataTransfer()
     if (imagen.tipo === 'nueva') datos.items.add(imagen.archivo)
+    // La portada del video viaja como la imagen de la novedad.
+    if (imagen.tipo === 'videoNuevo') datos.items.add(imagen.portada)
     campo.files = datos.files
   }, [imagen])
 
@@ -168,6 +195,7 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
       e.preventDefault()
       e.stopPropagation()
       editor.soltar()
+      setVideoEnEdicion(null)
     }
     window.addEventListener('keydown', alPulsar, true)
     return () => window.removeEventListener('keydown', alPulsar, true)
@@ -177,8 +205,57 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     selector.current?.click()
   }
 
+  function elegirVideo() {
+    setErrorVideo(null)
+    selectorVideo.current?.click()
+  }
+
+  function abrirVideo(archivo: File | undefined) {
+    if (!archivo) return
+    setErrorVideo(null)
+    setVideoEnEdicion((v) => ({ archivo, n: (v?.n ?? 0) + 1 }))
+  }
+
+  /** Ajustar un video: el original si es nuevo; si ya estaba publicado, se descarga. */
+  async function ajustarVideo() {
+    if (imagen.tipo === 'videoNuevo') {
+      abrirVideo(imagen.original)
+      return
+    }
+    if (imagen.tipo !== 'videoActual') return
+    setAbriendoVideo(true)
+    try {
+      const respuesta = await fetch(imagen.video)
+      if (!respuesta.ok) throw new Error(String(respuesta.status))
+      abrirVideo(new File([await respuesta.blob()], 'video.mp4', { type: 'video/mp4' }))
+    } catch {
+      setErrorVideo('No se pudo abrir el video publicado. Elige el archivo otra vez para ajustarlo.')
+    } finally {
+      setAbriendoVideo(false)
+    }
+  }
+
+  /** El video ya está subido: queda en la novedad hasta guardar. */
+  function usarVideo(listo: VideoListo) {
+    const original = videoEnEdicion?.archivo
+    if (!original) return
+    setImagen({
+      tipo: 'videoNuevo',
+      ruta: listo.ruta,
+      portada: listo.portada,
+      url: URL.createObjectURL(listo.portada),
+      video: urlPublicaVideo(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '', listo.ruta),
+      original,
+    })
+    setVideoEnEdicion(null)
+  }
+
   /** Abre en el editor la imagen que se ve ahora (la publicada o la recién elegida). */
   function ajustar() {
+    if (esVideo) {
+      void ajustarVideo()
+      return
+    }
     if (imagen.tipo !== 'ninguna') void editor.abrirActual(imagen.url)
   }
 
@@ -191,7 +268,10 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     e.preventDefault()
     setEncima(false)
     const archivo = e.dataTransfer.files?.[0]
-    if (archivo) editor.elegir(archivo)
+    if (!archivo) return
+    // Un video soltado va a su editor; lo demás, al de imágenes.
+    if (archivo.type.startsWith('video/')) abrirVideo(archivo)
+    else editor.elegir(archivo)
   }
 
   const urlVista = imagen.tipo === 'ninguna' ? null : imagen.url
@@ -211,7 +291,38 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
         }}
       />
 
-      {ajustando && editor.imagen && (
+      {/* El de los videos: cualquier formato que el navegador sepa abrir se
+          convierte a MP4 al prepararlo. */}
+      <input
+        ref={selectorVideo}
+        type="file"
+        accept={TIPOS_ACEPTADOS}
+        hidden
+        onChange={(e) => {
+          abrirVideo(e.target.files?.[0])
+          e.target.value = ''
+        }}
+      />
+
+      {videoEnEdicion && (
+        <div className={styles.paso}>
+          <p className={styles.pasoTitulo}>Ajusta el video</p>
+          <p className={styles.pasoAyuda}>
+            Encuádralo y elige el tramo que se verá en Novedades: 5 minutos como mucho. Al usarlo se prepara y se sube;
+            la novedad se publica al guardar.
+          </p>
+          <EditorVideo
+            key={videoEnEdicion.n}
+            archivo={videoEnEdicion.archivo}
+            destino="novedades"
+            onListo={usarVideo}
+            onCancelar={() => setVideoEnEdicion(null)}
+            onElegirOtro={elegirVideo}
+          />
+        </div>
+      )}
+
+      {ajustando && !ajustandoVideo && editor.imagen && (
         <div className={styles.paso}>
           <p className={styles.pasoTitulo}>Ajusta la imagen</p>
           <p className={styles.pasoAyuda}>
@@ -243,13 +354,14 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
 
         {anuncio && <input type="hidden" name="id" value={anuncio.id} />}
         <input ref={adjunto} type="file" name="archivo" hidden />
+        {imagen.tipo === 'videoNuevo' && <input type="hidden" name="video_ruta" value={imagen.ruta} />}
         {quitada && <input type="hidden" name="quitar_imagen" value="1" />}
 
         {/* ── LA IMAGEN ─────────────────────────────────────────────────── */}
         <section className={styles.bloqueImagen} aria-labelledby="titulo-imagen-novedad">
           <div className={styles.cabezaImagen}>
             <span id="titulo-imagen-novedad" className={styles.etiqueta}>
-              Imagen
+              Imagen o video
               <span className={styles.opcional}>opcional</span>
             </span>
             {quitada && (
@@ -265,8 +377,20 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
 
           {urlVista ? (
             <figure className={styles.vista}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local o URL de Storage */}
-              <img src={urlVista} alt="" className={styles.vistaImagen} />
+              {esVideo ? (
+                <video
+                  src={imagen.video}
+                  poster={urlVista}
+                  className={styles.vistaImagen}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  aria-label="Vista previa del video"
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- vista previa local o URL de Storage
+                <img src={urlVista} alt="" className={styles.vistaImagen} />
+              )}
               <figcaption className={styles.vistaAcciones}>
                 <Button
                   type="button"
@@ -274,11 +398,17 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
                   size="sm"
                   icon={<Crop size={15} />}
                   onClick={ajustar}
-                  loading={editor.abriendo}
+                  loading={editor.abriendo || abriendoVideo}
                 >
                   Ajustar
                 </Button>
-                <Button type="button" variant="secondary" size="sm" icon={<RefreshCw size={15} />} onClick={elegirArchivo}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  icon={<RefreshCw size={15} />}
+                  onClick={esVideo ? elegirVideo : elegirArchivo}
+                >
                   Cambiar
                 </Button>
                 <Button
@@ -293,11 +423,9 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
               </figcaption>
             </figure>
           ) : (
-            <button
-              type="button"
+            <div
               className={styles.soltar}
               data-encima={encima || undefined}
-              onClick={elegirArchivo}
               onDragOver={(e) => {
                 e.preventDefault()
                 setEncima(true)
@@ -308,11 +436,25 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
               <span className={styles.soltarIcono} aria-hidden="true">
                 <ImagePlus size={22} />
               </span>
-              <span className={styles.soltarTitulo}>Añade una imagen</span>
+              <span className={styles.soltarTitulo}>Añade una imagen o un video</span>
               <span className={styles.soltarAyuda}>
-                Arrástrala aquí o elige un archivo. Luego la ajustas al formato de la portada.
+                Arrástralo aquí o elige un archivo. Luego lo ajustas al formato de Novedades; el video puede durar hasta
+                5 minutos y lo recortas aquí mismo.
               </span>
-            </button>
+              <span className={styles.soltarBotones}>
+                <Button type="button" variant="secondary" size="sm" icon={<ImagePlus size={15} />} onClick={elegirArchivo}>
+                  Elegir imagen
+                </Button>
+                <Button type="button" variant="secondary" size="sm" icon={<Film size={15} />} onClick={elegirVideo}>
+                  Elegir video
+                </Button>
+              </span>
+            </div>
+          )}
+          {errorVideo && !ajustando && (
+            <p className={styles.errorImagen} role="alert">
+              {errorVideo}
+            </p>
           )}
           {editor.error && !ajustando && (
             <p className={styles.errorImagen} role="alert">

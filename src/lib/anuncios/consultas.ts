@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
-import { faltanColumnasDeProgramacion, vigentesAhora } from './programacion'
+import { vigentesAhora } from './programacion'
 import type { AnuncioResumen } from './tipos'
 
 export type PortalAnuncios = 'publico' | 'miembros'
@@ -32,15 +32,17 @@ export async function obtenerAnunciosVisibles(
   supabase: SupabaseClient<Database>,
   portal: PortalAnuncios,
 ): Promise<AnuncioResumen[]> {
-  const consulta = (columnas: string) =>
-    supabase
-      .from('anuncios')
-      .select(columnas)
-      .eq('activo', true)
-      .eq(COLUMNA_ALCANCE[portal], true)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(50)
+  /* `*` trae las columnas que existan: las de programación y la del video
+     llegan con migraciones que se aplican a mano, y sin ellas la lectura
+     sigue funcionando (las que falten no vienen). */
+  const respuesta = await supabase
+    .from('anuncios')
+    .select('*')
+    .eq('activo', true)
+    .eq(COLUMNA_ALCANCE[portal], true)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(50)
 
   type Fila = {
     id: number
@@ -50,14 +52,9 @@ export async function obtenerAnunciosVisibles(
     created_at: string
     publicar_desde?: string | null
     publicar_hasta?: string | null
+    video_url?: string | null
   }
 
-  let respuesta = await consulta(
-    'id, titulo, cuerpo, imagen_url, created_at, publicar_desde, publicar_hasta',
-  )
-  if (faltanColumnasDeProgramacion(respuesta.error)) {
-    respuesta = await consulta('id, titulo, cuerpo, imagen_url, created_at')
-  }
   const filas = ((respuesta.data ?? []) as unknown as Fila[]).map((f) => ({
     ...f,
     desde: f.publicar_desde ?? null,
@@ -70,6 +67,7 @@ export async function obtenerAnunciosVisibles(
     titulo: fila.titulo,
     cuerpo: fila.cuerpo,
     imagenUrl: fila.imagen_url,
+    videoUrl: fila.video_url?.trim() || null,
     // Cuándo SALIÓ: su inicio programado, o cuándo se creó.
     createdAt: fila.desde ?? fila.created_at,
   }))
@@ -81,6 +79,7 @@ export type AnuncioEditable = {
   titulo: string
   cuerpo: string
   imagenUrl: string | null
+  videoUrl: string | null
   mostrarPublico: boolean
   mostrarMiembros: boolean
   desde: string | null
@@ -96,15 +95,8 @@ export async function leerAnuncioParaEditar(
   admin: SupabaseClient<Database>,
   id: number,
 ): Promise<AnuncioEditable | null> {
-  const consulta = (columnas: string) =>
-    admin.from('anuncios').select(columnas).eq('id', id).is('deleted_at', null).maybeSingle()
-
-  let respuesta = await consulta(
-    'id, titulo, cuerpo, imagen_url, mostrar_publico, mostrar_miembros, publicar_desde, publicar_hasta',
-  )
-  if (faltanColumnasDeProgramacion(respuesta.error)) {
-    respuesta = await consulta('id, titulo, cuerpo, imagen_url, mostrar_publico, mostrar_miembros')
-  }
+  // `*`: con o sin las columnas de programación y de video (migraciones a mano).
+  const respuesta = await admin.from('anuncios').select('*').eq('id', id).is('deleted_at', null).maybeSingle()
   const fila = respuesta.data as unknown as {
     id: number
     titulo: string
@@ -114,6 +106,7 @@ export async function leerAnuncioParaEditar(
     mostrar_miembros: boolean
     publicar_desde?: string | null
     publicar_hasta?: string | null
+    video_url?: string | null
   } | null
   if (!fila) return null
   return {
@@ -121,6 +114,7 @@ export async function leerAnuncioParaEditar(
     titulo: fila.titulo,
     cuerpo: fila.cuerpo,
     imagenUrl: fila.imagen_url,
+    videoUrl: fila.video_url?.trim() || null,
     mostrarPublico: fila.mostrar_publico,
     mostrarMiembros: fila.mostrar_miembros,
     desde: fila.publicar_desde ?? null,

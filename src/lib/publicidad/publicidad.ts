@@ -21,7 +21,10 @@ export const DESCRIPCION_POR_DEFECTO = 'Publicidad de ORUM'
 /** Una pieza de publicidad, tal como la necesita el panel. */
 export type PiezaPublicidad = {
   id: number
+  /** La imagen, o la portada del video. */
   url: string
+  /** El MP4, si la pieza es un video (13/11/2026). */
+  video: string | null
   descripcion: string
   activa: boolean
 }

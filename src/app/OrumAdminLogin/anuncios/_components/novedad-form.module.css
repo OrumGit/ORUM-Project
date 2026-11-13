@@ -284,3 +284,27 @@
   margin-top: 1px;
   color: var(--brand);
 }
+
+/* Los dos botones del recuadro vacío (13/11/2026): imagen o video. El
+   recuadro ya no es un botón: los botones van dentro. */
+.soltarBotones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+div.soltar {
+  cursor: default;
+}
+
+div.soltar:active {
+  scale: 1;
+}
+
+/* Un video en la vista previa: entero, sobre negro. */
+video.vistaImagen {
+  background: var(--negro-900);
+  object-fit: contain;
+}

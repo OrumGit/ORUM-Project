@@ -238,7 +238,8 @@ export type OpcionFiltro = { id: number; nombre: string }
 export type CategoriaFiltro = OpcionFiltro & { subcategorias: OpcionFiltro[] }
 
 /** Una fotografía de la fachada, con su texto alternativo ya resuelto. */
-export type FotoPublica = { url: string; alt: string }
+/** Una pieza del carrusel: la imagen (o la portada de su video) y, si es un video, su MP4. */
+export type FotoPublica = { url: string; alt: string; video?: string | null }
 
 export type DatosVitrina = {
   /** «Comercios destacados», hasta `TOPE_DESTACADOS`. */
@@ -500,7 +501,8 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
   const supabase = clienteFachada()
   const { data, error } = await supabase
     .from('publicidad')
-    .select('imagen_url, descripcion')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
     .eq('activo', true)
     .order('orden', { ascending: true })
     .order('id', { ascending: true })
@@ -513,7 +515,8 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
 
   return (data ?? []).flatMap((p) => {
     const url = (p.imagen_url ?? '').trim()
-    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? '') }] : []
+    const video = typeof p.video_url === 'string' && p.video_url.trim() ? p.video_url.trim() : null
+    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? ''), video }] : []
   })
 }
 

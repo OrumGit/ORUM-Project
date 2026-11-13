@@ -1,0 +1,340 @@
+/* ==========================================================================
+   EL EDITOR DE VIDEO  ·  (13/11/2026) — ver la cabecera de `editor-video.tsx`
+   ========================================================================== */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* --- El marco ---------------------------------------------------------------- */
+
+.marco {
+  position: relative;
+  /* El alto tiene tope (la ventana tiene que dejar ver la línea de tiempo):
+     se encoge el ANCHO, así la proporción del marco no se rompe. */
+  width: min(100%, calc(52dvh * var(--proporcion)));
+  aspect-ratio: var(--proporcion);
+  margin-inline: auto;
+  overflow: clip;
+  border-radius: var(--radius-md);
+  /* Negro mientras carga y como fondo del video: un video no tiene «crema». */
+  background: var(--negro-900);
+  touch-action: none;
+}
+
+.marco[data-llenar] {
+  cursor: grab;
+}
+
+.marco[data-llenar]:active {
+  cursor: grabbing;
+}
+
+.marco:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Completo: el video ocupa el marco, que tiene su misma proporción. */
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Llenar: el video, más grande que el marco, colocado por el recorte. Se
+   mueve con `transform` (sus porcentajes son de su propio tamaño). */
+.marco[data-llenar] .video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--v-ancho);
+  height: var(--v-alto);
+  max-width: none;
+  object-fit: fill;
+  transform: translate(var(--v-x), var(--v-y));
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.zoom input {
+  flex: 1;
+  accent-color: var(--gold-600);
+}
+
+/* --- La línea de tiempo ------------------------------------------------------- */
+
+.tiempo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.reproducir {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--tinta-1);
+  color: var(--blanco);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    translate var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.reproducir::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .reproducir:not(:disabled):hover {
+    translate: 0 -1px;
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+.reproducir:not(:disabled):active {
+  translate: 0 1px;
+  box-shadow: var(--shadow-press);
+}
+
+.reproducir:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.reproducir:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.reloj {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.sonido {
+  margin-inline-start: auto;
+}
+
+.nota {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.resumen .nota {
+  display: inline;
+  margin: 0;
+}
+
+/* La pista: miniaturas de fondo, lo que queda fuera atenuado, el tramo con
+   su filo dorado y los dos tiradores. */
+.pista {
+  position: relative;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hueco);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.tiras {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: clip;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tiras img {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fuera {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--de);
+  right: calc(100% - var(--hasta));
+  background: color-mix(in srgb, var(--blanco) 72%, transparent);
+  pointer-events: none;
+}
+
+.tramo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--de);
+  right: calc(100% - var(--hasta));
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 2px var(--gold-500);
+  pointer-events: none;
+}
+
+.cabezal {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: var(--en);
+  width: 2px;
+  translate: -1px 0;
+  border-radius: var(--radius-full);
+  background: var(--tinta-1);
+  pointer-events: none;
+}
+
+.tirador {
+  position: absolute;
+  top: 50%;
+  left: var(--en);
+  width: 14px;
+  height: 64px;
+  translate: -50% -50%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--gold-500);
+  box-shadow: var(--shadow-card);
+  cursor: ew-resize;
+  touch-action: none;
+  transition: scale var(--dur-fast) var(--ease-out);
+}
+
+/* La muesca del tirador, para que se lea como algo que se agarra. */
+.tirador::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 2px;
+  height: 20px;
+  translate: -50% -50%;
+  border-radius: var(--radius-full);
+  background: var(--tinta-1);
+  opacity: 0.6;
+}
+
+/* Se ve fino y se toca grande. */
+.tirador::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--tap-min);
+  height: 100%;
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .tirador:not(:disabled):hover {
+    scale: 1.08 1;
+  }
+}
+
+.tirador:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.resumen {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.resumen strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* --- Preparar y subir --------------------------------------------------------- */
+
+.fase {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  animation: aparecer var(--dur-base) var(--ease-out);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.faseTexto {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.faseAyuda {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.botones > * {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fase {
+    animation: none;
+  }
+}

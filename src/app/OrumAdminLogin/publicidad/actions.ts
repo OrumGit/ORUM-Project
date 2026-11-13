@@ -29,6 +29,13 @@ import { LIMITE_IMAGENES_COMERCIOS } from '@/lib/imagenes/validacion'
 import { TOPE_PUBLICIDAD, ordenTrasMover, revisarDescripcion } from '@/lib/publicidad/publicidad'
 import { mensajeDeError } from '@/lib/shared/errores'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  MENSAJE_FALTA_MIGRACION_VIDEOS,
+  borrarVideo,
+  confirmarVideo,
+  faltaColumnaVideo,
+  videoDe,
+} from '@/lib/videos/servidor'
 
 const SIN_PERMISO = 'No tienes permiso para realizar esta acción.'
 
@@ -54,8 +61,14 @@ function leerId(formData: FormData): number | null {
 }
 
 /**
- * Guarda una imagen ya encuadrada. Con `id`, sustituye esa pieza (y conserva
- * su puesto); sin él, añade una al final del carrusel.
+ * Guarda una imagen ya encuadrada, o un VIDEO (13/11/2026). Con `id`,
+ * sustituye esa pieza (y conserva su puesto); sin él, añade una al final del
+ * carrusel.
+ *
+ * Un video llega ya subido (`video_ruta`, ver `pedirSubidaVideo`) y su
+ * PORTADA viaja como la imagen de siempre (`archivo`): la pieza guarda las
+ * dos, y el carrusel enseña la portada mientras el video carga. Sustituir un
+ * video por una imagen (o al revés) borra lo que sobra.
  */
 export async function guardarPublicidad(
   _prev: EstadoSubida,
@@ -70,15 +83,29 @@ export async function guardarPublicidad(
   const admin = createAdminClient()
   const { data: piezas, error: errorLectura } = await admin
     .from('publicidad')
-    .select('id, imagen_url, orden')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
   if (errorLectura) return { error: mensajeDeError('No se pudo leer la publicidad', errorLectura) }
 
   const id = leerId(formData)
   const anterior = id === null ? null : (piezas ?? []).find((p) => p.id === id)
   if (id !== null && !anterior) return { error: 'Esa imagen ya no existe.' }
   if (!anterior && (piezas ?? []).length >= TOPE_PUBLICIDAD) {
-    return { error: `Ya hay ${TOPE_PUBLICIDAD} imágenes. Quita una para añadir otra.` }
+    return { error: `Ya hay ${TOPE_PUBLICIDAD} piezas. Quita una para añadir otra.` }
   }
+
+  // El video, si viene: ya subido; aquí solo se comprueba que sea suyo y exista.
+  const rutaVideo = String(formData.get('video_ruta') ?? '').trim()
+  let videoUrl: string | null = null
+  if (rutaVideo) {
+    const confirmado = await confirmarVideo(admin, rutaVideo, 'portada')
+    if (!confirmado.ok) return { error: confirmado.error }
+    videoUrl = confirmado.url
+  }
+  const videoAnterior = videoDe(anterior)
+  // La columna solo se escribe si hay algo que decirle: sin la migración, una
+  // imagen se sigue guardando como siempre.
+  const conVideo = videoUrl !== null || videoAnterior !== null ? { video_url: videoUrl } : {}
 
   // Clave nueva en cada subida, también al sustituir: la dirección cambia y
   // ni el navegador ni la CDN pueden seguir enseñando la anterior.
@@ -94,7 +121,7 @@ export async function guardarPublicidad(
   const { data: fila, error } = anterior
     ? await admin
         .from('publicidad')
-        .update({ imagen_url: resultado.url, descripcion: revisada.descripcion })
+        .update({ imagen_url: resultado.url, descripcion: revisada.descripcion, ...conVideo })
         .eq('id', anterior.id)
         .select('id')
         .maybeSingle()
@@ -103,6 +130,7 @@ export async function guardarPublicidad(
         .insert({
           imagen_url: resultado.url,
           descripcion: revisada.descripcion,
+          ...conVideo,
           // Al final: las nuevas no desordenan las que ya había.
           orden: (piezas ?? []).reduce((max, p) => Math.max(max, p.orden), 0) + 1,
           creado_por: actorId,
@@ -111,8 +139,10 @@ export async function guardarPublicidad(
         .maybeSingle()
 
   if (error || !fila) {
-    // La fila no entró: el archivo recién subido no lo referencia nadie.
+    // La fila no entró: lo recién subido no lo referencia nadie.
     await borrarObjeto(admin, BUCKET_IMAGENES_ANUNCIOS, resultado.ruta)
+    await borrarVideo(admin, videoUrl)
+    if (faltaColumnaVideo(error)) return { error: MENSAJE_FALTA_MIGRACION_VIDEOS }
     return {
       error: error
         ? mensajeDeError('No se pudo guardar la imagen', error)
@@ -120,8 +150,11 @@ export async function guardarPublicidad(
     }
   }
 
-  // Sustituida: el archivo anterior sobra.
-  if (anterior) await borrarPorUrlPublica(admin, BUCKET_IMAGENES_ANUNCIOS, anterior.imagen_url)
+  // Sustituida: lo anterior sobra (la imagen o portada, y el video si lo había).
+  if (anterior) {
+    await borrarPorUrlPublica(admin, BUCKET_IMAGENES_ANUNCIOS, anterior.imagen_url)
+    if (videoAnterior && videoAnterior !== videoUrl) await borrarVideo(admin, videoAnterior)
+  }
 
   await registrarCambioImagen(admin, {
     actorId,
@@ -150,7 +183,8 @@ export async function quitarPublicidad(
   const admin = createAdminClient()
   const { data: fila } = await admin
     .from('publicidad')
-    .select('id, imagen_url')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
     .eq('id', id)
     .maybeSingle()
   // Ya no está: para quien pulsa, quedó quitada.
@@ -163,6 +197,7 @@ export async function quitarPublicidad(
   if (error) return { error: mensajeDeError('No se pudo quitar la imagen', error) }
 
   await borrarPorUrlPublica(admin, BUCKET_IMAGENES_ANUNCIOS, fila.imagen_url)
+  await borrarVideo(admin, videoDe(fila))
 
   await registrarCambioImagen(admin, {
     actorId,

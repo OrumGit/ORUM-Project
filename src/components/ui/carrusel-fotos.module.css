@@ -60,6 +60,12 @@
   pointer-events: none;
 }
 
+/* Con movimiento reducido el video no arranca solo y lleva sus controles:
+   ahí sí recibe el toque. */
+.foto[data-controles] {
+  pointer-events: auto;
+}
+
 /* --- Controles: pausa y puntos, sobre un velo para leerse en cualquier foto */
 
 .controles {

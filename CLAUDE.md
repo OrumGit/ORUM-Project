@@ -2117,6 +2117,73 @@ borrar la imagen»). Tres piezas:
   sin ellas si no se programó nada; si se programa, avisa de que falta
   aplicarla.
 
+**VIDEOS en las novedades y en el carrusel de la portada** (13/11/2026:
+«que el administrador pueda subir videos de máximo 5 minutos, con el visor
+para recortarlo y ajustar la duración, para que se vea correctamente en los
+portales»). Una novedad o una pieza del carrusel puede ser un video en vez
+de una imagen.
+
+- **El editor es `EditorVideo`** (`components/videos/`): el MARCO del destino
+  (16:9 novedades, 4:3 carrusel) con «Llenar el marco» (arrastrar, flechas y
+  «Acercar») o «Video completo» (el marco es el del propio video, como las
+  fotos enteras); la LÍNEA DE TIEMPO con miniaturas y dos tiradores (ratón,
+  dedo o flechas; Mayús salta 10 s), que reproduce solo el tramo; y «Usar
+  este video», que saca la portada, PREPARA y SUBE con una barra que dice qué
+  hace. Lo publicado dura como mucho 5 minutos (`DURACION_MAXIMA`): un video
+  más largo abre recortado a sus primeros 5 y el tirador que se pase
+  arrastra al otro. En la portada no hay sonido (se descarta al preparar);
+  en novedades, «Quitar el sonido» es opcional.
+- **Se prepara EN EL NAVEGADOR con Mediabunny** (WebCodecs, cargado con
+  `import()` solo al abrir el editor; `exportar-video.ts`): recorta el tramo
+  y el encuadre, baja a 720p como mucho, 30 cuadros, MP4 H.264 + AAC con
+  `fastStart`, y la tasa justa para no pasar de 48 MB (`tasaVideo`). Lo que se
+  sube es lo que se ve: los portales solo lo reproducen. Si el codificador del
+  equipo se queda QUIETO 10 s (algunas tarjetas de video, pestaña en segundo
+  plano), se cancela y se repite por software. La cuenta es pura y probada
+  (`lib/videos/video.ts`: tramo, recorte, medidas, tasa, rutas).
+- **Se sube DIRECTO a Storage** (un video no cabe en el cuerpo de una acción):
+  `pedirSubidaVideo` (`OrumAdminLogin/videos-actions.ts`, solo `super_admin`)
+  da una dirección firmada con una ruta que elige el servidor, el navegador
+  sube con `XMLHttpRequest` (para la barra) y la acción que guarda comprueba
+  que la ruta sea de su destino (`esRutaVideo`) y que exista
+  (`lib/videos/servidor.ts`). Sustituir o quitar borra el video anterior.
+- **La PORTADA del video es la imagen de siempre** (`imagen_url`; el primer
+  fotograma del tramo, en JPEG): todo lo que enseñaba imágenes sigue igual y
+  el video carga solo cuando hace falta. La dirección del video va en
+  `video_url` (`anuncios` y `publicidad`).
+- **Base**: `supabase/migrations/20261113120000_videos.sql`, SE APLICA A MANO
+  (columnas `video_url`, bucket `videos-orum` público de 50 MB solo MP4 y sus
+  políticas; comprobación en `supabase/verificacion/videos_verificacion.sql`).
+  ⚠️ El código aguanta sin ella: las lecturas van con `select('*')` y solo
+  guardar un video avisa (`MENSAJE_FALTA_MIGRACION_VIDEOS`). El bucket y sus
+  carpetas (`novedades/`, `portada/`) no dicen «publicidad» ni «anuncio»: los
+  bloqueadores los ocultarían.
+- **En la portada** (`CarruselFotos`): se ve la portada hasta que le toca;
+  entonces se reproduce SIN SONIDO, y el carrusel espera a que TERMINE para
+  pasar (las fotos siguen a 4,5 s). Solo el que está a la vista y con el
+  carrusel en pantalla (`IntersectionObserver`); la pausa también lo pausa;
+  con movimiento reducido no arranca solo y lleva sus controles.
+- **En `/novedades`** (y la de miembros): el video con sus controles y su
+  portada, que no carga hasta darle a reproducir, entero sobre negro (se
+  mira; no se recorta como una foto). El aviso compacto de la portada no
+  cambia: no lleva imagen ni video.
+- **En el panel**: el formulario de la novedad ofrece «Elegir imagen» o
+  «Elegir video» (y acepta uno soltado), y el video se ajusta como un PASO de
+  la misma ventana; el gestor del carrusel tiene «Añadir video» y marca sus
+  piezas con «Video». «Ajustar»/«Editar» uno publicado lo descarga y lo
+  vuelve a abrir.
+- Vista previa con un video FABRICADO en el navegador (12 s), solo en
+  desarrollo: `/dev/video` (`?destino=portada` para el 4:3), con «Solo
+  preparar» que enseña el MP4 resultante y el carrusel con él. Subir pide la
+  dirección a la acción real, que sin sesión contesta con un error.
+- ⚠️ **No se ha probado con sesión real** (subir y publicar de verdad, verlo
+  en la portada y en `/novedades` de producción, un video de iPhone). En esta
+  máquina el panel del navegador está oculto: el codificador del equipo no
+  responde (por eso existe el reintento) y `IntersectionObserver` no avisa,
+  así que el video del carrusel no arranca solo aquí; en un navegador normal
+  sí. Un `.mov` en HEVC del iPhone no lo abren todos los navegadores: el
+  editor lo dice y pide otro archivo.
+
 **Una contraseña NUEVA tiene que ser segura** (27/10/2026: «que el
 usuario no pueda poner una contraseña insegura»; con las fuentes oficiales:
 NIST SP 800-63B-4 §3.1.1.2 y el Authentication Cheat Sheet de OWASP). Hay

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, ImagePlus, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Film, ImagePlus, Pencil, Play, Trash2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -13,7 +13,9 @@ import {
   useImagenElegida,
   type OpcionesEncuadre,
 } from '@/components/imagenes/editor-encuadre'
+import { EditorVideo, type VideoListo } from '@/components/videos/editor-video'
 import { ESTADO_SUBIDA_INICIAL, type EstadoSubida } from '@/lib/imagenes/estado'
+import { TIPOS_ACEPTADOS } from '@/lib/videos/video'
 import {
   DESCRIPCION_MAXIMA,
   TOPE_PUBLICIDAD,
@@ -77,6 +79,17 @@ const OPCIONES_IMAGEN: OpcionesEncuadre = {
 /** Qué se está ajustando: una pieza que ya existe (`id`) o una nueva (`null`). */
 type Objetivo = { id: number | null }
 
+/*
+  LOS VIDEOS (13/11/2026: «que pueda subir videos de máximo 5 minutos, con el
+  visor para recortarlo y ajustar la duración»). «Añadir video» abre el
+  selector de videos y, con el archivo, `EditorVideo` en una ventana encima
+  (el marco 4:3 del carrusel, el tramo, preparar y subir). Al terminar, la
+  pieza se guarda con su video y su portada (el primer fotograma, que es la
+  imagen de la teja). «Editar» una pieza de video vuelve a abrir el que está
+  publicado. `n` cambia en cada archivo: el editor arranca de cero.
+*/
+type VideoEnEdicion = { id: number | null; archivo: File; n: number }
+
 type Accion = (previo: EstadoSubida, datos: FormData) => Promise<EstadoSubida>
 
 export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
@@ -95,6 +108,10 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
   const [error, setError] = useState<string | null>(null)
   const [ocupado, enTransicion] = useTransition()
   const entrada = useRef<HTMLInputElement>(null)
+  const entradaVideo = useRef<HTMLInputElement>(null)
+  const [enEdicion, setEnEdicion] = useState<VideoEnEdicion | null>(null)
+  const [objetivoVideo, setObjetivoVideo] = useState<number | null>(null)
+  const [abriendoVideo, setAbriendoVideo] = useState<number | null>(null)
 
   const ajustando = imagen !== null && objetivo !== null
   const cupos = Math.max(0, TOPE_PUBLICIDAD - piezas.length)
@@ -109,12 +126,63 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
     entrada.current?.click()
   }
 
-  /** EDITAR: abre en el editor la imagen que ya está publicada. */
+  /** EDITAR: abre en su editor la imagen o el video que ya está publicado. */
   function editar(pieza: PiezaPublicidad) {
     setError(null)
-    setObjetivo({ id: pieza.id })
     setDescripcion(pieza.descripcion)
+    if (pieza.video) {
+      void abrirVideoPublicado(pieza)
+      return
+    }
+    setObjetivo({ id: pieza.id })
     void abrirActual(pieza.url)
+  }
+
+  /** AÑADIR VIDEO: abre el selector de videos. */
+  function pedirVideo() {
+    setError(null)
+    setObjetivoVideo(null)
+    setDescripcion('')
+    entradaVideo.current?.click()
+  }
+
+  function abrirVideo(archivo: File | undefined, id: number | null) {
+    if (!archivo) return
+    setEnEdicion((v) => ({ id, archivo, n: (v?.n ?? 0) + 1 }))
+  }
+
+  /** Descarga el video publicado para volver a ajustarlo. */
+  async function abrirVideoPublicado(pieza: PiezaPublicidad) {
+    if (!pieza.video) return
+    setAbriendoVideo(pieza.id)
+    try {
+      const respuesta = await fetch(pieza.video)
+      if (!respuesta.ok) throw new Error(String(respuesta.status))
+      const blob = await respuesta.blob()
+      abrirVideo(new File([blob], 'video.mp4', { type: 'video/mp4' }), pieza.id)
+    } catch {
+      setObjetivoVideo(pieza.id)
+      setError('No se pudo abrir el video publicado. Elige el archivo otra vez para ajustarlo.')
+    } finally {
+      setAbriendoVideo(null)
+    }
+  }
+
+  /** El video ya está subido: se guarda la pieza con él y con su portada. */
+  function guardarVideo(listo: VideoListo) {
+    const objetivoId = enEdicion?.id ?? null
+    const datos = new FormData()
+    datos.set('archivo', listo.portada)
+    datos.set('video_ruta', listo.ruta)
+    datos.set('descripcion', descripcion)
+    if (objetivoId !== null) datos.set('id', String(objetivoId))
+
+    setError(null)
+    enTransicion(async () => {
+      const resultado = await guardarPublicidad(ESTADO_SUBIDA_INICIAL, datos)
+      if (resultado.ok) setEnEdicion(null)
+      else setError(resultado.error ?? 'No se pudo guardar el video. Inténtalo de nuevo.')
+    })
   }
 
   /** Cierra el ajuste sin guardar (y anula lo que se estuviera abriendo). */
@@ -171,12 +239,25 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
   }
 
   const aviso = error ?? errorImagen
+  const editandoVideo = enEdicion !== null
 
   return (
     <section className={styles.gestor} aria-label="Imágenes del carrusel">
       {/* El selector real, oculto: lo abren «Añadir» y «Elegir otra».
           `accept` amplio a propósito: cualquier imagen que el navegador sepa
           abrir se convierte a JPEG al guardar. */}
+      {/* Y el de los videos: cualquier formato que el navegador sepa abrir se
+          convierte a MP4 al prepararlo. */}
+      <input
+        ref={entradaVideo}
+        type="file"
+        accept={TIPOS_ACEPTADOS}
+        hidden
+        onChange={(e) => {
+          abrirVideo(e.target.files?.[0], enEdicion?.id ?? objetivoVideo)
+          e.target.value = ''
+        }}
+      />
       <input
         ref={entrada}
         type="file"
@@ -205,29 +286,43 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
             </span>
           )}
         </p>
-        <Button
-          variant="brand"
-          icon={<ImagePlus size={16} aria-hidden="true" />}
-          onClick={pedir}
-          disabled={bloqueado || cupos === 0}
-          loading={abriendo && objetivo?.id === null}
-        >
-          Añadir imagen
-        </Button>
+        <div className={styles.anadir}>
+          <Button
+            variant="secondary"
+            icon={<Film size={16} aria-hidden="true" />}
+            onClick={pedirVideo}
+            disabled={bloqueado || cupos === 0}
+          >
+            Añadir video
+          </Button>
+          <Button
+            variant="brand"
+            icon={<ImagePlus size={16} aria-hidden="true" />}
+            onClick={pedir}
+            disabled={bloqueado || cupos === 0}
+            loading={abriendo && objetivo?.id === null}
+          >
+            Añadir imagen
+          </Button>
+        </div>
       </div>
 
-      {aviso && !ajustando && (
+      {aviso && !ajustando && !editandoVideo && (
         <Alert
           key={aviso}
           tone="danger"
           /* Si no se pudo abrir la publicada, queda reemplazarla por un archivo. */
           actions={
-            falloLaActual &&
-            objetivo && (
+            (falloLaActual && objetivo && (
               <Button variant="secondary" size="sm" onClick={() => entrada.current?.click()}>
                 Elegir un archivo
               </Button>
-            )
+            )) ||
+            (objetivoVideo !== null && (
+              <Button variant="secondary" size="sm" onClick={() => entradaVideo.current?.click()}>
+                Elegir el video
+              </Button>
+            ))
           }
         >
           {aviso}
@@ -245,7 +340,7 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
       ) : (
         <ol className={styles.rejilla}>
           {piezas.map((pieza, i) => {
-            const nombre = `la imagen ${i + 1}`
+            const nombre = `${pieza.video ? 'el video' : 'la imagen'} ${i + 1}`
             return (
               <li key={pieza.id} className={styles.teja} data-oculta={!pieza.activa || undefined}>
                 <div className={styles.marco}>
@@ -262,6 +357,13 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
                   <span className={styles.puesto} aria-hidden="true">
                     {i + 1}
                   </span>
+                  {/* Un video se dice con icono y palabra, no solo con la portada. */}
+                  {pieza.video && (
+                    <span className={styles.esVideo}>
+                      <Play size={12} aria-hidden="true" />
+                      Video
+                    </span>
+                  )}
                   {/* El estado, con icono y palabra: no solo con la foto atenuada. */}
                   {!pieza.activa && (
                     <span className={styles.insignia}>
@@ -325,7 +427,7 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
                   <BotonTeja
                     etiqueta={`Editar ${nombre}`}
                     deshabilitado={bloqueado}
-                    ocupado={abriendo && objetivo?.id === pieza.id}
+                    ocupado={(abriendo && objetivo?.id === pieza.id) || abriendoVideo === pieza.id}
                     onClick={() => editar(pieza)}
                   >
                     <Pencil size={16} aria-hidden="true" />
@@ -388,6 +490,46 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
               onGuardar={subir}
               onElegirOtra={() => entrada.current?.click()}
               onCancelar={dejarDeAjustar}
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* ── EL VIDEO ────────────────────────────────────────────────────── */}
+      <Modal
+        open={editandoVideo}
+        onClose={() => !ocupado && setEnEdicion(null)}
+        title={enEdicion?.id === null ? 'Nuevo video' : 'Editar video'}
+        description="Encuádralo en el marco del carrusel y elige el tramo que se verá (5 minutos como mucho)."
+        width="760px"
+        cerrarAlPulsarFuera={false}
+      >
+        {enEdicion && (
+          <div className={styles.ajuste}>
+            <Field
+              label="Descripción"
+              optional
+              help="Qué se ve en el video. La leen los lectores de pantalla; no sale escrita en la portada."
+            >
+              <Input
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                maxLength={DESCRIPCION_MAXIMA}
+                placeholder="Ej.: Así fue la feria de aliados"
+                autoComplete="off"
+                disabled={ocupado}
+              />
+            </Field>
+            {error && <Alert tone="danger">{error}</Alert>}
+            <EditorVideo
+              key={enEdicion.n}
+              archivo={enEdicion.archivo}
+              destino="portada"
+              textoGuardar={enEdicion.id === null ? 'Publicar video' : 'Guardar cambios'}
+              guardando={ocupado}
+              onListo={guardarVideo}
+              onCancelar={() => setEnEdicion(null)}
+              onElegirOtro={() => entradaVideo.current?.click()}
             />
           </div>
         )}
