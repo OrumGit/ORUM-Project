@@ -19,9 +19,12 @@
 
   --placa-logo-w: 52px;
 
+  /* Más pausado que un botón (12/11/2026: «con más suavidad, para que se
+     sienta mejor cuando paso por él»): la tarjeta es grande y el ojo la
+     sigue; un movimiento corto y seco se lee como un salto. */
   transition:
-    translate var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out);
+    translate var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur-slow) var(--ease-out);
 }
 
 @container contenido (min-width: 900px) {
@@ -30,18 +33,22 @@
   }
 }
 
-/* Apuntar levanta, aparece el filo dorado y la sombra sube un escalón. */
+/* Apuntar levanta y la sombra sube un escalón. SIN filo dorado (12/11/2026,
+   propietario: «no me gusta que se ponga ese borde dorado; que solo tenga el
+   efecto»): la respuesta es el movimiento, como en el resto del sitio. */
 @media (hover: hover) {
   .tarjeta:hover {
-    translate: 0 -2px;
-    box-shadow: var(--filo-activo), var(--shadow-flotante), var(--edge);
+    translate: 0 -3px;
+    box-shadow: var(--shadow-flotante), var(--edge);
   }
 }
 
-/* Presionar hunde: baja y se queda con el contacto de su sombra. */
+/* Presionar hunde: baja y se queda con el contacto de su sombra. Rápido:
+   el toque tiene que responder en el acto aunque apuntar sea pausado. */
 .tarjeta:active {
   translate: 0 1px;
   box-shadow: var(--shadow-press), var(--edge);
+  transition-duration: var(--dur-press);
 }
 
 .tarjeta:focus-visible {
