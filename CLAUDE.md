@@ -1098,6 +1098,18 @@ algún comercio activo (`CatalogoPublico.categorias[].subcategorias`), y el
 buscador de «Ver todas» encuentra la categoría por el nombre de una
 subcategoría.
 
+**El «Top de comercios» del Inicio del socio** (`TopComerciosSocio`,
+rediseño del 12/11/2026: «valida el diseño de este apartado y mejóralo con
+el estilo existente»). Título de la marca (`TituloSeccion` de bloque) con
+una línea debajo que dice qué mide la lista que se ve; ABRE EN LA LISTA QUE
+TIENE DATOS («Mejor calificados» pide 3 reseñas y, mientras nadie llega,
+abrir ahí era enseñar un vacío con la otra llena); el vacío lleva su icono
+en el aro dorado, qué falta y un botón a la otra lista si tiene comercios;
+la posición va en un aro dorado de 28 px y las tres primeras en
+`--gold-600` con el número en tinta; en ancho (≥900 px de contenedor), dos
+columnas 3 + 2. Las filas siguen sin sombra y responden con opacidad.
+Vista previa: `/dev/top-comercios` (`?caso=vacio-calificados`, `?caso=uno`).
+
 **El directorio del SOCIO filtra por BENEFICIO** (12/11/2026: «para el
 portal de miembros, un filtro para que puedan filtrar por beneficio»). Una
 píldora más, «Beneficio: Todos», entre Ciudad y Ordenar, SOLO con `socio`

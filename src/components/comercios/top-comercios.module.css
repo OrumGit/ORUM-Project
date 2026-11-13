@@ -31,14 +31,21 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-3) var(--space-5);
 }
 
-.titulo {
+.textosCabecera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Qué mide la lista que se ve: cambia con la pestaña. */
+.bajada {
   margin: 0;
-  font-size: var(--t-title-3-size);
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
 }
 
 .lista {
@@ -65,13 +72,30 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+/* En ancho, dos columnas (3 + 2) en orden de lectura hacia abajo: cinco
+   filas a todo lo ancho eran una franja larga con el dato lejísimos del
+   nombre. La primera de la segunda columna no lleva hairline arriba. */
+@container contenido (min-width: 900px) {
+  .lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    column-gap: var(--space-8);
+  }
+
+  .lista > li:nth-child(4) {
+    border-top: 0;
+  }
+}
+
 .fila {
   /* El logo de la tarjeta mide 72px; en una lista de cinco filas eso las
      vuelve altísimas. Mismo gancho que usan los destacados de la portada. */
   --placa-logo-w: 44px;
 
   display: grid;
-  grid-template-columns: 1.25rem auto minmax(0, 1fr) auto;
+  grid-template-columns: 28px auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   min-height: var(--tap-min);
@@ -99,11 +123,26 @@
   border-radius: var(--radius-md);
 }
 
+/* La posición en un aro dorado, como los iconos de las píldoras; las tres
+   primeras, en oro pleno (`--gold-600`, texto en tinta: 4,84:1). Es un
+   orden, no un dato: el número lo dice igual sin el color. */
 .posicion {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1.5px var(--brand);
+  font-size: var(--t-footnote-size);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: center;
   color: var(--brand);
+}
+
+.posicion[data-podio] {
+  background: var(--gold-600);
+  box-shadow: none;
+  color: var(--tinta-1);
 }
 
 .textos {
@@ -134,9 +173,50 @@
   white-space: nowrap;
 }
 
+/* El vacío: su icono en el aro dorado, qué falta y, si la otra lista tiene
+   comercios, el botón para verla. Entra con el mismo fundido que la lista. */
 .vacio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding-block: var(--space-3) var(--space-4);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vacio {
+    animation: aparecer var(--dur-fast) var(--ease-out);
+  }
+}
+
+.vacioIcono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1.5px var(--brand);
+  color: var(--brand);
+}
+
+.vacioTextos {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.vacioTitulo {
   margin: 0;
-  padding-block: var(--space-4);
-  font-size: var(--t-body-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.vacioTexto {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  line-height: var(--t-footnote-leading);
   color: var(--text-2);
 }
