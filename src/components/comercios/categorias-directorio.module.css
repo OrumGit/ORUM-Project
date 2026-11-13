@@ -157,8 +157,21 @@
   componente una vez por sesión (`data-insinua`).
 */
 @media (prefers-reduced-motion: no-preference) {
-  .pista[data-insinua] > li {
-    animation: insinuar calc(var(--dur-page) * 3) var(--ease-in-out) var(--dur-slow) both;
+  /*
+    La ENTRADA de cada ficha (`entrarFicha`) se queda en la lista: si el
+    gesto la sustituyera, al quitarlo el navegador la volvería a empezar y
+    las fichas parpadearían justo después de asomarse (visto en producción
+    el 12/11/2026). Como ya terminó, conservarla no mueve nada; `insinuar`
+    va detrás y manda mientras dura. Los retrasos van por animación —el de
+    la entrada en 0, ya cumplido— para que el gesto no herede el escalonado
+    de las `:nth-child` y vayan todas a la vez.
+  */
+  .pista[data-insinua] > li:nth-child(n) {
+    animation-name: entrarFicha, insinuar;
+    animation-duration: var(--dur-slow), calc(var(--dur-page) * 3);
+    animation-timing-function: var(--ease-out), var(--ease-in-out);
+    animation-fill-mode: backwards, both;
+    animation-delay: 0ms, var(--dur-slow);
   }
 }
 
