@@ -245,19 +245,61 @@
   gap: var(--space-2);
 }
 
-/* En el teléfono los filtros ocupan el ancho del panel, uno debajo de otro. */
+/*
+  EN EL TELÉFONO, UNA SOLA FILA (12/11/2026, encargo del propietario: «esos
+  filtros ocupan demasiado espacio; que no ocupen tanto, solamente una fila
+  si es posible»). Antes iba cada uno en su fila y a todo el ancho: cuatro
+  píldoras eran cuatro renglones antes de llegar a las categorías. Ahora van
+  en fila, con el texto corto (`.textoCorto`: «Ciudad» o lo elegido) y sin
+  la flecha; si aun así no caben, la fila se desliza de lado como la tira de
+  categorías. Los menús no se recortan: se abren en la capa superior.
+*/
 @container contenido (max-width: 767px) {
   .menus {
+    flex-wrap: nowrap;
     width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    /* Aire para la sombra de las píldoras y el anillo de foco: `overflow`
+       también recorta arriba y abajo, y con poco aire la sombra se cortaba
+       en una franja gris de cantos rectos. La de una píldora baja 16 px y se
+       abre 12 a los lados: ese es el aire. El margen negativo lo cancela. */
+    padding: var(--space-4) var(--space-3);
+    margin: calc(var(--space-4) * -1) calc(var(--space-3) * -1);
   }
 
-  /* Cada filtro en su fila y a todo el ancho, como en el boceto móvil: tres
-     píldoras de anchos distintos una debajo de otra se leían desordenadas.
-     `:not(dialog)`: la ventana de categorías también es hija de esta fila, y
-     su ancho lo decide la hoja, no esto. */
-  .menus > :not(dialog),
+  .menus::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* `:not(dialog)`: la ventana de categorías también es hija de esta fila. */
+  .menus > :not(dialog) {
+    flex: none;
+  }
+
   .menus .disparador {
-    width: 100%;
+    gap: var(--space-1);
+    padding: 0 var(--space-3) 0 var(--space-1);
+  }
+
+  .menus .chevron {
+    display: none;
+  }
+}
+
+/* El texto de cada filtro: entero en el ordenador, corto en el teléfono. */
+.textoCorto {
+  display: none;
+}
+
+@container contenido (max-width: 767px) {
+  .textoLargo {
+    display: none;
+  }
+
+  .textoCorto {
+    display: inline;
   }
 }
 

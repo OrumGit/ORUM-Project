@@ -1103,6 +1103,16 @@ en `?beneficio=` y se combina con Y con los demás filtros
 (`lib/publico/directorio.ts`, probado). Vista previa con el catálogo real y
 sin sesión: `/dev/directorio-socio`.
 
+**En el teléfono los filtros van en UNA fila** (12/11/2026: «ocupan
+demasiado espacio; solamente una fila si es posible»; antes cada uno iba en
+su fila y a todo el ancho). Favoritos · Ciudad · Beneficio · Ordenar en
+fila, con texto CORTO (`.textoCorto`: el nombre del filtro o lo elegido,
+«Ciudad» → «Tuluá»; el orden, «A-Z») y sin la flecha; si no caben, la fila
+se desliza de lado. El aire de la fila (16 px arriba y abajo, 12 a los
+lados, con margen negativo) es el de la sombra de una píldora: con menos,
+el `overflow` la cortaba en una franja gris de cantos rectos. En el
+ordenador, el texto entero de siempre (`.textoLargo`).
+
 **Un comercio tiene de 1 a 3 categorías, cada una con su subcategoría
 opcional** (21/10/2026; antes era una sola). La fuente de verdad es la tabla
 `comercio_categorias` (`supabase/migrations/20261021130000_comercio_categorias.sql`;

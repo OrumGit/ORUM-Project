@@ -17,7 +17,7 @@ export default async function VistaPreviaDirectorioSocio() {
   const directorio = await obtenerDirectorioMiembros()
   return (
     <div className={portal.portal} data-theme="light">
-      <main>
+      <main className={portal.main}>
         <DirectorioComercios
           base="/dev/directorio-socio"
           directorio={directorio}

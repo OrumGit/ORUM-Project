@@ -349,7 +349,9 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
                     <span className={estilos.disparadorIcono} aria-hidden="true">
                       <MapPin size={13} />
                     </span>
-                    Ciudad: {ciudadActual?.nombre ?? 'Todas'}
+                    {/* En el teléfono, corto: el nombre del filtro o lo elegido. */}
+                    <span className={estilos.textoLargo}>Ciudad: {ciudadActual?.nombre ?? 'Todas'}</span>
+                    <span className={estilos.textoCorto}>{ciudadActual?.nombre ?? 'Ciudad'}</span>
                     <ChevronDown size={14} aria-hidden="true" className={estilos.chevron} />
                   </button>
                 }
@@ -385,7 +387,8 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
                     <span className={estilos.disparadorIcono} aria-hidden="true">
                       <Tag size={13} />
                     </span>
-                    Beneficio: {beneficioActual?.etiqueta ?? 'Todos'}
+                    <span className={estilos.textoLargo}>Beneficio: {beneficioActual?.etiqueta ?? 'Todos'}</span>
+                    <span className={estilos.textoCorto}>{beneficioActual?.etiqueta ?? 'Beneficio'}</span>
                     <ChevronDown size={14} aria-hidden="true" className={estilos.chevron} />
                   </button>
                 }
@@ -419,7 +422,11 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
                   <span className={estilos.disparadorIcono} aria-hidden="true">
                     <ArrowUpDown size={13} />
                   </span>
-                  Ordenar: {ETIQUETAS_ORDEN[filtros.orden]}
+                  <span className={estilos.textoLargo}>Ordenar: {ETIQUETAS_ORDEN[filtros.orden]}</span>
+                  <span className={estilos.textoCorto}>
+                    <span className="sr-only">Ordenar: </span>
+                    {ETIQUETAS_ORDEN[filtros.orden]}
+                  </span>
                   <ChevronDown size={14} aria-hidden="true" className={estilos.chevron} />
                 </button>
               }
