@@ -13,7 +13,7 @@ import {
 } from '@/lib/videos/video'
 
 /** Fabrica el video de prueba con Mediabunny: no depende de que la pestaña pinte. */
-async function videoDePrueba(): Promise<File> {
+async function videoDePrueba(segundos: number): Promise<File> {
   const mb = await import('mediabunny')
   const lienzo = document.createElement('canvas')
   lienzo.width = 1280
@@ -28,14 +28,14 @@ async function videoDePrueba(): Promise<File> {
   })
   output.addVideoTrack(fuente, { frameRate: 30 })
   await output.start()
-  const cuadros = 12 * 30
+  const cuadros = segundos * 30
   for (let i = 0; i < cuadros; i++) {
     const t = i / 30
     ctx.fillStyle = '#1d3557'
     ctx.fillRect(0, 0, 1280, 720)
     ctx.fillStyle = '#e9c46a'
     ctx.beginPath()
-    ctx.arc(80 + (t / 12) * 1120, 360, 90, 0, Math.PI * 2)
+    ctx.arc(80 + (t / segundos) * 1120, 360, 90, 0, Math.PI * 2)
     ctx.fill()
     ctx.fillStyle = '#ffffff'
     ctx.font = 'bold 72px sans-serif'
@@ -46,7 +46,7 @@ async function videoDePrueba(): Promise<File> {
   return new File([output.target.buffer!], 'prueba.mp4', { type: 'video/mp4' })
 }
 
-export function VistaEditorVideo({ destino }: { destino: DestinoVideo }) {
+export function VistaEditorVideo({ destino, segundos }: { destino: DestinoVideo; segundos: number }) {
   const [archivo, setArchivo] = useState<File | null>(null)
   const [resultado, setResultado] = useState<string | null>(null)
   const [preparado, setPreparado] = useState<string | null>(null)
@@ -74,11 +74,11 @@ export function VistaEditorVideo({ destino }: { destino: DestinoVideo }) {
 
   useEffect(() => {
     let vivo = true
-    void videoDePrueba().then((f) => vivo && setArchivo(f))
+    void videoDePrueba(segundos).then((f) => vivo && setArchivo(f))
     return () => {
       vivo = false
     }
-  }, [])
+  }, [segundos])
 
   if (!archivo) return <p>Fabricando el video de prueba…</p>
   return (

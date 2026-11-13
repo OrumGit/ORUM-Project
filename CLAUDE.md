@@ -2141,6 +2141,20 @@ de una imagen.
   equipo se queda QUIETO 10 s (algunas tarjetas de video, pestaña en segundo
   plano), se cancela y se repite por software. La cuenta es pura y probada
   (`lib/videos/video.ts`: tramo, recorte, medidas, tasa, rutas).
+- **CUÁNTO FALTA** (13/11/2026: «un contador para que el usuario sepa más o
+  menos cuánto falta»). Bajo la barra: «Paso 1 de 2 · Preparando el video» /
+  «Paso 2 de 2 · Subiendo el video», el porcentaje y «Faltan unos 35 s» /
+  «Faltan unos 2,5 min» / «Ya casi termina» («Calculando cuánto falta…» los
+  primeros segundos). Se estima con el RITMO de los últimos 6 s
+  (`estimarRestante`) y se SUAVIZA cada segundo de forma asimétrica
+  (`suavizarRestante`: baja deprisa si se acelera, sube con calma si se
+  frena); al cambiar de paso o al reintentar por software, empieza de cero.
+  ⚠️ La preparación avisa de su avance CIENTOS de veces por segundo: las
+  muestras se guardan espaciadas (`agregarMuestra`, una cada 0,25 s, las 120
+  últimas); guardarlas todas dejaba menos de medio segundo de historia y el
+  contador nunca salía de «Calculando». Puro y probado en
+  `lib/videos/estimacion.ts`. El lector oye solo el paso, no cada segundo.
+  `/dev/video?segundos=120` fabrica un video largo para verlo.
 - **Se sube DIRECTO a Storage** (un video no cabe en el cuerpo de una acción):
   `pedirSubidaVideo` (`OrumAdminLogin/videos-actions.ts`, solo `super_admin`)
   da una dirección firmada con una ruta que elige el servidor, el navegador

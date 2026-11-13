@@ -30,6 +30,13 @@ import {
   type Encuadre,
   type Tramo,
 } from '@/lib/videos/video'
+import {
+  agregarMuestra,
+  estimarRestante,
+  suavizarRestante,
+  textoRestante,
+  type Muestra,
+} from '@/lib/videos/estimacion'
 import { ErrorVideo, capturarPortada, exportarVideo, miniaturas } from './exportar-video'
 import { subirVideo } from './subir-video'
 import styles from './editor-video.module.css'
@@ -89,6 +96,12 @@ const ETAPA: Record<Fase['etapa'], string> = {
   subiendo: 'Subiendo el video',
 }
 
+/** El reloj de las muestras, en segundos (fuera del componente: no es parte de pintar). */
+const ahoraSegundos = () => performance.now() / 1000
+
+/** En qué paso va: sacar la portada es parte de preparar. */
+const PASO: Record<Fase['etapa'], number> = { portada: 1, preparando: 1, subiendo: 2 }
+
 const MINIATURAS = 10
 
 export function EditorVideo({
@@ -123,6 +136,20 @@ export function EditorVideo({
   const [fase, setFase] = useState<Fase | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  /*
+    CUÁNTO FALTA (13/11/2026: «un contador para que el usuario sepa más o
+    menos cuánto falta»). Cada avance deja una muestra; cada segundo se
+    estima con el ritmo de los últimos segundos (`estimarRestante`) y se
+    suaviza contra lo que ya se enseñaba (`suavizarRestante`), así el número
+    baja con calma. Al cambiar de paso —o si la preparación vuelve a empezar
+    por software— se empieza de cero.
+  */
+  const muestras = useRef<Muestra[]>([])
+  const etapaMuestras = useRef<Fase['etapa'] | null>(null)
+  const restanteMostrado = useRef<{ valor: number | null; t: number }>({ valor: null, t: 0 })
+  const [restante, setRestante] = useState<number | null>(null)
+  const etapaActual = fase?.etapa ?? null
+
   // En la portada los videos se ven sin sonido: no se sube el audio.
   const sinSonido = destino === 'portada' || quitarSonido
   const proporcion = PROPORCION_DESTINO[destino]
@@ -151,6 +178,23 @@ export function EditorVideo({
 
   // Si se cierra a medias, se cancela lo que se estuviera preparando o subiendo.
   useEffect(() => () => cancelador.current?.abort(), [])
+
+  // Cada segundo, mientras prepara o sube: cuánto falta.
+  useEffect(() => {
+    if (etapaActual !== 'preparando' && etapaActual !== 'subiendo') return
+    const reloj = setInterval(() => {
+      const ahora = ahoraSegundos()
+      const previo = restanteMostrado.current
+      const valor = suavizarRestante(
+        previo.valor,
+        estimarRestante(muestras.current),
+        previo.t ? ahora - previo.t : 0,
+      )
+      restanteMostrado.current = { valor, t: ahora }
+      setRestante(valor)
+    }, 1000)
+    return () => clearInterval(reloj)
+  }, [etapaActual])
 
   function alCargar() {
     const v = video.current
@@ -287,6 +331,16 @@ export function EditorVideo({
   /* --- Preparar y subir ---------------------------------------------------- */
 
   function progreso(etapa: Fase['etapa'], fraccion: number) {
+    // La muestra va siempre; lo que se pinta, solo al cambiar el porcentaje.
+    const ultima = muestras.current[muestras.current.length - 1]
+    if (etapaMuestras.current !== etapa || (ultima && fraccion < ultima.p - 0.01)) {
+      muestras.current = []
+      etapaMuestras.current = etapa
+      restanteMostrado.current = { valor: null, t: 0 }
+      setRestante(null)
+    }
+    muestras.current = agregarMuestra(muestras.current, { t: ahoraSegundos(), p: fraccion })
+
     const porcentaje = Math.floor(fraccion * 100)
     if (porcentaje === ultimoPorcentaje.current) return
     ultimoPorcentaje.current = porcentaje
@@ -310,8 +364,14 @@ export function EditorVideo({
       setFase({ etapa: 'portada', progreso: 0 })
       v.pause()
       v.currentTime = tramo.inicio
-      await new Promise<void>((ok) => v.addEventListener('seeked', () => ok(), { once: true }))
+      // Como mucho 3 s: si el navegador no avisa del salto, se toma el fotograma que haya.
+      await Promise.race([
+        new Promise<void>((ok) => v.addEventListener('seeked', () => ok(), { once: true })),
+        new Promise<void>((ok) => setTimeout(ok, 3000)),
+      ])
       const portada = await capturarPortada(v, recorte, salida)
+      // Ya se está preparando, aunque el primer avance tarde en llegar.
+      progreso('preparando', 0)
 
       const mp4 = await exportarVideo(archivo, {
         tramo,
@@ -334,6 +394,10 @@ export function EditorVideo({
       }
     } finally {
       if (cancelador.current === control) cancelador.current = null
+      muestras.current = []
+      etapaMuestras.current = null
+      restanteMostrado.current = { valor: null, t: 0 }
+      setRestante(null)
       setFase(null)
     }
   }
@@ -533,17 +597,29 @@ export function EditorVideo({
       )}
 
       {fase && (
-        <div className={styles.fase} role="status">
-          <p className={styles.faseTexto}>
+        <div className={styles.fase}>
+          {/* El lector oye solo el paso; el porcentaje y el tiempo cambian cada segundo. */}
+          <p className="sr-only" role="status">
+            Paso {PASO[fase.etapa]} de 2: {ETAPA[fase.etapa]}
+          </p>
+          <p className={styles.faseTexto} aria-hidden="true">
+            <span className={styles.paso}>Paso {PASO[fase.etapa]} de 2</span>
             {ETAPA[fase.etapa]}
-            {fase.etapa !== 'portada' && ` · ${Math.floor(fase.progreso * 100)} %`}
           </p>
           <ProgressBar
             value={fase.etapa === 'portada' ? undefined : fase.progreso * 100}
             label={ETAPA[fase.etapa]}
           />
+          {fase.etapa !== 'portada' && (
+            <p className={styles.faseCifras} aria-hidden="true">
+              <span className={styles.porcentaje}>{Math.floor(fase.progreso * 100)} %</span>
+              <span className={styles.restante} data-calculando={restante === null || undefined}>
+                {textoRestante(restante)}
+              </span>
+            </p>
+          )}
           <p className={styles.faseAyuda}>
-            Deja esta ventana abierta. Un video largo puede tardar un par de minutos.
+            Deja esta ventana abierta hasta que termine.
           </p>
         </div>
       )}
