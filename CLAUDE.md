@@ -2182,13 +2182,17 @@ de una imagen.
   activar el audio del video y agrandarlo para verlo completo»): ACTIVAR EL
   SONIDO (`aria-pressed`; vale para los videos siguientes; si el navegador
   no deja sonar, vuelve a silencio; no sale si se SABE que el video no tiene
-  audio —Firefox y Safari lo dicen—) y VER EN GRANDE: pantalla completa del
-  video, entero (`object-fit: contain`) y con sus controles, y mientras
-  tanto el carrusel no cambia de pieza; en iPhone, el reproductor del
-  sistema. Si el navegador NO deja la pantalla completa (falla o no contesta
-  en 1,5 s: los navegadores dentro de Instagram o Facebook), se abre el
-  VISOR, una ventana encima con el video igual de grande, sus controles y
-  su X.
+  audio —Firefox y Safari lo dicen—) y VER EN GRANDE. **En grande es una
+  VENTANA ENCIMA, como los formularios** (mismo día: «cuando le dan clic al
+  video para verlo más grande, que se ponga encima de todo con el efecto de
+  los formularios, y que se pueda cerrar»): `Modal desnudo` con su velo
+  difuminado y su entrada; se abre con el botón o TOCANDO el video (un
+  toque; arrastrar sigue pasando de pieza: `arrastro`), y se cierra con su
+  X, Escape o tocando fuera. Dentro, el video entero (`contain`) con sus
+  controles, CON SONIDO y desde donde iba (`alAbrirVisor`); la pantalla
+  completa queda en el botón del reproductor. Mientras está abierta, el
+  carrusel se queda quieto. **No uses la pantalla completa del navegador al
+  tocar**: se hizo primero y no era lo pedido.
 - **En `/novedades`** (y la de miembros): el video con sus controles y su
   portada, que no carga hasta darle a reproducir, entero sobre negro (se
   mira; no se recorta como una foto). El aviso compacto de la portada no

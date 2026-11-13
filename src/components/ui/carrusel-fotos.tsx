@@ -33,13 +33,19 @@ import estilos from './carrusel-fotos.module.css'
   solo un video con sonido— y el carrusel espera a que termine para pasar a
   la siguiente (no a los 4,5 s). Encima, dos botones («los usuarios pueden
   activar el audio y agrandarlo para verlo completo»): ACTIVAR EL SONIDO
-  (vale para los videos que vengan después) y VER EN GRANDE (pantalla
-  completa, con el video entero y sus controles; mientras tanto el
-  carrusel no pasa de pieza). El de sonido no sale si se sabe que el video
-  no tiene audio (el administrador lo quitó). Si el navegador NO deja la
-  pantalla completa (los de dentro de Instagram o Facebook, por ejemplo), el
-  video se abre igual de grande en una ventana encima (`visor`), entero, con
-  sus controles y su X.
+  (vale para los videos que vengan después; no sale si se sabe que el video
+  no tiene audio) y VER EN GRANDE.
+
+  EN GRANDE ES UNA VENTANA ENCIMA, como los formularios (13/11/2026: «cuando
+  le dan clic al video para verlo más grande, que se ponga encima de todo con
+  el efecto de los formularios, y que se pueda cerrar»). Se abre con el
+  botón o TOCANDO el video (un toque, no un arrastre: arrastrar sigue
+  pasando de pieza). Es `Modal desnudo`: el mismo velo que se difumina y la
+  misma entrada; se cierra con su X, con Escape o tocando fuera. Dentro, el
+  video entero con sus controles, CON SONIDO y desde donde iba; quien quiera
+  la pantalla completa la tiene en el botón del reproductor. Mientras está
+  abierta, el carrusel se queda quieto. Ya no se usa la pantalla completa
+  del navegador al tocar (se probó primero y no era lo pedido).
   Solo suena el que está a la vista y solo si el carrusel está en pantalla
   (`IntersectionObserver`): fuera de ella no gasta batería ni datos. La
   pausa del carrusel también lo pausa. Con movimiento reducido no arranca
@@ -94,8 +100,9 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const [enPantalla, setEnPantalla] = useState(false)
   const [conSonido, setConSonido] = useState(false)
-  const [enGrande, setEnGrande] = useState<number | null>(null)
   const [visor, setVisor] = useState<number | null>(null)
+  // ¿El último gesto fue un arrastre? Entonces el clic que lo sigue no abre el visor.
+  const arrastro = useRef(false)
   // Los videos de los que se SABE que no tienen audio (no se les ofrece sonido).
   const [sinAudio, setSinAudio] = useState<ReadonlySet<number>>(new Set())
 
@@ -128,9 +135,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
       if (!v) return
       // El sonido es una propiedad del elemento: el atributo `muted` solo vale al montar.
       v.muted = !conSonido
-      const toca =
-        (i === actual && enPantalla && !pausadoPorUsuario && !reducirMovimiento && visor === null) ||
-        i === enGrande
+      const toca = i === actual && enPantalla && !pausadoPorUsuario && !reducirMovimiento && visor === null
       if (toca) {
         if (v.paused) void v.play().catch(() => {})
       } else if (!v.paused) {
@@ -138,16 +143,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
       }
       if (i !== actual && v.currentTime > 0) v.currentTime = 0
     })
-  }, [actual, enPantalla, pausadoPorUsuario, reducirMovimiento, conSonido, enGrande, visor])
-
-  // Al salir de la pantalla completa (Escape, el botón del navegador), se vuelve al carrusel.
-  useEffect(() => {
-    const alCambiar = () => {
-      if (!document.fullscreenElement) setEnGrande(null)
-    }
-    document.addEventListener('fullscreenchange', alCambiar)
-    return () => document.removeEventListener('fullscreenchange', alCambiar)
-  }, [])
+  }, [actual, enPantalla, pausadoPorUsuario, reducirMovimiento, conSonido, visor])
 
   /** Activa o quita el sonido. Si el navegador no deja sonar, vuelve a silencio. */
   function alternarSonido() {
@@ -164,37 +160,33 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
     }
   }
 
-  /** Pantalla completa con el video entero. En iPhone, el reproductor del sistema. */
+  /** El video que está a la vista, en grande en la ventana encima. */
   function verEnGrande() {
-    const v = videos.current[actual] as
-      | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
-      | null
-    if (!v) return
-    const i = actual
-    if (v.requestFullscreen && document.fullscreenEnabled) {
-      setEnGrande(i)
-      // El navegador no la deja (falla, o no contesta en 1,5 s): el visor, en la página.
-      const alVisor = () => {
-        if (document.fullscreenElement === v) return
-        setEnGrande(null)
-        setVisor(i)
-      }
-      const plazo = window.setTimeout(alVisor, 1500)
-      v.requestFullscreen()
-        .then(() => {
-          window.clearTimeout(plazo)
-          if (v.paused) void v.play().catch(() => {})
-        })
-        .catch(() => {
-          window.clearTimeout(plazo)
-          alVisor()
-        })
-    } else if (v.webkitEnterFullscreen) {
-      v.webkitEnterFullscreen()
-      if (v.paused) void v.play().catch(() => {})
-    } else {
-      setVisor(i)
+    if (fotos[actual]?.video) setVisor(actual)
+  }
+
+  /** Un toque en el video lo abre en grande; un arrastre no (pasa de pieza). */
+  function alTocarPieza() {
+    if (arrastro.current) {
+      arrastro.current = false
+      return
     }
+    if (actualEsVideo) verEnGrande()
+  }
+
+  /**
+   * El video de la ventana sigue desde donde iba el del carrusel, y CON
+   * SONIDO: quien lo abrió quiere verlo. Si el navegador no deja sonar, en
+   * silencio (sus controles permiten activarlo).
+   */
+  function alAbrirVisor(v: HTMLVideoElement) {
+    const desde = visor !== null ? videos.current[visor]?.currentTime : 0
+    if (desde && desde < v.duration - 0.5) v.currentTime = desde
+    v.muted = false
+    void v.play().catch(() => {
+      v.muted = true
+      void v.play().catch(() => {})
+    })
   }
 
   /** ¿Se sabe que este video no tiene audio? Solo Firefox y Safari lo dicen; si no, se ofrece. */
@@ -208,8 +200,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   /** Al terminar un video: pasa a la siguiente pieza, o lo repite si el carrusel está parado. */
   function alTerminarVideo(i: number) {
     if (i !== actual) return
-    // En grande se está mirando: no se cambia de pieza por debajo.
-    if (rotando && enGrande === null) {
+    if (rotando) {
       setActual((i + 1) % total)
       return
     }
@@ -225,6 +216,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   /* --- Arrastrar ---------------------------------------------------------- */
 
   function alApretar(e: PointerEvent<HTMLDivElement>) {
+    // Cada gesto empieza siendo un toque; si arrastra, `alMover` lo marca.
+    arrastro.current = false
     if (total < 2 || (e.pointerType === 'mouse' && e.button !== 0)) return
     gesto.current = {
       id: e.pointerId,
@@ -252,6 +245,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         return
       }
       e.currentTarget.setPointerCapture(e.pointerId)
+      arrastro.current = true
       setArrastrando(true)
     }
 
@@ -323,6 +317,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         onPointerDown={alApretar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
+        onClick={alTocarPieza}
+        data-video-actual={actualEsVideo || undefined}
         onPointerCancel={alCancelar}
       >
         {/* El carril: `--indice` y `--desplazamiento` son lo único dinámico
@@ -347,7 +343,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 src={foto.video}
                 poster={foto.url}
                 className={estilos.foto}
-                data-controles={reducirMovimiento || enGrande === i || undefined}
+                data-controles={reducirMovimiento || undefined}
                 aria-label={foto.alt}
                 aria-hidden={i !== actual}
                 muted
@@ -355,7 +351,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 // Carga cuando le toca: hasta entonces se ve su portada.
                 preload={i === actual ? 'auto' : 'none'}
                 loop={total === 1}
-                controls={reducirMovimiento || enGrande === i}
+                controls={reducirMovimiento}
                 onLoadedMetadata={(e) => revisarAudio(i, e.currentTarget)}
                 onEnded={() => alTerminarVideo(i)}
               />
@@ -403,14 +399,13 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         </div>
       )}
 
-      {/* El visor: el video en grande dentro de la página, cuando no hay pantalla completa. */}
+      {/* EN GRANDE: la ventana encima, con el velo y la entrada de los formularios. */}
       <Modal
         open={visor !== null}
         onClose={() => setVisor(null)}
         ariaLabel={visor !== null ? fotos[visor]?.alt : 'Video'}
         desnudo
         width="min(96vw, 1280px)"
-        className={estilos.visorDialogo}
       >
         {visor !== null && fotos[visor]?.video && (
           <div className={estilos.visor}>
@@ -427,8 +422,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
               poster={fotos[visor].url}
               className={estilos.visorVideo}
               controls
-              autoPlay
               playsInline
+              onLoadedMetadata={(e) => alAbrirVisor(e.currentTarget)}
               aria-label={fotos[visor].alt}
             />
           </div>

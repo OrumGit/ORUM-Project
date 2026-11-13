@@ -66,11 +66,9 @@
   pointer-events: auto;
 }
 
-/* En pantalla completa, el video ENTERO (sin recortar) y con sus controles. */
-.foto:fullscreen {
-  object-fit: contain;
-  background: var(--negro-900);
-  pointer-events: auto;
+/* Con un video a la vista, tocarlo lo abre en grande: el cursor lo dice. */
+.fotos[data-video-actual] {
+  cursor: zoom-in;
 }
 
 /* --- Sonido y ver en grande, arriba a la derecha del video (13/11/2026) ---- */
@@ -172,11 +170,6 @@
 .visorCerrar:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-}
-
-/* El velo, más oscuro que el de un formulario: se mira un video. */
-.visorDialogo::backdrop {
-  background: color-mix(in srgb, var(--negro-900) 82%, transparent);
 }
 
 /* --- Controles: pausa y puntos, sobre un velo para leerse en cualquier foto */
