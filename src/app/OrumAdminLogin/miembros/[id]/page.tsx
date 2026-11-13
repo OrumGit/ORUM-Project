@@ -114,6 +114,9 @@ export default async function FichaMiembroPage({
   const [{ id }, consulta] = await Promise.all([params, searchParams])
   const miembroId = Number(id)
   const rangoCompras = leerPeriodoCompras(consulta, hoyISO())
+  /* Las compras en comercios las ve SOLO el super administrador (12/11/2026).
+     El empleado ni siquiera hace la consulta: no se le pinta la sección. */
+  const verCompras = actor.rolCodigo === 'super_admin'
 
   const admin = createAdminClient()
   const { data: miembro } = await admin
@@ -148,7 +151,7 @@ export default async function FichaMiembroPage({
       .eq('entidad_id', miembroId)
       .order('fecha_hora', { ascending: false })
       .limit(50),
-    cargarComprasMiembro(miembroId, rangoCompras),
+    verCompras ? cargarComprasMiembro(miembroId, rangoCompras) : Promise.resolve(null),
   ])
 
   // Los planes activos no bastan para nombrar el historial: una membresía
@@ -337,13 +340,15 @@ export default async function FichaMiembroPage({
         </Section>
 
         {/* Cuántas compras, dónde, cuánto gastó y cuánto se ahorró (11/11/2026). */}
-        <ComprasMiembro
-          miembroId={miembro.id}
-          nombre={miembro.nombres}
-          rango={rangoCompras}
-          compras={compras}
-          pagina={leerPagina(consulta.pagina)}
-        />
+        {verCompras && (
+          <ComprasMiembro
+            miembroId={miembro.id}
+            nombre={miembro.nombres}
+            rango={rangoCompras}
+            compras={compras}
+            pagina={leerPagina(consulta.pagina)}
+          />
+        )}
 
         <Section title="Historial de membresías">
           <Card padding={historial.length === 0 ? 'none' : 'lg'}>
