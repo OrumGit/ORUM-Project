@@ -641,6 +641,28 @@ columna `vence_at` y el propietario las descartó antes de aplicar la
 migración; no las vuelvas a poner sin que las pida. Vista previa:
 `/dev/panel-movil?f=renovar`, `?f=renovar-vigente`, `?f=miembro-nuevo`.
 
+**«Añadir días de cortesía» DETRÁS de lo pagado** (13/11/2026: «pagaron la
+membresía mensual, pero el cliente quiere ampliarlo hasta el 31 de diciembre;
+mantener que pagaron el plan mensual para no afectar las métricas; y poder
+ponerlo cuando ya se creó el usuario»). Solo `super_admin`: botón «Añadir
+cortesía» en la ficha (secundario, junto a «Renovar») y en el menú «…» de
+la lista, que abren `miembros/[id]/cortesia` encima (+ su gemela de
+`@modal`). Lo pagado NO se toca: `anadirCortesia` crea OTRA membresía
+(`tipo 'renovada'`, `es_cortesia`, $0, el MISMO plan) que empieza el día
+siguiente al fin de la vigente —u hoy si no hay— y dura días, semanas,
+meses o hasta una fecha (`DuracionCortesia sinPlan`, que abre en «Hasta
+una fecha»). Métricas sigue contando la venta mensual; la cortesía no suma.
+Renovar y esto comparten `encadenarMembresia` (la anterior pasa a
+`'vencida'` porque la base admite UNA `'activa'` por miembro, y se revierte
+si la nueva no entra). ⚠️ Ese `'vencida'` quiere decir «ya tiene quien la
+siga», no «se acabó»: el historial de la ficha lo lee con
+`estadoEnHistorial` (pura y probada): mientras su `fecha_fin` no pase y su
+sucesora siga activa, el mes pagado se ve ACTIVO, y la cortesía que espera
+dice «Empieza el …». El estado de arriba dice «Vigente hasta el 31 dic,
+con días de cortesía desde el 13 dic». La bitácora: «Días de cortesía
+añadidos hasta el 31 dic 2026 — plan Mensual, desde …» (`cortesia_tras_plan`).
+Vista previa: `/dev/panel-movil?f=cortesia`.
+
 **Revocar** (29/10/2026: «que el administrador pueda revocar membresías»).
 Solo `super_admin`, desde la ficha del miembro («Revocar membresía», en
 secundario y antes de «Renovar», solo si hay una vigente), en una ventana

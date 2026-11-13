@@ -357,46 +357,16 @@ export async function renovarMembresia(
   if (!duracion.ok) return { error: duracion.error }
   const fecha_fin = calcularFinCortesia(duracion.duracion, fecha_inicio, plan.duracion_meses)
 
-  // La anterior pasa a 'vencida' ANTES de insertar la nueva: uq_membresia_activa
-  // (índice único sobre membresias(miembro_id) WHERE estado='activa') rechaza el
-  // INSERT si sigue habiendo una fila 'activa' para este miembro. Si el INSERT de
-  // abajo falla, se revierte este UPDATE para no dejar al miembro sin membresía.
-  if (vigente) {
-    const { error: errVencer } = await admin
-      .from('membresias')
-      .update({ estado: 'vencida', updated_by: actor.userId })
-      .eq('id', vigente.id)
-    if (errVencer) {
-      return { error: mensajeDeError('No se pudo completar la renovación', errVencer) }
-    }
-  }
-
-  const { data: nueva, error: errNueva } = await admin
-    .from('membresias')
-    .insert({
-      updated_by: actor.userId,
-      miembro_id,
-      plan_id,
-      tipo: 'renovada',
-      estado: 'activa',
-      fecha_inicio,
-      fecha_fin,
-      precio_pagado,
-      es_cortesia,
-      vendido_por: empleadoId,
-      membresia_anterior_id: vigente?.id ?? null,
-    })
-    .select('id')
-    .single()
-  if (errNueva || !nueva) {
-    if (vigente) {
-      await admin
-        .from('membresias')
-        .update({ estado: 'activa', updated_by: actor.userId })
-        .eq('id', vigente.id)
-    }
-    return { error: mensajeDeError('No se pudo registrar la renovación', errNueva) }
-  }
+  const error = await encadenarMembresia(admin, actor.userId, vigente?.id ?? null, {
+    miembro_id,
+    plan_id,
+    fecha_inicio,
+    fecha_fin,
+    precio_pagado,
+    es_cortesia,
+    vendido_por: empleadoId,
+  })
+  if (error) return { error }
 
   await registrarActividad(admin, {
     actorId: actor.userId,
@@ -408,6 +378,143 @@ export async function renovarMembresia(
       fecha_fin,
       precio_pagado,
       es_cortesia,
+      ...datosDuracion(duracion.duracion, fecha_fin),
+    },
+  })
+
+  revalidatePath('/OrumAdminLogin/miembros')
+  revalidatePath(`/OrumAdminLogin/miembros/${miembro_id}`)
+  return { ok: true }
+}
+
+/**
+ * Pone una membresía nueva DETRÁS de la vigente (renovar, o añadir días de
+ * cortesía). La anterior pasa a 'vencida' ANTES de insertar la nueva:
+ * `uq_membresia_activa` (índice único sobre membresias(miembro_id) WHERE
+ * estado='activa') rechaza el INSERT si sigue habiendo una fila 'activa' para
+ * este miembro. Si el INSERT falla, se revierte el UPDATE para no dejar al
+ * miembro sin membresía. Ese 'vencida' quiere decir «ya tiene quien la
+ * siga», no «se acabó»: sus días siguen corriendo hasta su `fecha_fin`
+ * (`estadoEnHistorial`). Devuelve el mensaje de error, o `null`.
+ */
+async function encadenarMembresia(
+  admin: Admin,
+  actorId: string,
+  anteriorId: number | null,
+  nueva: {
+    miembro_id: number
+    plan_id: number
+    fecha_inicio: string
+    fecha_fin: string
+    precio_pagado: number
+    es_cortesia: boolean
+    vendido_por: number | null
+  },
+): Promise<string | null> {
+  if (anteriorId) {
+    const { error: errVencer } = await admin
+      .from('membresias')
+      .update({ estado: 'vencida', updated_by: actorId })
+      .eq('id', anteriorId)
+    if (errVencer) return mensajeDeError('No se pudo completar la renovación', errVencer)
+  }
+
+  const { data, error: errNueva } = await admin
+    .from('membresias')
+    .insert({
+      updated_by: actorId,
+      ...nueva,
+      tipo: 'renovada',
+      estado: 'activa',
+      membresia_anterior_id: anteriorId,
+    })
+    .select('id')
+    .single()
+  if (errNueva || !data) {
+    if (anteriorId) {
+      await admin.from('membresias').update({ estado: 'activa', updated_by: actorId }).eq('id', anteriorId)
+    }
+    return mensajeDeError('No se pudo registrar la membresía', errNueva)
+  }
+  return null
+}
+
+export type CortesiaState = { error?: string; ok?: boolean }
+
+/**
+ * AÑADIR DÍAS DE CORTESÍA (13/11/2026: «pagaron la membresía mensual, pero el
+ * cliente quiere ampliarlo hasta el 31 de diciembre; mantener que pagaron el
+ * plan mensual para no afectar las métricas; añadir los días de cortesía
+ * después de finalizado el plan, cuando ya se creó el usuario»).
+ *
+ * Lo pagado NO se toca: la cortesía es una membresía aparte, a $0 y marcada
+ * `es_cortesia`, que empieza el día siguiente al fin de la vigente (o hoy, si
+ * no hay ninguna) con el MISMO plan. Así Métricas sigue contando la venta
+ * mensual y la cortesía no suma ingresos. Solo el super_admin, como toda
+ * cortesía.
+ */
+export async function anadirCortesia(_prev: CortesiaState, formData: FormData): Promise<CortesiaState> {
+  const actor = await exigirEmpleadoOAdmin()
+  if (!actor || actor.rolCodigo !== 'super_admin') {
+    return { error: 'Solo un administrador puede dar días de cortesía.' }
+  }
+
+  const miembro_id = Number(formData.get('miembro_id'))
+  if (!Number.isInteger(miembro_id) || miembro_id < 1) return { error: 'Falta el identificador del miembro.' }
+
+  const admin = createAdminClient()
+  const [{ data: vigente }, { data: ultima }, empleadoId] = await Promise.all([
+    admin
+      .from('membresias')
+      .select('id, fecha_fin, plan_id')
+      .eq('miembro_id', miembro_id)
+      .eq('estado', 'activa')
+      .order('fecha_fin', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Sin una activa, el plan de la última que tuvo.
+    admin
+      .from('membresias')
+      .select('plan_id')
+      .eq('miembro_id', miembro_id)
+      .order('fecha_fin', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    resolverEmpleadoId(admin, actor.userId),
+  ])
+  const plan_id = vigente?.plan_id ?? ultima?.plan_id ?? null
+  if (!plan_id) return { error: 'Este miembro no tiene ninguna membresía: regístrale una primero.' }
+
+  const { data: plan } = await admin.from('planes_membresia').select('nombre').eq('id', plan_id).maybeSingle()
+
+  const fecha_inicio = calcularFechaInicioRenovacion(hoyISO(), vigente?.fecha_fin ?? null)
+  const duracion = leerDuracion(true, formData, fecha_inicio)
+  if (!duracion.ok) return { error: duracion.error }
+  if (duracion.duracion.unidad === 'plan') return { error: 'Elige cuántos días dura la cortesía.' }
+  const fecha_fin = calcularFinCortesia(duracion.duracion, fecha_inicio, 1)
+
+  const error = await encadenarMembresia(admin, actor.userId, vigente?.id ?? null, {
+    miembro_id,
+    plan_id,
+    fecha_inicio,
+    fecha_fin,
+    precio_pagado: 0,
+    es_cortesia: true,
+    vendido_por: empleadoId,
+  })
+  if (error) return { error }
+
+  await registrarActividad(admin, {
+    actorId: actor.userId,
+    accion: 'renovacion',
+    entidadId: miembro_id,
+    datosNuevos: {
+      plan_nombre: plan?.nombre ?? null,
+      fecha_inicio,
+      fecha_fin,
+      precio_pagado: 0,
+      es_cortesia: true,
+      cortesia_tras_plan: true,
       ...datosDuracion(duracion.duracion, fecha_fin),
     },
   })

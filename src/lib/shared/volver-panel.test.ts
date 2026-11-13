@@ -102,6 +102,7 @@ describe('rutaPadre', () => {
 
   it('los formularios suben al lugar que los contiene', () => {
     expect(rutaPadre('/OrumAdminLogin/miembros/12/renovar')).toBe('/OrumAdminLogin/miembros/12')
+    expect(rutaPadre('/OrumAdminLogin/miembros/12/cortesia')).toBe('/OrumAdminLogin/miembros/12')
     expect(rutaPadre('/OrumAdminLogin/miembros/12/foto/retirar')).toBe('/OrumAdminLogin/miembros/12')
     expect(rutaPadre('/OrumAdminLogin/miembros/nuevo')).toBe('/OrumAdminLogin/miembros')
     expect(rutaPadre('/OrumAdminLogin/miembros/numeros/cargar')).toBe('/OrumAdminLogin/miembros/numeros')

@@ -36,6 +36,9 @@ import styles from './duracion-cortesia.module.css'
 */
 
 const OPCIONES = UNIDADES_CORTESIA.map((u) => ({ value: u, label: ETIQUETAS_UNIDAD[u] }))
+/* «Añadir días de cortesía» va DESPUÉS de un plan: ahí «lo que dura el plan»
+   no tiene sentido. */
+const OPCIONES_SIN_PLAN = OPCIONES.filter((o) => o.value !== 'plan')
 
 /** Las reglas de los dos campos, para sumarlas al `REGLAS` del formulario. */
 function regla(campo: 'cantidad' | 'hasta'): Regla {
@@ -65,6 +68,7 @@ export const ETIQUETAS_CORTESIA = {
 export function DuracionCortesia({
   error,
   inicio,
+  sinPlan = false,
 }: {
   /** `v.error` del formulario. */
   error: (campo: string) => string | undefined
@@ -73,8 +77,13 @@ export function DuracionCortesia({
    * es el día siguiente a su fin; sin él, hoy.
    */
   inicio?: string
+  /**
+   * Sin «Lo que dura el plan» y sin colgar de una casilla: el formulario de
+   * «Añadir días de cortesía», que abre en «Hasta una fecha».
+   */
+  sinPlan?: boolean
 }) {
-  const [unidad, setUnidad] = useState<UnidadCortesia>('plan')
+  const [unidad, setUnidad] = useState<UnidadCortesia>(sinPlan ? 'fecha' : 'plan')
   const [cantidad, setCantidad] = useState('')
   const [hasta, setHasta] = useState('')
   // `null` en el servidor: la línea de «vence» aparece al montar.
@@ -95,13 +104,13 @@ export function DuracionCortesia({
   const porCantidad = unidad !== 'plan' && unidad !== 'fecha'
 
   return (
-    <div className={styles.bloque}>
+    <div className={styles.bloque} data-suelto={sinPlan || undefined}>
       <div className={styles.campos}>
         <Field label="¿Por cuánto tiempo?">
           <SelectMenu
             name="cortesia_duracion"
             etiqueta="¿Por cuánto tiempo?"
-            opciones={OPCIONES}
+            opciones={sinPlan ? OPCIONES_SIN_PLAN : OPCIONES}
             value={unidad}
             onChange={(valor) => setUnidad(valor as UnidadCortesia)}
           />
@@ -140,8 +149,9 @@ export function DuracionCortesia({
       <p className={styles.vence} aria-live="polite">
         <CalendarClock size={16} aria-hidden="true" />
         <span>
-          {vence ?? 'Escribe cuánto dura para ver cuándo vence.'}
-          {desde && hoy && desde > hoy && (
+          {vence ?? (unidad === 'fecha' ? 'Elige el día para ver hasta cuándo vale.' : 'Escribe cuánto dura para ver hasta cuándo vale.')}
+          {/* Suelto, el aviso de arriba ya lo dice. */}
+          {!sinPlan && desde && hoy && desde > hoy && (
             <span className={styles.nota}>
               {' '}
               Empieza el {fechaCorta(desde)}, cuando termine la membresía vigente.

@@ -11,6 +11,7 @@ import { SucursalForm } from '@/app/OrumAdminLogin/comercios/[id]/sucursales/_co
 import { ComercioForm } from '@/app/OrumAdminLogin/comercios/_components/comercio-form'
 import { PasswordForm } from '@/app/OrumAdminLogin/cuenta/password/_components/password-form'
 import { RenovarForm } from '@/app/OrumAdminLogin/miembros/[id]/_components/renovar-form'
+import { CortesiaForm } from '@/app/OrumAdminLogin/miembros/[id]/cortesia/_components/cortesia-form'
 import { EditarMiembroForm } from '@/app/OrumAdminLogin/miembros/[id]/editar/_components/editar-miembro-form'
 import { RevocarForm } from '@/app/OrumAdminLogin/miembros/[id]/revocar/_components/revocar-form'
 import { ComprasMiembro } from '@/app/OrumAdminLogin/miembros/[id]/_components/compras-miembro'
@@ -292,6 +293,22 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
     ),
   },
   renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia /> },
+  // «Añadir días de cortesía» tras un mensual pagado que vence el 12 dic.
+  cortesia: {
+    titulo: 'Añadir días de cortesía',
+    contenido: (
+      <CortesiaForm
+        datos={{
+          miembroId: 1,
+          nombre: 'Catalina García Ramírez',
+          plan: 'Mensual',
+          finVigente: '2026-12-12',
+          vigenteEsCortesia: false,
+          inicio: '2026-12-13',
+        }}
+      />
+    ),
+  },
   // Con una membresía vigente hasta el 20 dic 2026: la cortesía cuenta desde el 21.
   'renovar-vigente': {
     titulo: 'Renovar membresía (con una vigente)',

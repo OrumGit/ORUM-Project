@@ -3,6 +3,7 @@ import {
   Camera,
   ChevronDown,
   CreditCard,
+  Gift,
   Hash,
   Layers,
   MoreHorizontal,
@@ -305,6 +306,11 @@ export function ListaMiembros({
                 <MenuItem href={`/OrumAdminLogin/miembros/${m.id}/renovar`} icon={<CreditCard size={16} />}>
                   Renovar membresía
                 </MenuItem>
+                {esSuperAdmin && m.estado && (
+                  <MenuItem href={`/OrumAdminLogin/miembros/${m.id}/cortesia`} icon={<Gift size={16} />}>
+                    Añadir días de cortesía
+                  </MenuItem>
+                )}
                 <MenuSeparator />
                 <MenuItem href={`/OrumAdminLogin/miembros/${m.id}/editar`} icon={<Pencil size={16} />}>
                   Editar datos

@@ -129,3 +129,33 @@ export function venceProximamente(
 ): boolean {
   return derivado.activa && derivado.diasRestantes <= umbral
 }
+
+/** Cómo se ve una membresía en el historial de la ficha. */
+export type EstadoEnHistorial = { futura: true; desde: string } | { futura: false; estado: EstadoDerivado }
+
+/**
+ * El estado de una membresía EN EL HISTORIAL de la ficha (12/11/2026).
+ *
+ * Renovar —o añadir días de cortesía— pasa la anterior a `'vencida'` en el
+ * acto, porque la base admite UNA sola `'activa'` por miembro
+ * (`uq_membresia_activa`); la nueva empieza cuando la anterior termina. Así
+ * que `'vencida'` ahí no quiere decir «se acabó»: quiere decir «ya tiene
+ * quien la siga». Mientras su `fecha_fin` no pase y quien la sigue esté
+ * activa, el mes pagado sigue corriendo y se enseña como activo.
+ *
+ * Y la que empieza más adelante (la cortesía que va tras el plan) se enseña
+ * como «Empieza el …», no como activa.
+ *
+ * @param sucesorActivo ¿Hay una membresía ACTIVA que la sigue
+ *                      (`membresia_anterior_id` = esta)? Si la siguiente se
+ *                      revocó, esta no revive.
+ */
+export function estadoEnHistorial(
+  m: { estado: EstadoMembresia; fecha_inicio: string; fecha_fin: string },
+  hoy: string,
+  sucesorActivo: boolean,
+): EstadoEnHistorial {
+  if (m.estado === 'activa' && m.fecha_inicio > hoy) return { futura: true, desde: m.fecha_inicio }
+  const estado = m.estado === 'vencida' && sucesorActivo ? 'activa' : m.estado
+  return { futura: false, estado: derivarEstadoMembresia(estado, m.fecha_fin, hoy) }
+}

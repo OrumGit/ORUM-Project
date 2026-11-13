@@ -230,6 +230,15 @@
   color: var(--text-2);
 }
 
+/* «Añadir días de cortesía»: el mismo aviso, con el filo de marca. */
+.cortesiaAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--brand-edge);
+}
+
 /* La línea de la revocación, en la ficha y en el historial. */
 .revocada {
   margin: 0;

@@ -13,6 +13,12 @@
   animation: aparecer var(--dur-base) var(--ease-out);
 }
 
+/* Suelto (su propio formulario): sin el filo que lo cuelga de la casilla. */
+.bloque[data-suelto] {
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
 @keyframes aparecer {
   from {
     opacity: 0;

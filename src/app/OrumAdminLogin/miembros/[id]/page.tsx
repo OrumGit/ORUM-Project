@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
-import { Ban, Camera, CreditCard, Pencil, Trash2 } from 'lucide-react'
+import { Ban, Camera, CreditCard, Gift, Pencil, Trash2 } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { derivarEstadoMembresia, type EstadoMembresia } from '@/lib/miembros/membresias'
+import { derivarEstadoMembresia, estadoEnHistorial, type EstadoMembresia } from '@/lib/miembros/membresias'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
 import { ETIQUETA_MOTIVO_REVOCACION, esMotivoRevocacion } from '@/lib/miembros/revocacion'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -138,7 +138,7 @@ export default async function FichaMiembroPage({
   const [{ data: membresias }, { data: ciudad }, { data: eventos }, compras] = await Promise.all([
     admin
       .from('membresias')
-      .select('id, tipo, estado, fecha_inicio, fecha_fin, precio_pagado, es_cortesia, plan_id')
+      .select('id, tipo, estado, fecha_inicio, fecha_fin, precio_pagado, es_cortesia, plan_id, membresia_anterior_id')
       .eq('miembro_id', miembroId)
       .order('fecha_inicio', { ascending: false }),
     miembro.ciudad_id
@@ -214,11 +214,29 @@ export default async function FichaMiembroPage({
   }
 
   const hoy = hoyISO()
-  const historial = (membresias ?? []).map((m) => ({
-    ...m,
-    derivado: derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy),
-    plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
-  }))
+  // Las que tienen detrás una ACTIVA que las sigue: su 'vencida' solo dice
+  // «ya tiene quien la siga» y sus días corren hasta su fin (`estadoEnHistorial`).
+  const conSucesoraActiva = new Set(
+    (membresias ?? []).filter((m) => m.estado === 'activa').map((m) => m.membresia_anterior_id),
+  )
+  const historial = (membresias ?? []).map((m) => {
+    const enHistorial = estadoEnHistorial(
+      { estado: m.estado as EstadoMembresia, fecha_inicio: m.fecha_inicio, fecha_fin: m.fecha_fin },
+      hoy,
+      conSucesoraActiva.has(m.id),
+    )
+    return {
+      ...m,
+      // La que empieza más adelante cuenta como vigente para el estado de
+      // arriba (da acceso desde ya hasta su fin), pero en el historial dice
+      // «Empieza el …».
+      derivado: enHistorial.futura
+        ? derivarEstadoMembresia('activa', m.fecha_fin, hoy)
+        : enHistorial.estado,
+      empieza: enHistorial.futura ? enHistorial.desde : null,
+      plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
+    }
+  })
 
   // La vigente es la primera activa del historial, que ya viene ordenado por
   // fecha de inicio descendente.
@@ -280,6 +298,17 @@ export default async function FichaMiembroPage({
                 Revocar membresía
               </Button>
             )}
+            {/* Días de cortesía DETRÁS de lo pagado (13/11/2026): solo el
+                administrador, como toda cortesía, y solo si ya tuvo alguna. */}
+            {actor.rolCodigo === 'super_admin' && historial.length > 0 && (
+              <Button
+                href={`/OrumAdminLogin/miembros/${miembro.id}/cortesia`}
+                variant="secondary"
+                icon={<Gift size={16} />}
+              >
+                Añadir cortesía
+              </Button>
+            )}
             <Button
               href={`/OrumAdminLogin/miembros/${miembro.id}/renovar`}
               icon={<CreditCard size={16} />}
@@ -308,7 +337,9 @@ export default async function FichaMiembroPage({
               {vigente && (
                 <p className={styles.estadoNota}>
                   {vigente.derivado.activa
-                    ? `Vigente hasta el ${formatearFecha(vigente.fecha_fin)}.`
+                    ? vigente.empieza && vigente.es_cortesia
+                      ? `Vigente hasta el ${formatearFecha(vigente.fecha_fin)}, con días de cortesía desde el ${formatearFecha(vigente.empieza)}.`
+                      : `Vigente hasta el ${formatearFecha(vigente.fecha_fin)}.`
                     : textoRevocada(vigente.id)
                       ? `${textoRevocada(vigente.id)}. Para devolvérsela, renuévala.`
                       : `La última membresía terminó el ${formatearFecha(vigente.fecha_fin)}.`}
@@ -364,7 +395,7 @@ export default async function FichaMiembroPage({
                     <span
                       className={[
                         styles.punto,
-                        m.derivado.activa && styles.puntoVigente,
+                        m.derivado.activa && !m.empieza && styles.puntoVigente,
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -374,7 +405,13 @@ export default async function FichaMiembroPage({
                     <div className={styles.hitoCuerpo}>
                       <div className={styles.hitoCabecera}>
                         <span className={styles.hitoPlan}>{m.plan}</span>
-                        <StatusBadge estado={m.derivado} size="sm" />
+                        {m.empieza ? (
+                          <Badge tone="neutral" size="sm">
+                            Empieza el {formatearFecha(m.empieza)}
+                          </Badge>
+                        ) : (
+                          <StatusBadge estado={m.derivado} size="sm" />
+                        )}
                         <Badge tone="neutral" size="sm">
                           {m.tipo}
                         </Badge>

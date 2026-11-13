@@ -38,6 +38,11 @@ export function resumirEventoBitacora(
 
   if (accion === 'renovacion') {
     const n = datosNuevos ?? {}
+    // «Añadir días de cortesía»: no es una renovación, son días detrás del plan.
+    if (n.cortesia_tras_plan === true) {
+      const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+      return `Días de cortesía añadidos${por} — plan ${formatearValor(n.plan_nombre)}, desde ${formatearValor(n.fecha_inicio)}`
+    }
     const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
     const cortesia = n.es_cortesia === true ? ` (cortesía${por})` : ''
     return `Membresía renovada${cortesia} — plan ${formatearValor(n.plan_nombre)}, vence ${formatearValor(n.fecha_fin)}`
