@@ -12,6 +12,7 @@ import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
 import { obligatorio, precio as reglaPrecio, salvoCortesia } from '@/lib/validacion/reglas'
 import { useCerrarCuando } from '@/components/shell/overlay-ruta'
 import { renovarMembresia, type RenovarState } from '../../actions'
+import { DuracionCortesia, ETIQUETAS_CORTESIA, REGLAS_CORTESIA } from '../../_components/duracion-cortesia'
 import styles from '../ficha.module.css'
 
 type PlanOpcion = { id: number; nombre: string; precio: number }
@@ -25,19 +26,27 @@ const REGLAS = {
     salvoCortesia(obligatorio('Escribe el precio pagado.')),
     salvoCortesia(reglaPrecio(undefined, true)),
   ],
+  ...REGLAS_CORTESIA,
 }
 
-const ETIQUETAS: Record<string, string> = { plan_id: 'Plan', precio_pagado: 'Precio pagado' }
+const ETIQUETAS: Record<string, string> = {
+  plan_id: 'Plan',
+  precio_pagado: 'Precio pagado',
+  ...ETIQUETAS_CORTESIA,
+}
 
 export function RenovarForm({
   miembroId,
   planes,
   puedeCortesia,
+  inicio,
 }: {
   miembroId: number
   planes: PlanOpcion[]
   /** Solo el super_admin puede dar cortesías; al empleado la casilla no se pinta. */
   puedeCortesia: boolean
+  /** Día en que empezaría (hoy, o tras la membresía vigente): para decir cuándo vence una cortesía. */
+  inicio?: string
 }) {
   const [state, formAction, pending] = useActionState(renovarMembresia, estadoInicial)
   const [precio, setPrecio] = useState(planes[0] ? String(planes[0].precio) : '')
@@ -112,6 +121,8 @@ export function RenovarForm({
           disabled={sinPlanes}
         />
       )}
+
+      {puedeCortesia && esCortesia && <DuracionCortesia error={v.error} inicio={inicio} />}
 
       <Button
         type="submit"

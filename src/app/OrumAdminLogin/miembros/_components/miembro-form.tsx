@@ -23,6 +23,7 @@ import {
 import { Divider, Section, Stack } from '@/components/ui/layout'
 import { useCerrarOverlay } from '@/components/shell/overlay-ruta'
 import { registrarMiembro, type RegistrarMiembroState } from '../actions'
+import { DuracionCortesia, ETIQUETAS_CORTESIA, REGLAS_CORTESIA } from './duracion-cortesia'
 import styles from '@/styles/formulario.module.css'
 
 type Opcion = { id: number; nombre: string }
@@ -43,6 +44,7 @@ const REGLAS = {
   plan_id: [obligatorio('Elige un plan.')],
   // Una cortesía no se cobra: el campo ni se pinta y su regla no corre.
   precio_pagado: [salvoCortesia(obligatorio('Escribe el precio pagado.')), salvoCortesia(reglaPrecio())],
+  ...REGLAS_CORTESIA,
 }
 
 const ETIQUETAS: Record<string, string> = {
@@ -55,6 +57,7 @@ const ETIQUETAS: Record<string, string> = {
   numero_registro: 'Número de registro',
   plan_id: 'Plan',
   precio_pagado: 'Precio pagado',
+  ...ETIQUETAS_CORTESIA,
 }
 
 /**
@@ -249,6 +252,8 @@ function FormularioMiembro({
                 disabled={sinPlanes}
               />
             )}
+
+            {puedeCortesia && esCortesia && <DuracionCortesia error={v.error} />}
 
             <p className={styles.nota}>
               Al guardar se asigna el número elegido y se envía un correo para que

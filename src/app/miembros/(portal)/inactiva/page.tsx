@@ -1,7 +1,7 @@
 import { Pause } from 'lucide-react'
 import { requireRolMiembro } from '@/lib/miembros/requerir-miembro'
 import { createClient } from '@/lib/supabase/server'
-import { derivarEstadoMembresia, type MotivoInactiva } from '@/lib/miembros/membresias'
+import { derivarEstadoMembresia, venceAtDe, type MotivoInactiva } from '@/lib/miembros/membresias'
 import { hoyISO } from '@/lib/shared/fecha'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -123,7 +123,8 @@ export default async function MembresiaInactivaPage() {
   if (miembro) {
     const { data: membresias } = await supabase
       .from('membresias')
-      .select('estado, fecha_fin')
+      // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
+      .select('*')
       .eq('miembro_id', miembro.id)
       .order('fecha_fin', { ascending: false })
       .limit(1)
@@ -139,7 +140,7 @@ export default async function MembresiaInactivaPage() {
         Si el estado derivado saliera activo —solo ocurre si alguien escribe
         esta URL a mano— no se inventa un motivo: cae en la variante genérica.
       */
-      const estado = derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoyISO())
+      const estado = derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoyISO(), venceAtDe(ultima))
       if (!estado.activa) {
         motivo = estado.motivo
         fecha = fechaLegible(ultima.fecha_fin)

@@ -30,13 +30,16 @@ export function resumirEventoBitacora(
 ): string {
   if (accion === 'alta') {
     const n = datosNuevos ?? {}
-    const cobro = n.es_cortesia === true ? 'cortesía' : `$${formatearValor(n.precio_pagado)}`
+    // `cortesia_duracion` («por 5 horas»): solo si la cortesía no dura lo del plan.
+    const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+    const cobro = n.es_cortesia === true ? `cortesía${por}` : `$${formatearValor(n.precio_pagado)}`
     return `Miembro registrado — plan ${formatearValor(n.plan_nombre)}, ${cobro}`
   }
 
   if (accion === 'renovacion') {
     const n = datosNuevos ?? {}
-    const cortesia = n.es_cortesia === true ? ' (cortesía)' : ''
+    const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+    const cortesia = n.es_cortesia === true ? ` (cortesía${por})` : ''
     return `Membresía renovada${cortesia} — plan ${formatearValor(n.plan_nombre)}, vence ${formatearValor(n.fecha_fin)}`
   }
 

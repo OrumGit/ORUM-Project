@@ -9,11 +9,18 @@ import { hoyISO } from '@/lib/shared/fecha'
 import { registrarActividad } from '@/lib/bitacora/bitacora'
 import { enviarCorreoInvitacion } from '@/lib/correo/correo'
 import {
-  calcularFechaFin,
-  calcularFechaInicioRenovacion,
   derivarEstadoMembresia,
+  inicioDeRenovacion,
   type EstadoMembresia,
 } from '@/lib/miembros/membresias'
+import {
+  calcularFinCortesia,
+  faltaColumnaVenceAt,
+  leerDuracionCortesia,
+  MENSAJE_FALTA_MIGRACION_HORAS,
+  textoDuracionCortesia,
+  type DuracionCortesia,
+} from '@/lib/miembros/cortesia'
 import { esNumeroRegistroValido } from '@/lib/miembros/numeros-registro'
 import { revisarRevocacion } from '@/lib/miembros/revocacion'
 import { construirEnlaceActivacion, urlBaseSitio } from '@/lib/auth/activacion'
@@ -21,6 +28,34 @@ import { errorDeCorreoOcupado } from '@/lib/auth/correo-registrado'
 import { cambiarCorreoDeCuenta } from '@/lib/auth/cambiar-correo'
 
 type Admin = ReturnType<typeof createAdminClient>
+
+/**
+ * Cuánto dura la membresía que se va a crear. Pagada: lo del plan, siempre
+ * (los campos de duración se ignoran: solo existen con la casilla de
+ * cortesía). Cortesía: lo que elija el administrador (`cortesia.ts`).
+ */
+function leerDuracion(
+  esCortesia: boolean,
+  formData: FormData,
+  inicio: string,
+): { ok: true; duracion: DuracionCortesia } | { ok: false; error: string } {
+  if (!esCortesia) return { ok: true, duracion: { unidad: 'plan' } }
+  const texto = (nombre: string) => {
+    const v = formData.get(nombre)
+    return typeof v === 'string' ? v : null
+  }
+  return leerDuracionCortesia(
+    { duracion: texto('cortesia_duracion'), cantidad: texto('cortesia_cantidad'), hasta: texto('cortesia_hasta') },
+    inicio,
+  )
+}
+
+/** Lo que la bitácora guarda de la duración (nada si es la del plan). */
+function datosDuracion(duracion: DuracionCortesia, fechaFin: string, venceAt: string | null) {
+  const texto = textoDuracionCortesia(duracion)
+  if (!texto) return {}
+  return { cortesia_duracion: texto, fecha_fin: fechaFin, ...(venceAt ? { vence_at: venceAt } : {}) }
+}
 
 /** Devuelve el perfil del actor si es empleado o super_admin activo; si no, null. */
 async function exigirEmpleadoOAdmin(): Promise<PerfilActual | null> {
@@ -87,6 +122,10 @@ export async function registrarMiembro(
   if (!Number.isFinite(precio_pagado) || precio_pagado < 0) {
     return { error: 'El precio pagado debe ser un número mayor o igual a 0.' }
   }
+  // Cuánto dura: lo del plan (como siempre) o lo que elija el administrador.
+  const fecha_inicio = hoyISO()
+  const duracion = leerDuracion(es_cortesia, formData, fecha_inicio)
+  if (!duracion.ok) return { error: duracion.error }
 
   const admin = createAdminClient()
 
@@ -219,8 +258,12 @@ export async function registrarMiembro(
   numeroAsignado = true
 
   // 8) Primera membresía (nueva).
-  const fecha_inicio = hoyISO()
-  const fecha_fin = calcularFechaFin(fecha_inicio, plan.duracion_meses)
+  const { fechaFin: fecha_fin, venceAt } = calcularFinCortesia(
+    duracion.duracion,
+    fecha_inicio,
+    new Date(),
+    plan.duracion_meses,
+  )
   const { error: errMembresia } = await admin.from('membresias').insert({
     updated_by: actor.userId,
     miembro_id: miembroId,
@@ -231,10 +274,13 @@ export async function registrarMiembro(
     fecha_fin,
     precio_pagado,
     es_cortesia,
+    // Solo si es por horas: así, sin la migración, lo demás sigue funcionando.
+    ...(venceAt ? { vence_at: venceAt } : {}),
     vendido_por: empleadoId,
   })
   if (errMembresia) {
     await revertir()
+    if (venceAt && faltaColumnaVenceAt(errMembresia)) return { error: MENSAJE_FALTA_MIGRACION_HORAS }
     return { error: mensajeDeError('No se pudo registrar la membresía', errMembresia) }
   }
 
@@ -250,6 +296,7 @@ export async function registrarMiembro(
       plan_nombre: plan.nombre,
       precio_pagado,
       es_cortesia,
+      ...datosDuracion(duracion.duracion, fecha_fin, venceAt),
     },
   })
 
@@ -305,7 +352,8 @@ export async function renovarMembresia(
       .maybeSingle(),
     admin
       .from('membresias')
-      .select('id, fecha_fin')
+      // `*`: trae `vence_at` si la migración de las cortesías por horas está.
+      .select('*')
       .eq('miembro_id', miembro_id)
       .eq('estado', 'activa')
       .order('fecha_fin', { ascending: false })
@@ -315,8 +363,16 @@ export async function renovarMembresia(
   ])
   if (!plan || !plan.activo) return { error: 'El plan seleccionado no existe o está inactivo.' }
 
-  const fecha_inicio = calcularFechaInicioRenovacion(hoyISO(), vigente?.fecha_fin ?? null)
-  const fecha_fin = calcularFechaFin(fecha_inicio, plan.duracion_meses)
+  // Tras una cortesía por horas, empieza hoy (ver `inicioDeRenovacion`).
+  const fecha_inicio = inicioDeRenovacion(hoyISO(), vigente)
+  const duracion = leerDuracion(es_cortesia, formData, fecha_inicio)
+  if (!duracion.ok) return { error: duracion.error }
+  const { fechaFin: fecha_fin, venceAt } = calcularFinCortesia(
+    duracion.duracion,
+    fecha_inicio,
+    new Date(),
+    plan.duracion_meses,
+  )
 
   // La anterior pasa a 'vencida' ANTES de insertar la nueva: uq_membresia_activa
   // (índice único sobre membresias(miembro_id) WHERE estado='activa') rechaza el
@@ -344,6 +400,7 @@ export async function renovarMembresia(
       fecha_fin,
       precio_pagado,
       es_cortesia,
+      ...(venceAt ? { vence_at: venceAt } : {}),
       vendido_por: empleadoId,
       membresia_anterior_id: vigente?.id ?? null,
     })
@@ -356,6 +413,7 @@ export async function renovarMembresia(
         .update({ estado: 'activa', updated_by: actor.userId })
         .eq('id', vigente.id)
     }
+    if (venceAt && faltaColumnaVenceAt(errNueva)) return { error: MENSAJE_FALTA_MIGRACION_HORAS }
     return { error: mensajeDeError('No se pudo registrar la renovación', errNueva) }
   }
 
@@ -369,6 +427,7 @@ export async function renovarMembresia(
       fecha_fin,
       precio_pagado,
       es_cortesia,
+      ...datosDuracion(duracion.duracion, fecha_fin, venceAt),
     },
   })
 

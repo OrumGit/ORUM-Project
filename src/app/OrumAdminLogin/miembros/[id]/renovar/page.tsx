@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hoyISO } from '@/lib/shared/fecha'
+import { inicioDeRenovacion } from '@/lib/miembros/membresias'
 import { FormCard } from '@/components/ui/form-card'
 import { PageHeader } from '@/components/ui/layout'
 import { RenovarForm } from '../_components/renovar-form'
@@ -17,7 +19,7 @@ export default async function RenovarPage({
   const miembroId = Number(id)
 
   const admin = createAdminClient()
-  const [{ data: miembro }, { data: planes }] = await Promise.all([
+  const [{ data: miembro }, { data: planes }, { data: vigente }] = await Promise.all([
     admin
       .from('miembros')
       .select('id, nombres, apellidos')
@@ -30,6 +32,16 @@ export default async function RenovarPage({
       .eq('activo', true)
       .is('deleted_at', null)
       .order('nombre'),
+    // La membresía activa, para saber desde qué día contaría una cortesía.
+    // `*`: trae `vence_at` si la migración de las cortesías por horas está.
+    admin
+      .from('membresias')
+      .select('*')
+      .eq('miembro_id', miembroId)
+      .eq('estado', 'activa')
+      .order('fecha_fin', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   if (!miembro) notFound()
@@ -45,6 +57,7 @@ export default async function RenovarPage({
           miembroId={miembro.id}
           planes={planes ?? []}
           puedeCortesia={perfil.rolCodigo === 'super_admin'}
+          inicio={inicioDeRenovacion(hoyISO(), vigente)}
         />
       </FormCard>
     </>

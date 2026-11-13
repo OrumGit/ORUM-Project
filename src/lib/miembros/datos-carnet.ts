@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { hoyISO } from '@/lib/shared/fecha'
-import { derivarEstadoMembresia, type EstadoDerivado } from './membresias'
+import { derivarEstadoMembresia, venceAtDe, type EstadoDerivado } from './membresias'
 import { esMembresiaVigente } from './membresia-vigente'
 
 /*
@@ -57,13 +57,15 @@ export async function obtenerDatosCarnet(perfilId: string): Promise<DatosCarnet 
 
   const { data: membresias } = await supabase
     .from('membresias')
-    .select('plan_id, estado, fecha_fin')
+    // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
+    .select('*')
     .eq('miembro_id', miembro.id)
     .order('fecha_fin', { ascending: false })
     .limit(1)
   const ultima = membresias?.[0]
   const hoy = hoyISO()
-  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy)) return null
+  const venceAt = venceAtDe(ultima)
+  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy, venceAt)) return null
 
   const { data: plan } = await supabase
     .from('planes_membresia')
@@ -75,7 +77,7 @@ export async function obtenerDatosCarnet(perfilId: string): Promise<DatosCarnet 
     nombre: `${miembro.nombres} ${miembro.apellidos}`.trim(),
     plan: plan?.nombre ?? 'Membresía ORUM',
     numeroMembresia: miembro.numero_membresia,
-    estado: derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoy),
+    estado: derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoy, venceAt),
     vigencia: fechaLegible(ultima.fecha_fin),
     /* Una cadena vacía no es una foto: sería un `<img src="">`. */
     fotoUrl: (miembro.foto_url ?? '').trim() || null,

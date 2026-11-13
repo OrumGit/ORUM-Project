@@ -292,6 +292,11 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
     ),
   },
   renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia /> },
+  // Con una membresía vigente hasta el 20 dic 2026: la cortesía cuenta desde el 21.
+  'renovar-vigente': {
+    titulo: 'Renovar membresía (con una vigente)',
+    contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia inicio="2026-12-21" />,
+  },
   revocar: {
     titulo: 'Revocar membresía',
     contenido: (

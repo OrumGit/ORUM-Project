@@ -82,16 +82,27 @@ function diasEntre(desde: string, hasta: string): number {
  * @param estado    Valor de `membresias.estado`.
  * @param fechaFin  `membresias.fecha_fin` en 'YYYY-MM-DD'.
  * @param hoy       Fecha actual en 'YYYY-MM-DD'.
+ * @param venceAt   `membresias.vence_at` (solo las cortesías por HORAS, ver
+ *                  `cortesia.ts`): si lo hay, vence en ese instante exacto y
+ *                  no al final del día.
+ * @param ahora     El instante actual, para comparar con `venceAt`.
  */
 export function derivarEstadoMembresia(
   estado: EstadoMembresia,
   fechaFin: string,
   hoy: string,
+  venceAt: string | null = null,
+  ahora: Date = new Date(),
 ): EstadoDerivado {
   // Las decisiones administrativas mandan sobre cualquier fecha: una membresía
   // cancelada no revive porque le queden días pagados.
   if (estado === 'cancelada' || estado === 'suspendida') {
     return { activa: false, motivo: estado }
+  }
+
+  // Una cortesía por horas vence en su instante, aunque su día no haya acabado.
+  if (venceAt && new Date(venceAt).getTime() <= ahora.getTime()) {
+    return { activa: false, motivo: 'vencida' }
   }
 
   const diasRestantes = diasEntre(hoy, fechaFin)
@@ -128,4 +139,27 @@ export function venceProximamente(
   umbral: number = DIAS_AVISO_VENCIMIENTO,
 ): boolean {
   return derivado.activa && derivado.diasRestantes <= umbral
+}
+
+/**
+ * `vence_at` de una fila de `membresias` leída con `select('*')`: la columna
+ * solo existe con la migración `20261112120000_cortesia_por_horas.sql`, y sin
+ * ella la fila no la trae. Nunca lanza.
+ */
+export function venceAtDe(fila: object | null | undefined): string | null {
+  if (!fila || !('vence_at' in fila)) return null
+  const valor = (fila as { vence_at?: unknown }).vence_at
+  return typeof valor === 'string' && valor !== '' ? valor : null
+}
+
+/**
+ * Día en que empieza una renovación, a partir de la membresía ACTIVA más
+ * reciente (o `null`). Es `calcularFechaInicioRenovacion` con una excepción:
+ * una cortesía por HORAS no guarda días por delante, así que no se empieza
+ * al día siguiente de su `fecha_fin` (dejaría un hueco entre la hora en que
+ * vence y la medianoche): se empieza hoy.
+ */
+export function inicioDeRenovacion(hoy: string, vigente: { fecha_fin: string } | null): string {
+  const finVigente = vigente && !venceAtDe(vigente) ? vigente.fecha_fin : null
+  return calcularFechaInicioRenovacion(hoy, finVigente)
 }

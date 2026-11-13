@@ -1,0 +1,67 @@
+/* ==========================================================================
+   CUÁNTO DURA LA CORTESÍA  ·  bajo la casilla de cortesía (12/11/2026)
+   Cuelga de la casilla con un filo fino a la izquierda: se lee como parte
+   de ella, no como otro bloque del formulario.
+   ========================================================================== */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--border-subtle);
+  animation: aparecer var(--dur-base) var(--ease-out);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@container contenido (max-width: 520px) {
+  .campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* En una ventana encima no hay contenedor `contenido`: el ancho lo da ella. */
+@media (max-width: 520px) {
+  .campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* «Vence el 12 nov 2026 a las 8:00 p. m.» */
+.vence {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--t-footnote-size);
+  line-height: 1.45;
+}
+
+.vence svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.nota {
+  color: var(--text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloque {
+    animation: none;
+  }
+}

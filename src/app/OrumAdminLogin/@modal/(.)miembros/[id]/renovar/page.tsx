@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hoyISO } from '@/lib/shared/fecha'
+import { inicioDeRenovacion } from '@/lib/miembros/membresias'
 import { OverlayRuta } from '@/components/shell/overlay-ruta'
 import { RenovarForm } from '@/app/OrumAdminLogin/miembros/[id]/_components/renovar-form'
 
@@ -25,7 +27,7 @@ export default async function RenovarInterceptado({
   const miembroId = Number(id)
 
   const admin = createAdminClient()
-  const [{ data: miembro }, { data: planes }] = await Promise.all([
+  const [{ data: miembro }, { data: planes }, { data: vigente }] = await Promise.all([
     admin
       .from('miembros')
       .select('id, nombres, apellidos')
@@ -38,6 +40,16 @@ export default async function RenovarInterceptado({
       .eq('activo', true)
       .is('deleted_at', null)
       .order('nombre'),
+    // La membresía activa, para saber desde qué día contaría una cortesía.
+    // `*`: trae `vence_at` si la migración de las cortesías por horas está.
+    admin
+      .from('membresias')
+      .select('*')
+      .eq('miembro_id', miembroId)
+      .eq('estado', 'activa')
+      .order('fecha_fin', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   if (!miembro) notFound()
@@ -53,6 +65,7 @@ export default async function RenovarInterceptado({
         miembroId={miembro.id}
         planes={planes ?? []}
         puedeCortesia={perfil.rolCodigo === 'super_admin'}
+        inicio={inicioDeRenovacion(hoyISO(), vigente)}
       />
     </OverlayRuta>
   )

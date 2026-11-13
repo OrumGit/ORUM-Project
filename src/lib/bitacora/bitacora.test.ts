@@ -44,6 +44,26 @@ describe('resumirEventoBitacora — renovacion de cortesía', () => {
     })
     expect(texto).toBe('Membresía renovada (cortesía) — plan Oro, vence 2027-08-01')
   })
+
+  it('dice cuánto dura una cortesía que no es la del plan', () => {
+    expect(
+      resumirEventoBitacora('renovacion', null, {
+        plan_nombre: 'Mensual',
+        fecha_fin: '2026-11-12',
+        precio_pagado: 0,
+        es_cortesia: true,
+        cortesia_duracion: 'por 5 horas',
+      }),
+    ).toBe('Membresía renovada (cortesía por 5 horas) — plan Mensual, vence 2026-11-12')
+    expect(
+      resumirEventoBitacora('alta', null, {
+        plan_nombre: 'Mensual',
+        precio_pagado: 0,
+        es_cortesia: true,
+        cortesia_duracion: 'hasta el 24 dic 2026',
+      }),
+    ).toBe('Miembro registrado — plan Mensual, cortesía hasta el 24 dic 2026')
+  })
 })
 
 describe('resumirEventoBitacora — edicion', () => {

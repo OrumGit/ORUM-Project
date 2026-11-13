@@ -3,7 +3,7 @@ import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hoyISO } from '@/lib/shared/fecha'
 import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
-import { derivarEstadoMembresia, type EstadoMembresia } from './membresias'
+import { derivarEstadoMembresia, venceAtDe, type EstadoMembresia } from './membresias'
 import type { FilaMiembro } from './listado'
 
 /*
@@ -42,7 +42,8 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
     todas((desde, hasta) =>
       admin
         .from('membresias')
-        .select('id, miembro_id, estado, fecha_fin, plan_id')
+        // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
+        .select('*')
         .order('fecha_fin', { ascending: false })
         .order('id', { ascending: false })
         .range(desde, hasta),
@@ -55,12 +56,16 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
 
   // Ya vienen de la más reciente a la más antigua: la primera de cada
   // miembro es la que manda.
-  const ultima = new Map<number, { estado: EstadoMembresia; fecha_fin: string; plan_id: number | null }>()
+  const ultima = new Map<
+    number,
+    { estado: EstadoMembresia; fecha_fin: string; vence_at: string | null; plan_id: number | null }
+  >()
   for (const m of membresias) {
     if (!ultima.has(m.miembro_id)) {
       ultima.set(m.miembro_id, {
         estado: m.estado as EstadoMembresia,
         fecha_fin: m.fecha_fin,
+        vence_at: venceAtDe(m),
         plan_id: m.plan_id,
       })
     }
@@ -77,7 +82,7 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
       fotoUrl: (m.foto_url ?? '').trim() || null,
       plan: u?.plan_id != null ? (nombrePlan.get(u.plan_id) ?? null) : null,
       planId: u?.plan_id ?? null,
-      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy) : null,
+      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy, u.vence_at) : null,
       fechaFin: u?.fecha_fin ?? null,
     }
   })
