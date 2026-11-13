@@ -1353,7 +1353,7 @@ promoción se escribe CORTO («Brunch»): lo pide la ayuda del formulario.
 Vista previa con datos falsos (Coraje, el caso que lo pidió) y el editor de
 franjas: `/dev/beneficios`.
 
-`Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `Textarea` `Switch` `Checkbox` `Radio`
+`Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `SelectorFecha` `Textarea` `Switch` `Checkbox` `Radio`
 `SegmentedControl` · `Card` `FormCard` `Stack` `Grid` `Section` `PageHeader` `Divider` ·
 `Badge` `StatusBadge` `VenceEn` `Avatar` `Cifra` `CifraAnimada` · `Alert` `Toast` · `Modal` `Sheet`
 `Overlay` `DropdownMenu` `MenuItem` · `Skeleton` `ProgressBar` `EmptyState` `ErrorState` ·
@@ -1382,6 +1382,22 @@ contrario). Sin `value` guarda su propio estado desde `defaultValue`, como un
 `<select>`, y al cambiar su campo oculto avisa con un `input` que burbujea:
 así lo oye `useValidacion`. `DropdownMenu` ganó para esto la prop
 `igualarAncho` (la lista mide lo que su campo).
+
+**`SelectorFecha`** (12/11/2026, «ponle diseño al calendario») es a
+`<input type="date">` lo que `SelectMenu` a `<select>`: el calendario del
+navegador (un recuadro gris con el día en azul) no se puede vestir. El campo
+es el de `SelectMenu` con un calendario dorado a la derecha, y lo que abre
+es la capa del menú (`DropdownMenu como="dialogo"`, que además se recoloca
+cuando su panel cambia de tamaño): el mes en el serif de la marca con sus
+flechas, la semana de LUNES a domingo, el elegido en relleno `--gold-500`
+con el número en tinta, hoy en peso y con un punto (nunca solo color),
+fuera de `min`/`max` apagado, y «Hoy» al pie. Sin tinte al apuntar: el día
+sube 1px. Teclado de la cuadrícula de fechas de ARIA (flechas, Inicio/Fin,
+RePág/AvPág, Intro), con tabindex itinerante. El valor viaja en un campo
+oculto 'YYYY-MM-DD' que avisa con un `input` que burbujea, y no valida
+solo. La lógica es pura y probada (`lib/shared/calendario.ts`). Hoy lo usa
+«Hasta una fecha» de la cortesía; **un campo de fecha nuevo del panel usa
+este, no `type="date"`**.
 
 **`Agitar`** envuelve un icono y lo agita **una vez** cuando su prop `activo`
 pasa de `false` a `true` — el acento de «seleccionado» en un filtro. Se le pasa

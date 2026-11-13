@@ -62,6 +62,20 @@ type DropdownMenuProps = {
    * campo del que cuelga se lee como un menú suelto, no como su desplegable.
    */
   igualarAncho?: boolean
+  /**
+   * `dialogo`: lo que se abre no es una lista sino un panel con su propio
+   * teclado —el calendario de `SelectorFecha`—. Es `role="dialog"` con
+   * `etiqueta`, las flechas no saltan entre opciones y el foco inicial lo
+   * pone quien lo usa. La capa, la posición, el seguimiento y la animación
+   * son los mismos.
+   */
+  como?: 'menu' | 'dialogo'
+  /** Nombre accesible del panel, con `como="dialogo"`. */
+  etiqueta?: string
+  /** Clase extra para el panel (su ancho, por ejemplo). */
+  className?: string
+  /** Avisa al abrirse y al cerrarse. */
+  onAlternar?: (abierto: boolean) => void
   children: ReactNode
 }
 
@@ -69,6 +83,10 @@ export function DropdownMenu({
   trigger,
   align = 'end',
   igualarAncho = false,
+  como = 'menu',
+  etiqueta,
+  className,
+  onAlternar,
   children,
 }: DropdownMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
@@ -141,8 +159,14 @@ export function DropdownMenu({
     }
     window.addEventListener('scroll', alMoverse, { capture: true, passive: true })
     window.addEventListener('resize', alMoverse, { passive: true })
+    /* Y cuando el propio panel cambia de tamaño: un contenido que se pinta
+       después de abrir (el mes de `SelectorFecha`) lo agranda, y colocado
+       con la medida vieja se salía de la pantalla en el teléfono. */
+    const observador = new ResizeObserver(alMoverse)
+    if (menuRef.current) observador.observe(menuRef.current)
     return () => {
       cancelAnimationFrame(marco)
+      observador.disconnect()
       window.removeEventListener('scroll', alMoverse, { capture: true })
       window.removeEventListener('resize', alMoverse)
     }
@@ -155,12 +179,14 @@ export function DropdownMenu({
     const evento = e.nativeEvent as ToggleEvent
     dejarDeSeguir.current?.()
     dejarDeSeguir.current = null
+    onAlternar?.(evento.newState === 'open')
     if (evento.newState !== 'open') return
 
     colocar()
     dejarDeSeguir.current = seguirAlDisparador()
-    // Enfocar el primer elemento deja el menú listo para el teclado.
-    menuRef.current?.querySelector<HTMLElement>(SELECTOR_OPCIONES)?.focus()
+    // Enfocar el primer elemento deja el menú listo para el teclado. Un
+    // diálogo pone su propio foco (el día elegido, en el calendario).
+    if (como === 'menu') menuRef.current?.querySelector<HTMLElement>(SELECTOR_OPCIONES)?.focus()
   }
 
   /** Navegación con flechas, Inicio y Fin dentro del menú. */
@@ -226,10 +252,11 @@ export function DropdownMenu({
         ref={menuRef}
         id={id}
         popover="auto"
-        className={styles.menu}
-        role="menu"
+        className={[styles.menu, className].filter(Boolean).join(' ')}
+        role={como === 'menu' ? 'menu' : 'dialog'}
+        aria-label={como === 'dialogo' ? etiqueta : undefined}
         onToggle={alAlternar}
-        onKeyDown={alPulsarTecla}
+        onKeyDown={como === 'menu' ? alPulsarTecla : undefined}
       >
         {/*
           Los hijos se pintan TAL CUAL. El retardo escalonado lo resuelve

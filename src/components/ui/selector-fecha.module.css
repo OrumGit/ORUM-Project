@@ -1,0 +1,266 @@
+/* ==========================================================================
+   EL CALENDARIO DEL SITIO  ·  `SelectorFecha` (12/11/2026)
+   --------------------------------------------------------------------------
+   El campo es el de `SelectMenu` (`select-menu.module.css`); aquí vive lo que
+   se abre. La superficie, la sombra y la animación de entrada y salida son
+   las del menú (`menu.module.css`): esto solo pone su contenido.
+   ========================================================================== */
+
+/* `[popover]` sube la especificidad sobre `.menu`, que limita el ancho a 320. */
+.panel[popover] {
+  min-width: 0;
+  max-width: calc(100vw - var(--space-4) * 2);
+  padding: var(--space-3);
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--brand);
+}
+
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --- Cabecera: el mes en el serif de la marca, entre dos flechas ------------ */
+
+.cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mes {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-body-size);
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+}
+
+/* La primera letra en mayúscula sin tocar el texto: «Noviembre de 2026». */
+.mes::first-letter {
+  text-transform: uppercase;
+}
+
+.flechaMes {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
+}
+
+/* Se ve pequeña, se toca grande. */
+.flechaMes::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .flechaMes:not(:disabled):first-child:hover {
+    color: var(--text);
+    translate: -2px 0;
+  }
+
+  .flechaMes:not(:disabled):last-child:hover {
+    color: var(--text);
+    translate: 2px 0;
+  }
+}
+
+.flechaMes:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.flechaMes:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* --- La cuadrícula ---------------------------------------------------------- */
+
+.dias {
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+/* Al cambiar de mes la cuadrícula se INTERCAMBIA (otra `key`): no hay valor
+   de partida que transicionar, así que aquí el keyframe es lo correcto. */
+.dias[data-sentido='despues'] {
+  animation: desdeDerecha var(--dur-base) var(--ease-out);
+}
+
+.dias[data-sentido='antes'] {
+  animation: desdeIzquierda var(--dur-base) var(--ease-out);
+}
+
+@keyframes desdeDerecha {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes desdeIzquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.diaSemana {
+  height: 28px;
+  padding: 0;
+  font-size: var(--t-caption-size);
+  font-weight: 600;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.dias td {
+  padding: 0;
+  text-align: center;
+}
+
+.dia {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--t-footnote-size);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    translate var(--dur-fast) var(--ease-out),
+    scale var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* En táctil, el objetivo mínimo. */
+@media (pointer: coarse) {
+  .dia {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Apuntar: sin tinte (29/09/2026), el día sube 1px y gana peso. */
+@media (hover: hover) {
+  .dia:not(:disabled):not([data-elegido]):hover {
+    translate: 0 -1px;
+    font-weight: 700;
+  }
+}
+
+.dia:not(:disabled):active {
+  scale: 0.94;
+}
+
+.dia:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* Hoy: en peso y con un punto debajo — nunca solo el color. */
+.dia[data-hoy] {
+  font-weight: 700;
+}
+
+.dia[data-hoy]::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  translate: -50% 0;
+}
+
+/* El elegido: relleno de marca con el número en tinta (8,5:1), y su sombra
+   de pulsable. Lo dicen además `aria-selected` y la etiqueta del campo. */
+.dia[data-elegido] {
+  background: var(--gold-500);
+  color: var(--tinta-1);
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
+}
+
+.dia[data-elegido][data-hoy]::after {
+  background: var(--tinta-1);
+}
+
+/* Fuera de los límites: se ve el mes entero, pero esos días no se eligen. */
+.dia:disabled {
+  color: var(--text-3);
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- Pie ---------------------------------------------------------------------- */
+
+.pie {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hoy {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--brand);
+  font-family: var(--font-sans);
+  font-size: var(--t-footnote-size);
+  font-weight: 700;
+  cursor: pointer;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .hoy:hover {
+    translate: 0 -1px;
+  }
+}
+
+.hoy:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dias[data-sentido] {
+    animation: none;
+  }
+}

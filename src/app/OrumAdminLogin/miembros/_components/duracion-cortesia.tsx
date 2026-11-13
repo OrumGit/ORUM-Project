@@ -5,6 +5,7 @@ import { CalendarClock } from 'lucide-react'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { SelectMenu } from '@/components/ui/select-menu'
+import { SelectorFecha } from '@/components/ui/selector-fecha'
 import { useInstanteAlMinuto } from '@/components/comercios/use-minuto'
 import {
   calcularFinCortesia,
@@ -125,12 +126,12 @@ export function DuracionCortesia({
 
         {unidad === 'fecha' && (
           <Field label="Vale hasta el día" error={error('cortesia_hasta')}>
-            <Input
-              type="date"
+            <SelectorFecha
               name="cortesia_hasta"
+              etiqueta="Vale hasta el día"
               min={desde ?? undefined}
               value={hasta}
-              onChange={(e) => setHasta(e.target.value)}
+              onChange={setHasta}
             />
           </Field>
         )}
