@@ -622,38 +622,24 @@ marca con la casilla de «Registrar miembro» y de «Renovar membresía»
 (`salvoCortesia`) y el servidor ignora cualquier precio. Poner 0 sin casilla ya
 no es la forma de regalar una membresía: sigue siendo un descuento total.
 
-**Una cortesía dura lo que decida el administrador** (12/11/2026: «por el
-tiempo que él decida, ya sea horas, semanas, meses o directamente en un
-calendario; y conserva las cortesías de los planes normales»). Con la casilla
-marcada aparece «¿Por cuánto tiempo?» (`DuracionCortesia`, en
-`miembros/_components/`): «Lo que dura el plan» (por defecto: la cortesía de
-siempre, la anual un año y la mensual un mes) · Horas · Días · Semanas ·
-Meses · «Hasta una fecha» (calendario, ese día incluido), y una línea dice
-cuándo vence. Lógica pura y probada en `lib/miembros/cortesia.ts`
-(`leerDuracionCortesia`, `calcularFinCortesia`, topes en `MAXIMOS`); días,
-semanas y meses cuentan como un plan (hasta la misma fecha). Solo se aplica a
-las CORTESÍAS: una membresía pagada dura siempre lo del plan.
-- **Las HORAS guardan un instante**: `membresias.vence_at` (timestamptz,
-  `supabase/migrations/20261112120000_cortesia_por_horas.sql`, SE APLICA A
-  MANO; comprobación en `supabase/verificacion/cortesia_por_horas_verificacion.sql`),
-  y `fecha_fin` es el día en que vence. Si el día en que empieza no es hoy
-  (renovando con una vigente), las horas cuentan desde su medianoche.
-- **La vigencia lo mira en todas partes**: `derivarEstadoMembresia` y
-  `esMembresiaVigente` aceptan `venceAt`; las lecturas de `membresias` que
-  deciden vigencia van con `select('*')` y `venceAtDe(fila)` (acceso y carnet
-  del socio, lista, buscador y ficha del panel, pantalla de inactiva); la caja
-  lo vuelve a mirar tras `buscar_miembro_comercio`, que solo sabe de días
-  (`cortesiaPorHorasVencida`), y `fn_validar_venta` lo exige en la base. La
-  portada del panel sigue contando por `fecha_fin`: una cortesía por horas ya
-  vencida cuenta como vigente hasta la medianoche.
-- **Renovar tras una cortesía por horas empieza HOY** (`inicioDeRenovacion`),
-  no al día siguiente de su `fecha_fin`.
-- ⚠️ **El código aguanta la base sin la migración**: sin `vence_at` todo
-  funciona y solo la cortesía por horas avisa de que falta aplicarla
-  (`MENSAJE_FALTA_MIGRACION_HORAS`).
-- La bitácora dice cuánto («cortesía por 5 horas», «hasta el 24 dic 2026»).
-  Vista previa: `/dev/panel-movil?f=renovar`, `?f=renovar-vigente`,
-  `?f=miembro-nuevo`.
+**Una cortesía dura lo que decida el administrador, en DÍAS** (12/11/2026:
+«por el tiempo que él decida […] o directamente en un calendario; y conserva
+las cortesías de los planes normales»; y el mismo día: «dejemos únicamente
+por días, descarta horas»). Con la casilla marcada aparece «¿Por cuánto
+tiempo?» (`DuracionCortesia`, en `miembros/_components/`): «Lo que dura el
+plan» (por defecto: la cortesía de siempre, la anual un año y la mensual un
+mes) · Días · Semanas · Meses · «Hasta una fecha» (calendario, ese día
+incluido), y una línea dice hasta cuándo vale. Lógica pura y probada en
+`lib/miembros/cortesia.ts` (`leerDuracionCortesia`, `calcularFinCortesia`,
+topes en `MAXIMOS`); días, semanas y meses cuentan como un plan (hasta la
+misma fecha). Todo es `fecha_fin`: la vigencia no cambia en ninguna parte.
+Al renovar con una vigente, empieza al día siguiente de su fin (la página le
+pasa `inicio` al formulario). Solo se aplica a las CORTESÍAS: una membresía
+pagada dura siempre lo del plan. La bitácora dice cuánto («cortesía por 2
+semanas», «hasta el 24 dic 2026»). ⚠️ **Sin horas**: se hicieron con una
+columna `vence_at` y el propietario las descartó antes de aplicar la
+migración; no las vuelvas a poner sin que las pida. Vista previa:
+`/dev/panel-movil?f=renovar`, `?f=renovar-vigente`, `?f=miembro-nuevo`.
 
 **Revocar** (29/10/2026: «que el administrador pueda revocar membresías»).
 Solo `super_admin`, desde la ficha del miembro («Revocar membresía», en

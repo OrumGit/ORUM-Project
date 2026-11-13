@@ -1,7 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   derivarEstadoMembresia,
-  venceAtDe,
   type EstadoDerivado,
   type EstadoMembresia,
 } from '@/lib/miembros/membresias'
@@ -72,8 +71,7 @@ export async function buscarMiembros(
   const ids = miembros.map((m) => m.id)
   const { data: membresias } = await admin
     .from('membresias')
-    // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
-    .select('*, planes_membresia(nombre)')
+    .select('miembro_id, estado, fecha_fin, plan_id, planes_membresia(nombre)')
     .in('miembro_id', ids)
     .order('fecha_fin', { ascending: false })
 
@@ -96,7 +94,7 @@ export async function buscarMiembros(
     const plan = Array.isArray(relacion) ? (relacion[0]?.nombre ?? null) : (relacion?.nombre ?? null)
 
     porMiembro.set(fila.miembro_id, {
-      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy, venceAtDe(fila)),
+      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy),
       plan,
     })
   }

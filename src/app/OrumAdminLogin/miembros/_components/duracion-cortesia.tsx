@@ -23,8 +23,9 @@ import styles from './duracion-cortesia.module.css'
 /*
   CUÁNTO DURA LA CORTESÍA  ·  «Registrar miembro» y «Renovar membresía»
   (12/11/2026: «que el administrador pueda otorgar membresías de cortesía por
-  el tiempo que él decida, ya sea horas, semanas, meses o directamente en un
-  calendario; y conserva las cortesías de los planes normales»).
+  el tiempo que él decida […] o directamente en un calendario; y conserva las
+  cortesías de los planes normales»; ese día: «dejemos únicamente por días,
+  descarta horas»).
 
   Sale debajo de la casilla de cortesía, solo con ella marcada. Por defecto
   «Lo que dura el plan»: la cortesía de siempre (la anual, un año; la
@@ -85,9 +86,9 @@ export function DuracionCortesia({
   let vence: string | null = null
   if (unidad === 'plan') {
     vence = 'Dura lo mismo que el plan elegido: la anual, un año; la mensual, un mes.'
-  } else if (ahora && desde) {
+  } else if (desde) {
     const r = leerDuracionCortesia({ duracion: unidad, cantidad, hasta }, desde)
-    if (r.ok) vence = textoVencimiento(calcularFinCortesia(r.duracion, desde, ahora, 1))
+    if (r.ok) vence = textoVencimiento(calcularFinCortesia(r.duracion, desde, 1))
   }
 
   const porCantidad = unidad !== 'plan' && unidad !== 'fecha'

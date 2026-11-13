@@ -52,9 +52,9 @@ describe('resumirEventoBitacora — renovacion de cortesía', () => {
         fecha_fin: '2026-11-12',
         precio_pagado: 0,
         es_cortesia: true,
-        cortesia_duracion: 'por 5 horas',
+        cortesia_duracion: 'por 2 semanas',
       }),
-    ).toBe('Membresía renovada (cortesía por 5 horas) — plan Mensual, vence 2026-11-12')
+    ).toBe('Membresía renovada (cortesía por 2 semanas) — plan Mensual, vence 2026-11-12')
     expect(
       resumirEventoBitacora('alta', null, {
         plan_nombre: 'Mensual',

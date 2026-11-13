@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getPerfilActual, type PerfilActual } from '@/lib/auth/auth'
 import { hoyISO } from '@/lib/shared/fecha'
 import { esMembresiaVigente } from './membresia-vigente'
-import { venceAtDe } from './membresias'
 import type { EstadoMembresia, TipoMembresia } from '@/lib/supabase/database.types'
 
 export type MiembroActual = {
@@ -68,8 +67,7 @@ export async function requireMiembroVigente(): Promise<MiembroActual> {
 
   const { data: membresias, error: membresiasError } = await supabase
     .from('membresias')
-    // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
-    .select('*')
+    .select('id, plan_id, tipo, estado, fecha_inicio, fecha_fin')
     .eq('miembro_id', miembro.id)
     .order('fecha_fin', { ascending: false })
     .limit(1)
@@ -84,7 +82,7 @@ export async function requireMiembroVigente(): Promise<MiembroActual> {
   const ultima = membresias?.[0] ?? null
   const hoy = hoyISO()
 
-  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy, venceAtDe(ultima))) {
+  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy)) {
     redirect('/miembros/inactiva')
   }
 

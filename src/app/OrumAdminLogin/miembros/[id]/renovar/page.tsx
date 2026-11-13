@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hoyISO } from '@/lib/shared/fecha'
-import { inicioDeRenovacion } from '@/lib/miembros/membresias'
+import { calcularFechaInicioRenovacion } from '@/lib/miembros/membresias'
 import { FormCard } from '@/components/ui/form-card'
 import { PageHeader } from '@/components/ui/layout'
 import { RenovarForm } from '../_components/renovar-form'
@@ -33,10 +33,9 @@ export default async function RenovarPage({
       .is('deleted_at', null)
       .order('nombre'),
     // La membresía activa, para saber desde qué día contaría una cortesía.
-    // `*`: trae `vence_at` si la migración de las cortesías por horas está.
     admin
       .from('membresias')
-      .select('*')
+      .select('fecha_fin')
       .eq('miembro_id', miembroId)
       .eq('estado', 'activa')
       .order('fecha_fin', { ascending: false })
@@ -57,7 +56,7 @@ export default async function RenovarPage({
           miembroId={miembro.id}
           planes={planes ?? []}
           puedeCortesia={perfil.rolCodigo === 'super_admin'}
-          inicio={inicioDeRenovacion(hoyISO(), vigente)}
+          inicio={calcularFechaInicioRenovacion(hoyISO(), vigente?.fecha_fin ?? null)}
         />
       </FormCard>
     </>

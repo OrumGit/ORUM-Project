@@ -30,7 +30,7 @@ export function resumirEventoBitacora(
 ): string {
   if (accion === 'alta') {
     const n = datosNuevos ?? {}
-    // `cortesia_duracion` («por 5 horas»): solo si la cortesía no dura lo del plan.
+    // `cortesia_duracion` («por 2 semanas»): solo si la cortesía no dura lo del plan.
     const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
     const cobro = n.es_cortesia === true ? `cortesía${por}` : `$${formatearValor(n.precio_pagado)}`
     return `Miembro registrado — plan ${formatearValor(n.plan_nombre)}, ${cobro}`

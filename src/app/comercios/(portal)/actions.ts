@@ -6,7 +6,6 @@ import { requireRolComercio } from '@/lib/comercios/requerir-comercio'
 import type { MetodoRegistroVenta } from '@/lib/supabase/database.types'
 import { calcularDescuento, calcularValorFinal } from '@/lib/comercios/ventas'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { venceAtDe } from '@/lib/miembros/membresias'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import { aplicaAhora, cuandoAplica, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -75,29 +74,6 @@ export type BuscarMiembroState = {
   consultaId?: number
 }
 
-/*
-  LAS CORTESÍAS POR HORAS (12/11/2026). `buscar_miembro_comercio` decide la
-  vigencia por DÍAS (`fecha_fin`) y no conoce `vence_at`: una cortesía de 5
-  horas seguiría «vigente» hasta la medianoche. La caja lo vuelve a mirar
-  aquí, con la `service_role` y solo sobre la membresía que la función ya
-  resolvió. Si no se puede leer (sin la migración, por ejemplo), no cambia
-  nada: la última barrera es `fn_validar_venta`, que sí lo comprueba.
-*/
-async function cortesiaPorHorasVencida(membresiaId: number | null): Promise<boolean> {
-  if (!membresiaId) return false
-  try {
-    const { data } = await createAdminClient()
-      .from('membresias')
-      .select('*')
-      .eq('id', membresiaId)
-      .maybeSingle()
-    const venceAt = venceAtDe(data)
-    return venceAt !== null && new Date(venceAt).getTime() <= Date.now()
-  } catch {
-    return false
-  }
-}
-
 /** Busca un miembro por número de membresía vía la función segura `buscar_miembro_comercio` (RF-21/RF-22). */
 export async function buscarMiembro(
   _prev: BuscarMiembroState,
@@ -133,7 +109,7 @@ export async function buscarMiembro(
     enseña en su carnet, y sirve para lo mismo, cotejar la cara. Si falla, la
     ventana cae a las iniciales: la foto no puede tumbar una verificación.
   */
-  const [{ data: fila }, historial, horasVencidas] = await Promise.all([
+  const [{ data: fila }, historial] = await Promise.all([
     createAdminClient()
       .from('miembros')
       .select('foto_url')
@@ -141,7 +117,6 @@ export async function buscarMiembro(
       .is('deleted_at', null)
       .maybeSingle(),
     obtenerHistorial(data.miembro_id),
-    data.vigente ? cortesiaPorHorasVencida(data.membresia_id) : Promise.resolve(false),
   ])
 
   return {
@@ -151,7 +126,7 @@ export async function buscarMiembro(
       id: data.miembro_id,
       nombreCompleto: `${data.nombres} ${data.apellidos}`.trim(),
       numeroMembresia: data.numero_membresia,
-      vigente: data.vigente && !horasVencidas,
+      vigente: data.vigente,
       membresiaId: data.membresia_id,
       planNombre: data.plan_nombre,
       /* Una cadena vacía no es una foto: sería un `<img src="">`. */
@@ -252,7 +227,7 @@ export async function registrarVenta(
   if (miembroError || !miembroData) {
     return { error: 'No se pudo verificar el miembro para esta venta.' }
   }
-  if (!miembroData.vigente || (await cortesiaPorHorasVencida(miembroData.membresia_id))) {
+  if (!miembroData.vigente) {
     return { error: 'La membresía de este miembro ya no está vigente.' }
   }
 

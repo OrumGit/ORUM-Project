@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import { Ban, Camera, CreditCard, Pencil, Trash2 } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { derivarEstadoMembresia, venceAtDe, type EstadoMembresia } from '@/lib/miembros/membresias'
-import { horaCorta } from '@/lib/miembros/cortesia'
+import { derivarEstadoMembresia, type EstadoMembresia } from '@/lib/miembros/membresias'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
 import { ETIQUETA_MOTIVO_REVOCACION, esMotivoRevocacion } from '@/lib/miembros/revocacion'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -139,8 +138,7 @@ export default async function FichaMiembroPage({
   const [{ data: membresias }, { data: ciudad }, { data: eventos }, compras] = await Promise.all([
     admin
       .from('membresias')
-      // `*`: trae `vence_at` (cortesías por horas) si la migración está aplicada.
-      .select('*')
+      .select('id, tipo, estado, fecha_inicio, fecha_fin, precio_pagado, es_cortesia, plan_id')
       .eq('miembro_id', miembroId)
       .order('fecha_inicio', { ascending: false }),
     miembro.ciudad_id
@@ -216,18 +214,11 @@ export default async function FichaMiembroPage({
   }
 
   const hoy = hoyISO()
-  const historial = (membresias ?? []).map((m) => {
-    const venceAt = venceAtDe(m)
-    return {
-      ...m,
-      derivado: derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy, venceAt),
-      plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
-      // «12 nov 2026», o con una cortesía por horas «12 nov 2026 a las 8:00 p. m.».
-      hasta: venceAt
-        ? `${formatearFecha(m.fecha_fin)} a las ${horaCorta(new Date(venceAt))}`
-        : formatearFecha(m.fecha_fin),
-    }
-  })
+  const historial = (membresias ?? []).map((m) => ({
+    ...m,
+    derivado: derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy),
+    plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
+  }))
 
   // La vigente es la primera activa del historial, que ya viene ordenado por
   // fecha de inicio descendente.
@@ -317,10 +308,10 @@ export default async function FichaMiembroPage({
               {vigente && (
                 <p className={styles.estadoNota}>
                   {vigente.derivado.activa
-                    ? `Vigente hasta el ${vigente.hasta}.`
+                    ? `Vigente hasta el ${formatearFecha(vigente.fecha_fin)}.`
                     : textoRevocada(vigente.id)
                       ? `${textoRevocada(vigente.id)}. Para devolvérsela, renuévala.`
-                      : `La última membresía terminó el ${vigente.hasta}.`}
+                      : `La última membresía terminó el ${formatearFecha(vigente.fecha_fin)}.`}
                 </p>
               )}
             </div>
@@ -390,7 +381,7 @@ export default async function FichaMiembroPage({
                       </div>
 
                       <span className={styles.hitoFechas}>
-                        {formatearFecha(m.fecha_inicio)} — {m.hasta}
+                        {formatearFecha(m.fecha_inicio)} — {formatearFecha(m.fecha_fin)}
                       </span>
 
                       {textoRevocada(m.id) && <p className={styles.revocada}>{textoRevocada(m.id)}</p>}
