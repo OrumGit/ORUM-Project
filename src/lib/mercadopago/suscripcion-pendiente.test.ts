@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { construirCuerpoSuscripcion } from './suscripcion-pendiente'
+import { construirCuerpoSuscripcion, correoPagador } from './suscripcion-pendiente'
 
 const base = {
   razon: 'Membresía ORUM · Anual',
@@ -42,5 +42,18 @@ describe('construirCuerpoSuscripcion', () => {
     const c = construirCuerpoSuscripcion({ ...base, duracionMeses: 1, monto: 30000 })
     expect(c.auto_recurring.frequency).toBe(1)
     expect(c.auto_recurring.transaction_amount).toBe(30000)
+  })
+})
+
+describe('correoPagador', () => {
+  it('usa el correo del registro si no hay correo de prueba', () => {
+    expect(correoPagador('Persona@Correo.com ', undefined)).toBe('persona@correo.com')
+    expect(correoPagador('persona@correo.com', '   ')).toBe('persona@correo.com')
+  })
+
+  it('usa el correo de prueba cuando está definido', () => {
+    expect(correoPagador('persona@correo.com', ' test_user_1@testuser.com ')).toBe(
+      'test_user_1@testuser.com',
+    )
   })
 })

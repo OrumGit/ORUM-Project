@@ -1,6 +1,7 @@
 import { cedula, nombrePersona, telefono } from '../validacion/reglas'
 import { palabrasDeContexto, revisarContrasena } from './contrasena-segura'
 import { correoParaRegistro } from './correo-registro'
+import { revisarDireccion } from '../aliados/solicitud-aliado'
 
 /**
  * Validación de los datos del registro público. Pura: el servidor la usa antes
@@ -13,6 +14,8 @@ export type EntradaRegistro = {
   cedula: string
   correo: string
   telefono: string
+  ciudadId: string
+  direccion: string
   contrasena: string
   planId: string
   terminosAceptados: boolean
@@ -24,6 +27,8 @@ export type CampoRegistro =
   | 'cedula'
   | 'correo'
   | 'telefono'
+  | 'ciudadId'
+  | 'direccion'
   | 'contrasena'
   | 'planId'
   | 'terminos'
@@ -36,6 +41,8 @@ export type DatosRegistro = {
   cedula: string
   correo: string
   telefono: string | null
+  ciudadId: number
+  direccion: string
   contrasena: string
   planId: number
 }
@@ -45,6 +52,7 @@ export type ResultadoEntrada =
   | { ok: false; errores: ErroresRegistro }
 
 const PLAN_ID = /^[1-9]\d{0,17}$/
+const CIUDAD_ID = /^[1-9]\d{0,8}$/
 
 export function validarEntradaRegistro(entrada: EntradaRegistro): ResultadoEntrada {
   const errores: ErroresRegistro = {}
@@ -85,6 +93,12 @@ export function validarEntradaRegistro(entrada: EntradaRegistro): ResultadoEntra
   const revision = revisarContrasena(entrada.contrasena, contexto)
   if (!revision.ok) errores.contrasena = revision.mensaje
 
+  if (!CIUDAD_ID.test(entrada.ciudadId)) errores.ciudadId = 'Elige tu ciudad.'
+
+  const direccion = entrada.direccion.trim()
+  if (direccion === '') errores.direccion = 'Escribe tu dirección.'
+  else errores.direccion = revisarDireccion(direccion) ?? undefined
+
   if (!PLAN_ID.test(entrada.planId)) errores.planId = 'Elige un plan.'
 
   if (!entrada.terminosAceptados) {
@@ -108,6 +122,8 @@ export function validarEntradaRegistro(entrada: EntradaRegistro): ResultadoEntra
       cedula: cedulaLimpia,
       correo: correo.correo,
       telefono: telefonoLimpio === '' ? null : telefonoLimpio,
+      ciudadId: Number(entrada.ciudadId),
+      direccion,
       contrasena: entrada.contrasena,
       planId: Number(entrada.planId),
     },

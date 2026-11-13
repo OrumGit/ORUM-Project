@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { urlBaseSitio } from '@/lib/auth/activacion'
 import { puedeAbrirPago, type MotivoNoPagar } from '@/lib/auth/registro-pago'
 import { cancelarSuscripcion, crearSuscripcion, ErrorMercadoPago } from '@/lib/mercadopago/cliente'
-import { construirCuerpoSuscripcion } from '@/lib/mercadopago/suscripcion-pendiente'
+import { construirCuerpoSuscripcion, correoPagador } from '@/lib/mercadopago/suscripcion-pendiente'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -76,7 +76,7 @@ export async function iniciarPagoRegistro(
     razon: `Membresía ORUM · ${plan.nombre}`,
     monto: Number(plan.precio),
     duracionMeses: plan.duracion_meses,
-    emailPagador: registro.correo,
+    emailPagador: correoPagador(registro.correo, process.env.MP_PAGADOR_PRUEBA),
     urlRetorno: `${origen}/registro/pago/retorno`,
     referenciaExterna: String(registro.id),
   })

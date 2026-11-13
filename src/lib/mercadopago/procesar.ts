@@ -88,6 +88,19 @@ async function registrarPago(
   const args = argsRegistrarCobro(pago, preapprovalId)
   if (!args) throw new NotificacionNoAplicable('pago_incompleto')
 
+  // Primer cobro aprobado de un registro público: se da de alta el socio y su
+  // suscripción con plan antes de registrar el cobro. Para socios existentes
+  // la función no encuentra registro y no hace nada.
+  if (decision.tipo === 'registrar_aprobado') {
+    const { error: errAlta } = await admin.rpc('alta_socio_mercadopago', {
+      p_preapproval_id: preapprovalId,
+    })
+    if (errAlta) {
+      if (errAlta.code === 'P0001') throw new NotificacionNoAplicable(errAlta.message)
+      throw errAlta
+    }
+  }
+
   const { data, error } = await admin.rpc('registrar_cobro_mp', {
     ...args,
     // Los periodos los calcula la base desde la duración del plan.

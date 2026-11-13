@@ -30,6 +30,11 @@ export default async function RegistroPage({
           .maybeSingle()
       : { data: null }
 
+  const { data: ciudades } = await admin
+    .from('ciudades')
+    .select('id, nombre')
+    .order('nombre')
+
   return (
     <PantallaAcceso
       puerta="activar"
@@ -38,6 +43,7 @@ export default async function RegistroPage({
     >
       {plan ? (
         <FormularioRegistro
+          ciudades={ciudades ?? []}
           plan={{
             id: plan.id,
             nombre: plan.nombre,

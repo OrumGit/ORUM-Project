@@ -7,6 +7,8 @@ const valida: EntradaRegistro = {
   cedula: '1.023.456.789',
   correo: '  Maria.Gomez@Gmail.com ',
   telefono: '316 529 4870',
+  ciudadId: '11',
+  direccion: 'Cra 15 # 93-47',
   contrasena: 'Montaña-Rio-Verde-42',
   planId: '3',
   terminosAceptados: true,
@@ -23,6 +25,8 @@ describe('validarEntradaRegistro', () => {
       cedula: '1023456789',
       correo: 'maria.gomez@gmail.com',
       telefono: '3165294870',
+      ciudadId: 11,
+      direccion: 'Cra 15 # 93-47',
       contrasena: 'Montaña-Rio-Verde-42',
       planId: 3,
     })
@@ -68,6 +72,21 @@ describe('validarEntradaRegistro', () => {
     const r = validarEntradaRegistro({ ...valida, contrasena: 'MariaGomez2026!!' })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.errores.contrasena).toBeDefined()
+  })
+
+  it('exige la ciudad', () => {
+    const r = validarEntradaRegistro({ ...valida, ciudadId: '' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errores.ciudadId).toBeDefined()
+  })
+
+  it('exige una dirección con número', () => {
+    const vacia = validarEntradaRegistro({ ...valida, direccion: '  ' })
+    expect(vacia.ok).toBe(false)
+    if (!vacia.ok) expect(vacia.errores.direccion).toBeDefined()
+    const sinNumero = validarEntradaRegistro({ ...valida, direccion: 'Calle larga sin numero' })
+    expect(sinNumero.ok).toBe(false)
+    if (!sinNumero.ok) expect(sinNumero.errores.direccion).toBeDefined()
   })
 
   it('rechaza un plan que no es un identificador válido', () => {

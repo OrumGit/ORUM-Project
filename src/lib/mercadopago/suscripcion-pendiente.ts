@@ -52,3 +52,14 @@ export function construirCuerpoSuscripcion(args: ArgsSuscripcionPendiente): Cuer
     },
   }
 }
+
+/**
+ * Correo que Mercado Pago recibe como pagador. Con credenciales de prueba el
+ * pagador tiene que ser un usuario de prueba; si `MP_PAGADOR_PRUEBA` está
+ * definida (solo en entornos de prueba), se usa ese correo en vez del del
+ * registro. En producción la variable no existe y el pagador es el del registro.
+ */
+export function correoPagador(correoRegistro: string, correoPrueba: string | undefined): string {
+  const prueba = correoPrueba?.trim()
+  return (prueba ? prueba : correoRegistro).trim().toLowerCase()
+}

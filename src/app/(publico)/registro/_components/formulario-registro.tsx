@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Stack } from '@/components/ui/layout'
+import { SelectMenu } from '@/components/ui/select-menu'
 import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { Checkbox } from '@/components/ui/toggle'
 import { useValidacion } from '@/components/ui/validacion'
@@ -21,6 +22,7 @@ import {
   type ReglasFormulario,
   type Regla,
 } from '@/lib/validacion/reglas'
+import { revisarDireccion } from '@/lib/aliados/solicitud-aliado'
 import { iniciarRegistro, type RegistroState } from '../actions'
 import estilos from './formulario-registro.module.css'
 
@@ -36,6 +38,8 @@ const REGLAS: ReglasFormulario = {
   cedula: [obligatorio('Escribe tu número de cédula.'), cedula],
   correo: [obligatorio('Escribe tu correo electrónico.'), correo],
   telefono: [telefono],
+  ciudad_id: [obligatorio('Elige tu ciudad.')],
+  direccion: [obligatorio('Escribe tu dirección.'), (valor) => revisarDireccion(valor)],
   contrasena: [obligatorio('Elige una contraseña.'), contrasena],
   terminos: [aceptado],
 }
@@ -52,7 +56,15 @@ export type PlanRegistro = {
  * navegador (las mismas reglas que el servidor) y el servidor vuelve a
  * validar todo. Sin ficha ni número: eso llega con el pago.
  */
-export function FormularioRegistro({ plan }: { plan: PlanRegistro }) {
+export type CiudadRegistro = { id: number; nombre: string }
+
+export function FormularioRegistro({
+  plan,
+  ciudades,
+}: {
+  plan: PlanRegistro
+  ciudades: CiudadRegistro[]
+}) {
   const [estado, accion, cargando] = useActionState(iniciarRegistro, ESTADO_INICIAL)
   const validacion = useValidacion(REGLAS)
   const turnstile = useTurnstile()
@@ -106,6 +118,22 @@ export function FormularioRegistro({ plan }: { plan: PlanRegistro }) {
 
         <Field label="Teléfono (opcional)" error={errorDe('telefono') ?? undefined}>
           <Input name="telefono" type="tel" autoComplete="tel" inputMode="tel" />
+        </Field>
+
+        <Field label="Ciudad" error={errorDe('ciudad_id') ?? undefined}>
+          <SelectMenu
+            name="ciudad_id"
+            etiqueta="Ciudad"
+            placeholder="Elige tu ciudad"
+            opciones={[
+              { value: '', label: 'Elige tu ciudad' },
+              ...ciudades.map((c) => ({ value: String(c.id), label: c.nombre })),
+            ]}
+          />
+        </Field>
+
+        <Field label="Dirección" error={errorDe('direccion') ?? undefined}>
+          <Input name="direccion" autoComplete="street-address" />
         </Field>
 
         <CampoContrasenaNueva

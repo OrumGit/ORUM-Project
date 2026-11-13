@@ -46,6 +46,8 @@ function leerEntrada(formData: FormData): EntradaRegistro {
     cedula: leer('cedula'),
     correo: leer('correo'),
     telefono: leer('telefono'),
+    ciudadId: leer('ciudad_id'),
+    direccion: leer('direccion'),
     contrasena: leer('contrasena'),
     planId: leer('plan_id'),
     terminosAceptados: leer('terminos') === 'on',
@@ -77,6 +79,16 @@ export async function iniciarRegistro(
   }
   const datos = validacion.datos
   const admin = createAdminClient()
+
+  // La ciudad tiene que existir: el formulario solo ofrece las de la tabla, pero
+  // el servidor no se fía del cliente.
+  const { data: ciudad, error: errCiudad } = await admin
+    .from('ciudades')
+    .select('id')
+    .eq('id', datos.ciudadId)
+    .maybeSingle()
+  if (errCiudad) return { ok: false, mensaje: ERROR_GENERICO }
+  if (!ciudad) return { ok: false, mensaje: 'Revisa los campos marcados.', errores: { ciudadId: 'Elige una ciudad de la lista.' } }
 
   // Contraseña: también contra las filtradas (la comprobación de forma ya está en la validación).
   const contexto = palabrasDeContexto([datos.nombres, datos.apellidos, datos.cedula, datos.correo])
@@ -133,6 +145,8 @@ export async function iniciarRegistro(
     cedula: datos.cedula,
     correo: datos.correo,
     telefono: datos.telefono,
+    ciudad_id: datos.ciudadId,
+    direccion: datos.direccion,
     terminos_aceptados_at: new Date().toISOString(),
     terminos_version: TERMINOS_VERSION,
     estado: 'pendiente',

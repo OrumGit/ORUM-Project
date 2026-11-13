@@ -1137,6 +1137,10 @@ export type Database = {
         Args: { p_comercio_id: number }
         Returns: boolean
       }
+      alta_socio_mercadopago: {
+        Args: { p_preapproval_id: string }
+        Returns: number | null
+      }
       registrar_cobro_mp: {
         Args: {
           p_estado_mp: string

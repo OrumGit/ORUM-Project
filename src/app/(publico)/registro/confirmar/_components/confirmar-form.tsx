@@ -14,10 +14,10 @@ const PAGO_INICIAL: IniciarPagoState = {}
  * El enlace solo se canjea al pulsar el botón. Abrir la página no gasta el
  * token: un escáner de correo que visite el enlace no lo consume.
  */
-export function ConfirmarForm({ tokenHash }: { tokenHash: string }) {
+export function ConfirmarForm({ tokenHash, pasoPago }: { tokenHash: string; pasoPago: boolean }) {
   const [estado, accion, cargando] = useActionState(confirmarCorreoRegistro, INICIAL)
 
-  if (estado.estado === 'confirmado') {
+  if (pasoPago || estado.estado === 'confirmado') {
     return <PasoPago />
   }
 
@@ -58,7 +58,7 @@ export function ConfirmarForm({ tokenHash }: { tokenHash: string }) {
  * Tras confirmar el correo. `iniciarPagoRegistro` crea la suscripción en Mercado
  * Pago y redirige a su página de pago; si falla, muestra el motivo aquí.
  */
-function PasoPago() {
+export function PasoPago() {
   const [estado, accion, cargando] = useActionState(iniciarPagoRegistro, PAGO_INICIAL)
 
   return (
