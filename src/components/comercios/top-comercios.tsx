@@ -31,9 +31,11 @@ import styles from './top-comercios.module.css'
     · la posición va en un aro dorado (las tres primeras, en oro pleno), y
       en ancho la lista se reparte en dos columnas.
 
-  Cada fila es un enlace a la ficha del socio. El dato de la derecha se dice
-  con texto (estrella + número, «128 ventas»), nunca solo con color, y el
-  lector de pantalla oye la versión larga (`datoAccesible`).
+  Cada fila es un enlace a la ficha del socio. El dato de la derecha (la
+  estrella y el promedio) se dice con texto, nunca solo con color, y el
+  lector de pantalla oye la versión larga (`datoAccesible`). En «Más
+  ventas» NO hay dato: el propietario no quiere que el socio vea cuántas
+  ventas hizo un comercio (12/11/2026); la lista dice solo el orden.
 
   La lista no anima al cambiar de pestaña más que con un fundido corto: es
   algo que el socio hace a menudo (regla cero de movimiento).
@@ -115,7 +117,7 @@ export function TopComerciosSocio({ top }: { top: TopComercios }) {
               <Link
                 href={`/miembros/comercios/${item.comercioId}`}
                 className={styles.fila}
-                aria-label={`${item.posicion}. ${item.nombre}. ${item.datoAccesible}`}
+                aria-label={[`${item.posicion}. ${item.nombre}`, item.datoAccesible].filter(Boolean).join('. ')}
               >
                 <span
                   className={styles.posicion}
@@ -129,9 +131,11 @@ export function TopComerciosSocio({ top }: { top: TopComercios }) {
                   <span className={styles.nombre}>{item.nombre}</span>
                   {item.detalle && <span className={styles.detalle}>{item.detalle}</span>}
                 </span>
-                <span className={styles.dato} aria-hidden="true">
-                  {item.dato}
-                </span>
+                {item.dato && (
+                  <span className={styles.dato} aria-hidden="true">
+                    {item.dato}
+                  </span>
+                )}
               </Link>
             </li>
           ))}

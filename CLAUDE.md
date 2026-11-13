@@ -1105,8 +1105,11 @@ una línea debajo que dice qué mide la lista que se ve; ABRE EN LA LISTA QUE
 TIENE DATOS («Mejor calificados» pide 3 reseñas y, mientras nadie llega,
 abrir ahí era enseñar un vacío con la otra llena); el vacío lleva su icono
 en el aro dorado, qué falta y un botón a la otra lista si tiene comercios;
-la posición va en un aro dorado de 28 px y las tres primeras en
-`--gold-600` con el número en tinta; en ancho (≥900 px de contenedor), dos
+la posición va en un aro dorado de 28 px (`--gold-500`, decorativo) y las
+tres primeras con RELLENO `--gold-500` y el número en tinta (el `--gold-600`
+«se veía muy oscuro»); **«Más ventas» NO enseña cuántas ventas** («no
+quiero que aparezcan las ventas», 12/11/2026): `armarTopVentas` devuelve el
+orden sin el número, que así no llega ni a los datos de la página; en ancho (≥900 px de contenedor), dos
 columnas 3 + 2. Las filas siguen sin sombra y responden con opacidad.
 Vista previa: `/dev/top-comercios` (`?caso=vacio-calificados`, `?caso=uno`).
 

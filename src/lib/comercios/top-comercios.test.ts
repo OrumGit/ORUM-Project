@@ -106,7 +106,7 @@ describe('armarTopVentas', () => {
     expect(top.map((i) => i.nombre)).toEqual(['Gamma', 'Alfa', 'Beta'])
   })
 
-  it('escribe el dato con singular y separador de miles', () => {
+  it('no dice cuántas ventas hizo cada comercio, solo el orden', () => {
     const top = armarTopVentas(
       [
         { comercio_id: 1, ventas: 1280 },
@@ -115,9 +115,9 @@ describe('armarTopVentas', () => {
       ],
       COMERCIOS,
     )
-    expect(top.map((i) => i.dato)).toEqual(['1.280 ventas', '128 ventas', '1 venta'])
-    expect(top[2].datoAccesible).toBe('1 venta en el último mes')
-    expect(top[0].datoAccesible).toBe('1.280 ventas en el último mes')
+    expect(top.map((i) => i.posicion)).toEqual([1, 2, 3])
+    expect(top.map((i) => i.dato)).toEqual(['', '', ''])
+    expect(top.every((i) => i.datoAccesible === '')).toBe(true)
   })
 
   it('descarta comercios con 0 ventas y los que no están en el catálogo', () => {

@@ -46,9 +46,13 @@ export type ItemTop = {
   logoUrl: string | null
   /** «Gastronomía (Pizzerías) · Bogotá». */
   detalle: string
-  /** Lo que se ve a la derecha: «★ 4,9» o «128 ventas». */
+  /**
+   * Lo que se ve a la derecha: «★ 4,9». VACÍO en el top de ventas
+   * (12/11/2026, propietario: «no quiero que aparezcan las ventas»): esa
+   * lista dice el ORDEN, nunca cuántas ventas hizo un comercio.
+   */
   dato: string
-  /** Lo que lee el lector de pantalla. */
+  /** Lo que lee el lector de pantalla (vacío si no hay dato). */
   datoAccesible: string
 }
 
@@ -114,14 +118,13 @@ export function armarTopVentas(
         porNombre(comercios.get(a.comercio_id)!, comercios.get(b.comercio_id)!),
     )
     .slice(0, TOPE_TOP)
-    .map((f, i) => {
-      const texto = pluralizar(f.ventas, 'venta', 'ventas')
-      return {
-        ...base(comercios.get(f.comercio_id)!, i + 1),
-        dato: texto,
-        datoAccesible: `${texto} en el último mes`,
-      }
-    })
+    // Solo el orden: la cantidad de ventas no sale del servidor (no llega
+    // ni a los datos de la página del socio).
+    .map((f, i) => ({
+      ...base(comercios.get(f.comercio_id)!, i + 1),
+      dato: '',
+      datoAccesible: '',
+    }))
 }
 
 /** ¿Merece existir el bloque? Falso si no hay datos o las dos listas están vacías. */
