@@ -2131,8 +2131,8 @@ de una imagen.
   este video», que saca la portada, PREPARA y SUBE con una barra que dice qué
   hace. Lo publicado dura como mucho 5 minutos (`DURACION_MAXIMA`): un video
   más largo abre recortado a sus primeros 5 y el tirador que se pase
-  arrastra al otro. En la portada no hay sonido (se descarta al preparar);
-  en novedades, «Quitar el sonido» es opcional.
+  arrastra al otro. El sonido SE CONSERVA en los dos destinos (desde el
+  13/11/2026); «Quitar el sonido» es opcional.
 - **Se prepara EN EL NAVEGADOR con Mediabunny** (WebCodecs, cargado con
   `import()` solo al abrir el editor; `exportar-video.ts`): recorta el tramo
   y el encuadre, baja a 720p como mucho, 30 cuadros, MP4 H.264 + AAC con
@@ -2173,10 +2173,22 @@ de una imagen.
   carpetas (`novedades/`, `portada/`) no dicen «publicidad» ni «anuncio»: los
   bloqueadores los ocultarían.
 - **En la portada** (`CarruselFotos`): se ve la portada hasta que le toca;
-  entonces se reproduce SIN SONIDO, y el carrusel espera a que TERMINE para
-  pasar (las fotos siguen a 4,5 s). Solo el que está a la vista y con el
-  carrusel en pantalla (`IntersectionObserver`); la pausa también lo pausa;
-  con movimiento reducido no arranca solo y lleva sus controles.
+  entonces se reproduce EN SILENCIO (un navegador no deja arrancar solo un
+  video con sonido), y el carrusel espera a que TERMINE para pasar (las
+  fotos siguen a 4,5 s). Solo el que está a la vista y con el carrusel en
+  pantalla (`IntersectionObserver`); la pausa también lo pausa; con
+  movimiento reducido no arranca solo y lleva sus controles.
+  **Arriba a la derecha, dos botones** (13/11/2026: «los usuarios pueden
+  activar el audio del video y agrandarlo para verlo completo»): ACTIVAR EL
+  SONIDO (`aria-pressed`; vale para los videos siguientes; si el navegador
+  no deja sonar, vuelve a silencio; no sale si se SABE que el video no tiene
+  audio —Firefox y Safari lo dicen—) y VER EN GRANDE: pantalla completa del
+  video, entero (`object-fit: contain`) y con sus controles, y mientras
+  tanto el carrusel no cambia de pieza; en iPhone, el reproductor del
+  sistema. Si el navegador NO deja la pantalla completa (falla o no contesta
+  en 1,5 s: los navegadores dentro de Instagram o Facebook), se abre el
+  VISOR, una ventana encima con el video igual de grande, sus controles y
+  su X.
 - **En `/novedades`** (y la de miembros): el video con sus controles y su
   portada, que no carga hasta darle a reproducir, entero sobre negro (se
   mira; no se recorta como una foto). El aviso compacto de la portada no

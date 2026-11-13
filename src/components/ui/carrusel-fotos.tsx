@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { Pause, Play } from 'lucide-react'
+import { Maximize2, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { Modal } from './modal'
 import { useMediaQuery } from '@/components/use-media-query'
 import type { FotoPublica } from '@/lib/publico/datos-publicos'
 import estilos from './carrusel-fotos.module.css'
@@ -27,9 +28,18 @@ import estilos from './carrusel-fotos.module.css'
       decide en los primeros píxeles.
 
   VIDEOS (13/11/2026): una pieza puede ser un video (lo sube el
-  administrador en «Publicidad», ya recortado y sin sonido). Se ve su
-  portada hasta que le toca; entonces se reproduce, SIN SONIDO, y el
-  carrusel espera a que termine para pasar a la siguiente (no a los 4,5 s).
+  administrador en «Publicidad», ya recortado). Se ve su portada hasta que
+  le toca; entonces se reproduce EN SILENCIO —un navegador no deja arrancar
+  solo un video con sonido— y el carrusel espera a que termine para pasar a
+  la siguiente (no a los 4,5 s). Encima, dos botones («los usuarios pueden
+  activar el audio y agrandarlo para verlo completo»): ACTIVAR EL SONIDO
+  (vale para los videos que vengan después) y VER EN GRANDE (pantalla
+  completa, con el video entero y sus controles; mientras tanto el
+  carrusel no pasa de pieza). El de sonido no sale si se sabe que el video
+  no tiene audio (el administrador lo quitó). Si el navegador NO deja la
+  pantalla completa (los de dentro de Instagram o Facebook, por ejemplo), el
+  video se abre igual de grande en una ventana encima (`visor`), entero, con
+  sus controles y su X.
   Solo suena el que está a la vista y solo si el carrusel está en pantalla
   (`IntersectionObserver`): fuera de ella no gasta batería ni datos. La
   pausa del carrusel también lo pausa. Con movimiento reducido no arranca
@@ -83,10 +93,15 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   const raiz = useRef<HTMLDivElement>(null)
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const [enPantalla, setEnPantalla] = useState(false)
+  const [conSonido, setConSonido] = useState(false)
+  const [enGrande, setEnGrande] = useState<number | null>(null)
+  const [visor, setVisor] = useState<number | null>(null)
+  // Los videos de los que se SABE que no tienen audio (no se les ofrece sonido).
+  const [sinAudio, setSinAudio] = useState<ReadonlySet<number>>(new Set())
 
   const total = fotos.length
   const rotando =
-    total > 1 && !pausadoPorUsuario && !enfocado && !arrastrando && !reducirMovimiento
+    total > 1 && !pausadoPorUsuario && !enfocado && !arrastrando && !reducirMovimiento && visor === null
   const actualEsVideo = Boolean(fotos[actual]?.video)
 
   // Un video marca su propio tiempo: el temporizador solo corre con fotos.
@@ -111,7 +126,11 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   useEffect(() => {
     videos.current.forEach((v, i) => {
       if (!v) return
-      const toca = i === actual && enPantalla && !pausadoPorUsuario && !reducirMovimiento
+      // El sonido es una propiedad del elemento: el atributo `muted` solo vale al montar.
+      v.muted = !conSonido
+      const toca =
+        (i === actual && enPantalla && !pausadoPorUsuario && !reducirMovimiento && visor === null) ||
+        i === enGrande
       if (toca) {
         if (v.paused) void v.play().catch(() => {})
       } else if (!v.paused) {
@@ -119,12 +138,78 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
       }
       if (i !== actual && v.currentTime > 0) v.currentTime = 0
     })
-  }, [actual, enPantalla, pausadoPorUsuario, reducirMovimiento])
+  }, [actual, enPantalla, pausadoPorUsuario, reducirMovimiento, conSonido, enGrande, visor])
+
+  // Al salir de la pantalla completa (Escape, el botón del navegador), se vuelve al carrusel.
+  useEffect(() => {
+    const alCambiar = () => {
+      if (!document.fullscreenElement) setEnGrande(null)
+    }
+    document.addEventListener('fullscreenchange', alCambiar)
+    return () => document.removeEventListener('fullscreenchange', alCambiar)
+  }, [])
+
+  /** Activa o quita el sonido. Si el navegador no deja sonar, vuelve a silencio. */
+  function alternarSonido() {
+    const v = videos.current[actual]
+    const siguiente = !conSonido
+    setConSonido(siguiente)
+    if (!v) return
+    v.muted = !siguiente
+    if (siguiente && v.paused) {
+      void v.play().catch(() => {
+        v.muted = true
+        setConSonido(false)
+      })
+    }
+  }
+
+  /** Pantalla completa con el video entero. En iPhone, el reproductor del sistema. */
+  function verEnGrande() {
+    const v = videos.current[actual] as
+      | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
+      | null
+    if (!v) return
+    const i = actual
+    if (v.requestFullscreen && document.fullscreenEnabled) {
+      setEnGrande(i)
+      // El navegador no la deja (falla, o no contesta en 1,5 s): el visor, en la página.
+      const alVisor = () => {
+        if (document.fullscreenElement === v) return
+        setEnGrande(null)
+        setVisor(i)
+      }
+      const plazo = window.setTimeout(alVisor, 1500)
+      v.requestFullscreen()
+        .then(() => {
+          window.clearTimeout(plazo)
+          if (v.paused) void v.play().catch(() => {})
+        })
+        .catch(() => {
+          window.clearTimeout(plazo)
+          alVisor()
+        })
+    } else if (v.webkitEnterFullscreen) {
+      v.webkitEnterFullscreen()
+      if (v.paused) void v.play().catch(() => {})
+    } else {
+      setVisor(i)
+    }
+  }
+
+  /** ¿Se sabe que este video no tiene audio? Solo Firefox y Safari lo dicen; si no, se ofrece. */
+  function revisarAudio(i: number, v: HTMLVideoElement) {
+    const conPistas = v as HTMLVideoElement & { mozHasAudio?: boolean; audioTracks?: { length: number } }
+    const sinPista =
+      conPistas.mozHasAudio === false || (conPistas.audioTracks !== undefined && conPistas.audioTracks.length === 0)
+    if (sinPista) setSinAudio((previo) => new Set(previo).add(i))
+  }
 
   /** Al terminar un video: pasa a la siguiente pieza, o lo repite si el carrusel está parado. */
   function alTerminarVideo(i: number) {
     if (i !== actual) return
-    if (rotando) {
+    // En grande se está mirando: no se cambia de pieza por debajo.
+    if (rotando && enGrande === null) {
       setActual((i + 1) % total)
       return
     }
@@ -262,7 +347,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 src={foto.video}
                 poster={foto.url}
                 className={estilos.foto}
-                data-controles={reducirMovimiento || undefined}
+                data-controles={reducirMovimiento || enGrande === i || undefined}
                 aria-label={foto.alt}
                 aria-hidden={i !== actual}
                 muted
@@ -270,7 +355,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 // Carga cuando le toca: hasta entonces se ve su portada.
                 preload={i === actual ? 'auto' : 'none'}
                 loop={total === 1}
-                controls={reducirMovimiento}
+                controls={reducirMovimiento || enGrande === i}
+                onLoadedMetadata={(e) => revisarAudio(i, e.currentTarget)}
                 onEnded={() => alTerminarVideo(i)}
               />
             ) : (
@@ -289,6 +375,65 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
           )}
         </div>
       </div>
+
+      {/* Sonido y ver en grande, sobre el video que está a la vista. */}
+      {actualEsVideo && (
+        <div className={estilos.videoAcciones}>
+          {!sinAudio.has(actual) && (
+            <button
+              type="button"
+              className={estilos.videoBoton}
+              onClick={alternarSonido}
+              aria-pressed={conSonido}
+              aria-label={conSonido ? 'Silenciar el video' : 'Activar el sonido del video'}
+              title={conSonido ? 'Silenciar' : 'Activar el sonido'}
+            >
+              {conSonido ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
+            </button>
+          )}
+          <button
+            type="button"
+            className={estilos.videoBoton}
+            onClick={verEnGrande}
+            aria-label="Ver el video en grande"
+            title="Ver en grande"
+          >
+            <Maximize2 size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* El visor: el video en grande dentro de la página, cuando no hay pantalla completa. */}
+      <Modal
+        open={visor !== null}
+        onClose={() => setVisor(null)}
+        ariaLabel={visor !== null ? fotos[visor]?.alt : 'Video'}
+        desnudo
+        width="min(96vw, 1280px)"
+        className={estilos.visorDialogo}
+      >
+        {visor !== null && fotos[visor]?.video && (
+          <div className={estilos.visor}>
+            <button
+              type="button"
+              className={estilos.visorCerrar}
+              onClick={() => setVisor(null)}
+              aria-label="Cerrar el video"
+            >
+              <X size={20} aria-hidden="true" />
+            </button>
+            <video
+              src={fotos[visor].video ?? undefined}
+              poster={fotos[visor].url}
+              className={estilos.visorVideo}
+              controls
+              autoPlay
+              playsInline
+              aria-label={fotos[visor].alt}
+            />
+          </div>
+        )}
+      </Modal>
 
       {total > 1 && (
         <div className={estilos.controles}>

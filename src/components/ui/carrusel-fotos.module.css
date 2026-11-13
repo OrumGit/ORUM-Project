@@ -66,6 +66,119 @@
   pointer-events: auto;
 }
 
+/* En pantalla completa, el video ENTERO (sin recortar) y con sus controles. */
+.foto:fullscreen {
+  object-fit: contain;
+  background: var(--negro-900);
+  pointer-events: auto;
+}
+
+/* --- Sonido y ver en grande, arriba a la derecha del video (13/11/2026) ---- */
+
+.videoAcciones {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.videoBoton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--franja-bg) 60%, transparent);
+  color: var(--franja-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    translate var(--dur-fast) var(--ease-out),
+    scale var(--dur-press) var(--ease-out);
+}
+
+/* Se ve de 36 y se toca de 44. */
+.videoBoton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .videoBoton:hover {
+    translate: 0 -1px;
+  }
+}
+
+.videoBoton:active {
+  scale: 0.94;
+}
+
+.videoBoton:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* El visor: el video en grande dentro de la página (sin pantalla completa). */
+.visor {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--negro-900);
+  box-shadow: var(--shadow-overlay);
+}
+
+.visorVideo {
+  display: block;
+  width: 100%;
+  max-height: 86dvh;
+  object-fit: contain;
+  background: var(--negro-900);
+}
+
+.visorCerrar {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--negro-900) 60%, transparent);
+  color: var(--blanco);
+  cursor: pointer;
+  transition: rotate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .visorCerrar:hover {
+    rotate: 90deg;
+  }
+}
+
+.visorCerrar:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* El velo, más oscuro que el de un formulario: se mira un video. */
+.visorDialogo::backdrop {
+  background: color-mix(in srgb, var(--negro-900) 82%, transparent);
+}
+
 /* --- Controles: pausa y puntos, sobre un velo para leerse en cualquier foto */
 
 .controles {

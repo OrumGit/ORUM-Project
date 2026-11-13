@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from 'react'
-import { Pause, Play, RefreshCw, Upload, VolumeX } from 'lucide-react'
+import { Pause, Play, RefreshCw, Upload } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/feedback'
@@ -150,8 +150,10 @@ export function EditorVideo({
   const [restante, setRestante] = useState<number | null>(null)
   const etapaActual = fase?.etapa ?? null
 
-  // En la portada los videos se ven sin sonido: no se sube el audio.
-  const sinSonido = destino === 'portada' || quitarSonido
+  /* El sonido se conserva en los dos destinos (13/11/2026: «los usuarios
+     pueden activar el audio del video»): en la portada empieza en silencio
+     y quien la ve lo activa con su botón. Quitarlo es opcional. */
+  const sinSonido = quitarSonido
   const proporcion = PROPORCION_DESTINO[destino]
   const mismaProporcion = meta !== null && Math.abs(meta.ancho / meta.alto - proporcion) < 0.02
   const llenar = meta !== null && !mismaProporcion && modo === 'llenar'
@@ -521,21 +523,18 @@ export function EditorVideo({
             <p className={styles.reloj}>
               {textoTiempo(Math.max(0, actual - tramo.inicio))} / {textoTiempo(largoTramo)}
             </p>
-            {destino !== 'portada' && (
-              <Checkbox
-                label="Quitar el sonido"
-                checked={quitarSonido}
-                onChange={(e) => setQuitarSonido(e.target.checked)}
-                disabled={ocupado}
-                className={styles.sonido}
-              />
-            )}
-            {destino === 'portada' && (
-              <span className={styles.nota}>
-                <VolumeX size={14} aria-hidden="true" />
-                En la portada se ve sin sonido
-              </span>
-            )}
+            <Checkbox
+              label="Quitar el sonido"
+              description={
+                destino === 'portada'
+                  ? 'En la portada empieza en silencio; quien lo ve puede activar el sonido.'
+                  : undefined
+              }
+              checked={quitarSonido}
+              onChange={(e) => setQuitarSonido(e.target.checked)}
+              disabled={ocupado}
+              className={styles.sonido}
+            />
           </div>
 
           <div ref={pista} className={styles.pista} onPointerDown={(e) => !ocupado && e.target === e.currentTarget && irA(segundoEn(e.clientX))}>
