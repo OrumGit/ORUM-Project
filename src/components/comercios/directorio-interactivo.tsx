@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent, type MouseEvent, type ReactNode } fro
 import { flushSync } from 'react-dom'
 import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { ArrowUpDown, ChevronDown, Heart, LayoutGrid, MapPin, Search } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, Heart, LayoutGrid, MapPin, Search, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, MenuItem } from '@/components/ui/menu'
 import { EmptyState } from '@/components/ui/feedback'
@@ -12,6 +12,7 @@ import fotoMarca from '@/components/ui/marca/foto-hero.webp'
 import type { CatalogoPublico } from '@/lib/publico/datos-publicos'
 import {
   alternarCategoria,
+  BENEFICIOS_FILTRO,
   ETIQUETAS_ORDEN,
   filtrarDirectorio,
   hayFiltros,
@@ -144,6 +145,12 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
   /* La ciudad elegida puede no existir ya (un enlace viejo): se muestra
      «Todas» en vez de un id suelto, y el filtro no casa con nada. */
   const ciudadActual = directorio.ciudades.find((c) => c.id === filtros.ciudadId)
+
+  /* EL FILTRO «BENEFICIO» (12/11/2026), solo en el portal de miembros: los
+     tipos que de verdad tiene algún comercio del directorio, en su orden. */
+  const tiposPresentes = new Set(directorio.comercios.flatMap((c) => c.tiposBeneficio ?? []))
+  const beneficios = socio ? BENEFICIOS_FILTRO.filter((b) => tiposPresentes.has(b.clave)) : []
+  const beneficioActual = BENEFICIOS_FILTRO.find((b) => b.clave === filtros.beneficio)
 
   /**
    * Aplica un cambio de filtros SIN ir al servidor. Parte de la URL de este
@@ -288,6 +295,7 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
             )}
             {filtros.orden !== 'az' && <input type="hidden" name="orden" value={filtros.orden} />}
             {soloFavoritos && <input type="hidden" name="favoritos" value="1" />}
+            {filtros.beneficio && <input type="hidden" name="beneficio" value={filtros.beneficio} />}
             <button type="submit" className={estilos.botonBuscar} aria-label="Buscar">
               <Search size={18} aria-hidden="true" />
             </button>
@@ -363,6 +371,42 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
                     onSelect={() => cambiar(() => ({ ciudadId: c.id }))}
                   >
                     {c.nombre}
+                  </MenuItem>
+                ))}
+              </DropdownMenu>
+            )}
+
+            {/* Por tipo de beneficio: solo el socio, y solo si hay entre qué elegir. */}
+            {beneficios.length > 0 && (
+              <DropdownMenu
+                align="end"
+                trigger={
+                  <button type="button" className={estilos.disparador}>
+                    <span className={estilos.disparadorIcono} aria-hidden="true">
+                      <Tag size={13} />
+                    </span>
+                    Beneficio: {beneficioActual?.etiqueta ?? 'Todos'}
+                    <ChevronDown size={14} aria-hidden="true" className={estilos.chevron} />
+                  </button>
+                }
+              >
+                <MenuItem
+                  href={hrefDirectorio(filtros, { beneficio: null }, base)}
+                  scroll={false}
+                  selected={!beneficioActual}
+                  onSelect={() => cambiar(() => ({ beneficio: null }))}
+                >
+                  Todos
+                </MenuItem>
+                {beneficios.map((b) => (
+                  <MenuItem
+                    key={b.clave}
+                    href={hrefDirectorio(filtros, { beneficio: b.clave }, base)}
+                    scroll={false}
+                    selected={b.clave === beneficioActual?.clave}
+                    onSelect={() => cambiar(() => ({ beneficio: b.clave }))}
+                  >
+                    {b.etiqueta}
                   </MenuItem>
                 ))}
               </DropdownMenu>
@@ -507,7 +551,11 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
         ) : hayFiltros(filtros) ? (
           <EmptyState
             title="Ningún comercio coincide"
-            description="Prueba con otra categoría, otra ciudad u otra búsqueda."
+            description={
+              socio
+                ? 'Prueba con otra categoría, otra ciudad, otro beneficio u otra búsqueda.'
+                : 'Prueba con otra categoría, otra ciudad u otra búsqueda.'
+            }
             icon={<Search aria-hidden="true" />}
             actions={
               <Button

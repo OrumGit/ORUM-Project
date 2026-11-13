@@ -1086,6 +1086,18 @@ algún comercio activo (`CatalogoPublico.categorias[].subcategorias`), y el
 buscador de «Ver todas» encuentra la categoría por el nombre de una
 subcategoría.
 
+**El directorio del SOCIO filtra por BENEFICIO** (12/11/2026: «para el
+portal de miembros, un filtro para que puedan filtrar por beneficio»). Una
+píldora más, «Beneficio: Todos», entre Ciudad y Ordenar, SOLO con `socio`
+(la fachada pública no la enseña): Descuento en % · Descuento fijo · 2x1 ·
+Regalo (`BENEFICIOS_FILTRO`, los cuatro de `tipos_beneficio`), y solo los
+tipos que tiene algún comercio. Un comercio cuenta para un tipo si tiene una
+promoción VIGENTE de él (`ComercioVitrina.tiposBeneficio`, que calcula
+`leerCatalogoPublico`; clave de caché `publico-catalogo-v3`). En la URL va
+en `?beneficio=` y se combina con Y con los demás filtros
+(`lib/publico/directorio.ts`, probado). Vista previa con el catálogo real y
+sin sesión: `/dev/directorio-socio`.
+
 **Un comercio tiene de 1 a 3 categorías, cada una con su subcategoría
 opcional** (21/10/2026; antes era una sola). La fuente de verdad es la tabla
 `comercio_categorias` (`supabase/migrations/20261021130000_comercio_categorias.sql`;

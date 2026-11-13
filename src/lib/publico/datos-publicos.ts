@@ -219,6 +219,12 @@ export type ComercioVitrina = {
   portadaUrl: string | null
   /** Dónde se ve: el catálogo es UNO y cada portal se queda con lo suyo (`catalogoPara`). */
   visible: Visibilidad
+  /**
+   * Los TIPOS de sus promociones vigentes (`porcentaje`, `monto_fijo`,
+   * `dos_por_uno`, `regalo`): alimentan el filtro «Beneficio» del portal de
+   * miembros (12/11/2026).
+   */
+  tiposBeneficio: string[]
 }
 
 /** Una opción de filtro del directorio: una categoría o una ciudad. */
@@ -365,9 +371,15 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
   }
 
   const beneficioPorComercio = new Map<number, string>()
+  const tiposPorComercio = new Map<number, Set<string>>()
   for (const p of promociones ?? []) {
     // Una promoción caducada no se anuncia: la caja del comercio la rechazaría.
     if (!esPromocionVigente(p.activo, p.fecha_inicio, p.fecha_fin, hoy)) continue
+    const codigo = codigoTipo.get(p.tipo_beneficio_id)
+    if (codigo) {
+      if (!tiposPorComercio.has(p.comercio_id)) tiposPorComercio.set(p.comercio_id, new Set())
+      tiposPorComercio.get(p.comercio_id)!.add(codigo)
+    }
     if (beneficioPorComercio.has(p.comercio_id)) continue
     const tipoCodigo = codigoTipo.get(p.tipo_beneficio_id)
     if (!tipoCodigo) continue
@@ -409,6 +421,7 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
       beneficioDestacado: beneficioPorComercio.get(c.id) ?? null,
       portadaUrl: (c.portada_url ?? '').trim() || null,
       visible: leerVisibilidad(c),
+      tiposBeneficio: Array.from(tiposPorComercio.get(c.id) ?? []).sort(),
     }
   })
 
@@ -425,8 +438,9 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
 
 const catalogoEnCache = unstable_cache(
   () => circuito.ejecutar('catalogo', leerCatalogoPublico),
-  // v2 (07/11/2026): cada comercio trae `visible`; una copia vieja no lo tenía.
-  ['publico-catalogo-v2'],
+  // v3 (12/11/2026): cada comercio trae `tiposBeneficio`; una copia vieja no
+  // lo tenía y el filtro «Beneficio» la dejaría vacía.
+  ['publico-catalogo-v3'],
   OPCIONES_CACHE,
 )
 const cargarCatalogoPublico = cache(() =>
