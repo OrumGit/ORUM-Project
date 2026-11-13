@@ -17,12 +17,13 @@ export const NOMBRE_SITIO = 'ORUM'
 /**
  * INTERRUPTOR: ¿se indexan las páginas que enseñan el catálogo de comercios?
  *
- * Son la portada (`/`, «Comercios destacados») y `/explorar` (el directorio):
- * los dos pintan en su texto el nombre de TODOS los comercios activos, lo
- * que el `indexable` por comercio no controla. Mientras los comercios sean
- * datos de prueba se quedan en `false`: `noindex` en ambas y fuera del sitemap.
+ * Son la portada (`/`, «Comercios destacados») y `/explorar` (el directorio).
+ * Encendido desde el 12/11/2026 (encargo del propietario: indexar la portada
+ * y el directorio de una vez). Los nombres que pintan son los de los comercios
+ * activos, aunque sigan siendo datos de prueba: el `indexable` por comercio
+ * sigue mandando sobre cada FICHA, no sobre estas dos páginas.
  *
- * Cuando haya comercios reales, se pone en `true` (y se enciende el
- * interruptor «Aparecer en buscadores» de cada comercio real).
+ * Con `true`: `index` en ambas y `/` y `/explorar` van en el sitemap, más las
+ * fichas con `indexable = true`. Para volver a ocultarlas, poner `false`.
  */
-export const INDEXAR_CATALOGO = false
+export const INDEXAR_CATALOGO = true
