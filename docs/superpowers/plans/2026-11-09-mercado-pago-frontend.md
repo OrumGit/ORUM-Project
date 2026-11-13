@@ -151,3 +151,23 @@ Resuelve §8.1 («Revisa tu correo» primero) y amplía §3.1:
 3. **Pantalla «Completa tu membresía»** (miembros, sin ficha): para quien entra sin haber pagado. Muestra el plan y el botón **Pagar**, que crea una suscripción nueva en Mercado Pago. Solo se muestra si `puedeAbrirPago` lo permite (correo confirmado y registro pendiente).
 4. **Enlace vencido o ya usado:** mensaje claro y la vía para entrar con correo y contraseña. El reenvío del correo queda pendiente.
 5. **Login de socios:** acepta número de socio o correo en el mismo campo.
+
+## 13. Estado y lo que falta de interfaz (13/11/2026)
+
+Lo que ya existe en el backend y en pantallas provisionales (`commit e91cd49`):
+
+- **`/registro?plan=N`** (página provisional): formulario con datos, **ciudad** y **dirección** (obligatorias), contraseña y términos. Recibe el plan por la URL. Todavía **ningún enlace de la web lleva a ella**: la sección de precios no tiene el botón de elegir plan.
+- **`/registro/confirmar`**: pide confirmar el correo; cuando ya está confirmado y el registro sigue pendiente, muestra el botón «Continuar al pago». Usa `PantallaAcceso` y un aviso sencillo, sin diseño final.
+- **`/registro/pago/retorno`**: página de retorno provisional con dos textos (confirmando el pago / membresía activa). No sondea ni distingue rechazo, pago pendiente ni cancelado.
+
+Lo que falta, en orden de prioridad:
+
+1. **Overlay de registro desde precios (§3.1).** Sustituye a la página provisional. Debe abrirse desde el botón de cada plan, con el plan arriba, y llevar ciudad (lista con `SelectMenu`) y dirección. Sin esto, nadie puede llegar al registro sin escribir la URL.
+2. **Pantalla «Completa tu membresía» en el Portal de Miembros (§12.3).** Quien entra con un registro pendiente (número o correo) debe ver el plan y el botón de pagar. Hoy solo existe en `/registro/confirmar`.
+3. **Retorno de Mercado Pago (§5.2).** La `back_url` apunta a `/registro/pago/retorno`. Hay que decidir si vive ahí o en `miembros/(portal)/pago/retorno`, y añadir sondeo con tope de 60 s, «Revisar de nuevo» y mensajes de rechazo («Intentar con otra tarjeta», «Elegir otro plan»).
+4. **Pago pendiente (§5.3).** Estado «confirmando» que indique el medio de pago cuando Mercado Pago lo devuelva como pendiente. Depende de confirmar los medios en un cobro real.
+5. **Mensajes de error del alta.** Si la cédula ya es socio (`cedula_ya_es_socio`), la persona no debe ver un error genérico: hay que decidir el texto y el paso siguiente.
+6. **Vistas previas en `/dev/`** para los estados de registro, confirmación y retorno, con datos falsos, antes de probar con pagos reales.
+7. **Revisión de accesibilidad y móvil** de las pantallas nuevas (`accessibility-auditor`, `mobile-ux-specialist`) antes de darlas por terminadas.
+
+Bloqueante de datos: el correo del comprador de prueba (`MP_PAGADOR_PRUEBA`, solo en el preview). Sin él no se puede probar el pago de punta a punta, y por tanto tampoco los estados 2 a 4.

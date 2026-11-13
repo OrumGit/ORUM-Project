@@ -1,7 +1,7 @@
 # Mercado Pago · Plan de backend
 
 - **Fecha:** 2026-11-09
-- **Estado (11/11/2026):** en curso. Commit `82f4b30` en `feat/mercadopago-backend`, sin subir. Hechos los pasos 1, 2 y 4 de §10 y el paso 3 escrito pero sin probar contra Mercado Pago real. Pendientes los pasos 5 a 9 y las preguntas de §9.
+- **Estado (13/11/2026):** en curso. Rama `feat/mercadopago-backend` subida hasta `e91cd49`. Hechos los pasos 1, 2 y 4 de §10; el webhook (paso 3) está escrito y el alta al aprobarse el primer cobro también, pero **nada de eso se ha probado con un cobro real**. El paso 5 (registro público) está casi completo: falta probar el pago de punta a punta. Pendientes los pasos 6 a 9 y las preguntas de §9. **Bloqueante inmediato:** el correo del comprador de prueba (`MP_PAGADOR_PRUEBA`), sin el que el pago de prueba no se puede crear.
 - **Par:** [`2026-11-09-mercado-pago-frontend.md`](2026-11-09-mercado-pago-frontend.md)
 - **Antecedente:** [`docs/mercado-pago-suscripciones.md`](../../mercado-pago-suscripciones.md) (investigación).
 
@@ -196,13 +196,13 @@ Módulo existente `src/lib/correo/correo.ts`. Se añaden tres constructores puro
 
 ## 10. Orden sugerido de implementación
 
-Estado al 11/11/2026 (✅ hecho · 🟡 escrito, sin probar · ⬜ pendiente):
+Estado al 13/11/2026 (✅ hecho · 🟡 escrito, sin probar · ⬜ pendiente):
 
 1. ✅ Migración y verificación SQL (§2). Aplicadas en la base. El script `supabase/verificacion/mercadopago_verificacion.sql` **todavía no existe** (§2.5 pendiente).
 2. ✅ Módulo puro `src/lib/mercadopago/` con pruebas (§3.1). `cliente.ts` usa REST en lugar del SDK (decisión documentada en el archivo).
 3. 🟡 Webhook con firma, idempotencia y bitácora (§4). Compila y pasa `next build`, pero **sin probar** contra Mercado Pago: faltan las credenciales de prueba. Formatos de `authorized_payments` y de `metadata.preapproval_id` sin confirmar.
 4. ✅ Funciones de base de datos de cobro (§2.3) conectadas al webhook. Un cobro aprobado fallará con `suscripcion_sin_plan` hasta que el alta asigne `plan_id`.
-5. ⬜ Registro público sin membresía (§3.3).
+5. 🟡 Registro público sin membresía (§3.3 y §10): formulario con ciudad y dirección, confirmación, pago, retorno y alta al aprobarse el cobro. Escrito y verificado en local (tsc, 970 pruebas); falta probar el pago real (bloqueado por `MP_PAGADOR_PRUEBA`).
 6. ⬜ Acciones del socio (§3.2) y cancelación con acceso hasta `fecha_fin`.
 7. ⬜ Job de cortes de gracia (§5).
 8. ⬜ Correos (§6).
@@ -211,6 +211,20 @@ Estado al 11/11/2026 (✅ hecho · 🟡 escrito, sin probar · ⬜ pendiente):
 El frontend (`2026-11-09-mercado-pago-frontend.md`) se monta sobre el paso 5 en adelante.
 
 ## 10. Registro previo al pago (decidido 11/11/2026)
+
+**Estado (13/11/2026):**
+- ✅ Opción B decidida: el socio se crea **solo** al aprobarse el primer cobro, no al autorizar la suscripción.
+- ✅ Ciudad y dirección son obligatorias en el formulario (`registro-entrada.ts`, `registros_pendientes.ciudad_id` y `direccion`).
+- ✅ Migración `20261113120000_alta_socio_mercadopago.sql` **aplicada en producción** (SQL Editor, 13/11). Verificada: con `service_role` devuelve `null` para un preapproval inexistente y `anon` recibe `permission denied`.
+- ✅ Alta en el webhook: en un cobro con estado `approved`, `procesar.ts` llama a `alta_socio_mercadopago` antes de `registrar_cobro_mp`. Para socios existentes no hay registro público y la función devuelve `null`.
+- ✅ Página de retorno `/registro/pago/retorno` (la `back_url`) y paso de pago en `/registro/confirmar` aunque el enlace ya se haya usado.
+- ⬜ **Probar el pago de punta a punta** con un usuario de prueba. Bloqueado por el correo del comprador: con credenciales de prueba el pagador debe ser un usuario de prueba, y la variable `MP_PAGADOR_PRUEBA` está vacía en el preview.
+- ⬜ Confirmar en un cobro real el formato de `metadata.preapproval_id` del pago. La alta depende de él.
+- ⬜ Reintentar la alta si falla con `cedula_ya_es_socio` (hoy queda como error en la bitácora y el registro sigue pendiente; revisión manual).
+
+**Hallazgo del 12–13/11:** con el token de prueba, Mercado Pago rechaza un pagador que sea cuenta real (`Both payer and collector must be real or test users`). Por eso existe `MP_PAGADOR_PRUEBA`, que solo se define en el preview.
+
+**Hallazgo del 12/11:** el enlace de confirmación es de un solo uso. Abrirlo otra vez muestra «Entra con tu correo y tu contraseña» y, antes del arreglo de `/registro/confirmar`, no había forma de llegar al pago.
 
 Flujo acordado con el propietario:
 
