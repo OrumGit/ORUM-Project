@@ -4,21 +4,33 @@ import { pedirSubidaVideo } from '@/app/OrumAdminLogin/videos-actions'
 import type { DestinoVideo } from '@/lib/videos/video'
 import { ErrorVideo } from './exportar-video'
 
+/** La dirección firmada donde se subirá el video, y su ruta. */
+export type SubidaPedida = { ruta: string; url: string }
+
 /**
- * Sube el MP4 ya preparado con la dirección firmada que da el servidor y
- * devuelve su ruta en el bucket. Va con `XMLHttpRequest` y no con `fetch`
- * porque es lo único que dice cuánto lleva subido (la barra de progreso).
- * El cuerpo es el mismo que arma `uploadToSignedUrl` de Supabase.
+ * Pide al servidor la dirección firmada. Se pide ANTES de preparar el video
+ * (vale dos horas): si falta algo —el permiso, o la migración de los
+ * videos—, el editor lo dice al instante y no después de un minuto
+ * preparando.
+ */
+export async function pedirSubida(destino: DestinoVideo): Promise<SubidaPedida> {
+  const pedida = await pedirSubidaVideo(destino)
+  if (!pedida.ok) throw new ErrorVideo(pedida.error)
+  return { ruta: pedida.ruta, url: pedida.url }
+}
+
+/**
+ * Sube el MP4 ya preparado a la dirección firmada y devuelve su ruta en el
+ * bucket. Va con `XMLHttpRequest` y no con `fetch` porque es lo único que
+ * dice cuánto lleva subido (la barra de progreso). El cuerpo es el mismo que
+ * arma `uploadToSignedUrl` de Supabase.
  */
 export async function subirVideo(
   video: Blob,
-  destino: DestinoVideo,
+  pedida: SubidaPedida,
   alProgresar: (fraccion: number) => void,
   senal?: AbortSignal,
 ): Promise<string> {
-  const pedida = await pedirSubidaVideo(destino)
-  if (!pedida.ok) throw new ErrorVideo(pedida.error)
-
   const cuerpo = new FormData()
   cuerpo.append('cacheControl', '31536000')
   cuerpo.append('', video, 'video.mp4')

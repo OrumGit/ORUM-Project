@@ -28,7 +28,13 @@ export async function pedirSubidaVideo(destino: DestinoVideo): Promise<SubidaVid
   const ruta = rutaVideo(destino, claveVideo(Date.now(), Math.random()))
   const { data, error } = await createAdminClient().storage.from(BUCKET_VIDEOS).createSignedUploadUrl(ruta)
   if (error || !data) {
-    const sinBucket = /bucket/i.test(error?.message ?? '') && /not.?found/i.test(error?.message ?? '')
+    /* Sin el bucket (la migración aún sin aplicar), Supabase contesta «The
+       related resource does not exist» con 404 —no «Bucket not found», que
+       era lo único que se miraba y dejó un aviso genérico el 13/11/2026—. */
+    const conCodigo = error as { statusCode?: string | number; status?: number } | null
+    const sinBucket =
+      String(conCodigo?.statusCode ?? '') === '404' ||
+      /does not exist|not.?found/i.test(error?.message ?? '')
     return {
       ok: false,
       error: sinBucket

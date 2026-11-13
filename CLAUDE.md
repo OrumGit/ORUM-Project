@@ -2158,7 +2158,10 @@ de una imagen.
 - **Se sube DIRECTO a Storage** (un video no cabe en el cuerpo de una acción):
   `pedirSubidaVideo` (`OrumAdminLogin/videos-actions.ts`, solo `super_admin`)
   da una dirección firmada con una ruta que elige el servidor, el navegador
-  sube con `XMLHttpRequest` (para la barra) y la acción que guarda comprueba
+  sube con `XMLHttpRequest` (para la barra) —la dirección se pide ANTES de
+  preparar (`pedirSubida`), así un permiso o una migración que falte se dice
+  al instante; sin el bucket, Supabase contesta «The related resource does not
+  exist» (404), no «Bucket not found»— y la acción que guarda comprueba
   que la ruta sea de su destino (`esRutaVideo`) y que exista
   (`lib/videos/servidor.ts`). Sustituir o quitar borra el video anterior.
 - **La PORTADA del video es la imagen de siempre** (`imagen_url`; el primer

@@ -38,7 +38,7 @@ import {
   type Muestra,
 } from '@/lib/videos/estimacion'
 import { ErrorVideo, capturarPortada, exportarVideo, miniaturas } from './exportar-video'
-import { subirVideo } from './subir-video'
+import { pedirSubida, subirVideo } from './subir-video'
 import styles from './editor-video.module.css'
 
 /*
@@ -364,6 +364,8 @@ export function EditorVideo({
 
     try {
       setFase({ etapa: 'portada', progreso: 0 })
+      // Primero, el permiso de subida: si falta algo, se sabe ya y no tras preparar.
+      const pedida = await pedirSubida(destino)
       v.pause()
       v.currentTime = tramo.inicio
       // Como mucho 3 s: si el navegador no avisa del salto, se toma el fotograma que haya.
@@ -386,7 +388,7 @@ export function EditorVideo({
       if (control.signal.aborted) return
 
       ultimoPorcentaje.current = -1
-      const ruta = await subirVideo(mp4, destino, (p) => progreso('subiendo', p), control.signal)
+      const ruta = await subirVideo(mp4, pedida, (p) => progreso('subiendo', p), control.signal)
       onListo({ ruta, portada, duracion: largoTramo })
     } catch (e) {
       const cancelado =
