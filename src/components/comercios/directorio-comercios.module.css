@@ -257,7 +257,10 @@
 @container contenido (max-width: 767px) {
   .menus {
     flex-wrap: nowrap;
-    width: 100%;
+    /* El ancho del panel MÁS el margen negativo de los dos lados: con
+       `100%` a secas la fila acababa 24 px antes que las otras dos y la
+       píldora del borde se cortaba en seco (12/11/2026). */
+    width: calc(100% + var(--space-3) * 2);
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scrollbar-width: none;

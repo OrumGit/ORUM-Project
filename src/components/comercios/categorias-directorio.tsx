@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import type { CSSProperties, RefObject } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Check, ChevronLeft, ChevronRight, LayoutGrid, Search } from 'lucide-react'
 import { Agitar } from '@/components/ui/agitar'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { IconoCategoria } from '@/components/ui/icono-categoria'
 import { Input } from '@/components/ui/input'
 import { Overlay } from '@/components/ui/overlay'
 import { buscarCategorias, repartirTira } from '@/lib/comercios/tira-categorias'
+import { HAY_ANTES, HAY_DESPUES, HOLGURA, useDesborde } from './use-desborde'
 import estilos from './categorias-directorio.module.css'
 
 /*
@@ -117,47 +118,6 @@ function Ficha({
       {activa && <span className="sr-only"> (elegida)</span>}
     </a>
   )
-}
-
-/* --- Hacia dónde queda tira por ver --------------------------------------- */
-
-const HAY_ANTES = 1
-const HAY_DESPUES = 2
-/** Holgura: los navegadores redondean el desplazamiento a fracciones de píxel. */
-const HOLGURA = 4
-
-/*
-  El desplazamiento de la pista es estado EXTERNO (lo mueve el navegador, no
-  React): se lee con `useSyncExternalStore`, como manda `CLAUDE.md`, y solo
-  vuelve a pintar cuando cambia la respuesta —«hay antes», «hay después»—, no
-  en cada píxel.
-*/
-function useDesborde(ref: RefObject<HTMLUListElement | null>): number {
-  const suscribir = useCallback(
-    (avisar: () => void) => {
-      const pista = ref.current
-      if (!pista) return () => {}
-      pista.addEventListener('scroll', avisar, { passive: true })
-      const observador = new ResizeObserver(avisar)
-      observador.observe(pista)
-      return () => {
-        pista.removeEventListener('scroll', avisar)
-        observador.disconnect()
-      }
-    },
-    [ref],
-  )
-  const leer = useCallback(() => {
-    const pista = ref.current
-    if (!pista) return 0
-    const recorrido = pista.scrollWidth - pista.clientWidth
-    if (recorrido <= HOLGURA) return 0
-    return (
-      (pista.scrollLeft > HOLGURA ? HAY_ANTES : 0) |
-      (pista.scrollLeft < recorrido - HOLGURA ? HAY_DESPUES : 0)
-    )
-  }, [ref])
-  return useSyncExternalStore(suscribir, leer, () => 0)
 }
 
 /*

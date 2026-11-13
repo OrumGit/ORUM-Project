@@ -1119,8 +1119,13 @@ icono de 28 px con anillo de 1,5px y glifo de 15; al apuntar suben 1px con
 `--shadow-raised` (SIN filo dorado), al presionar bajan con
 `--shadow-press`, y la elegida —también un filtro con valor, «Tuluá»— lleva
 filo `--gold-600` y 700. Sus tres filas del teléfono comparten relleno y
-`scroll-padding-inline` (`--space-3`): empiezan en la misma línea (con 8 px
-la tira de categorías se corría 4). La regla está escrita en
+`scroll-padding-inline` (`--space-3`): empiezan Y TERMINAN en la misma
+línea (con 8 px la tira de categorías se corría 4; y la de filtros, con
+`width: 100%` y margen negativo, acababa 24 px antes: su ancho es
+`calc(100% + --space-3 * 2)`). Las tres se DESVANECEN hacia el canto por el
+que siguen: `useDesborde` (`components/comercios/use-desborde.ts`, la de la
+tira, ahora compartida) pone `data-antes`/`data-despues` y la máscara es
+`[data-desliza]` en `globals.css` (la tira conserva sus propias reglas). La regla está escrita en
 `subcategorias-directorio.module.css`: si cambias una, cambia las tres.
 
 **En el teléfono los filtros van en UNA fila** (12/11/2026: «ocupan

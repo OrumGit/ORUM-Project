@@ -29,6 +29,7 @@ import { CategoriasDirectorio } from './categorias-directorio'
 import { SubcategoriasDirectorio } from './subcategorias-directorio'
 import { BotonFavorito, useFavoritos } from './favoritos'
 import { TarjetaDirectorio } from './tarjeta-directorio'
+import { atributosDesborde, useDesborde } from './use-desborde'
 import estilos from './directorio-comercios.module.css'
 
 /*
@@ -145,6 +146,9 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
   /* La ciudad elegida puede no existir ya (un enlace viejo): se muestra
      «Todas» en vez de un id suelto, y el filtro no casa con nada. */
   const ciudadActual = directorio.ciudades.find((c) => c.id === filtros.ciudadId)
+
+  const filaFiltros = useRef<HTMLDivElement>(null)
+  const desbordeFiltros = useDesborde(filaFiltros)
 
   /* EL FILTRO «BENEFICIO» (12/11/2026), solo en el portal de miembros: los
      tipos que de verdad tiene algún comercio del directorio, en su orden. */
@@ -316,7 +320,8 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
             {comercios.length === 1 ? '1 comercio' : `${comercios.length} comercios`}
           </p>
 
-          <div className={estilos.menus}>
+          {/* En el teléfono se desliza de lado y se desvanece hacia donde sigue. */}
+          <div ref={filaFiltros} className={estilos.menus} data-desliza {...atributosDesborde(desbordeFiltros)}>
             {/* «Favoritos»: un interruptor, no un menú. Enciende y apaga el
                 filtro con el mismo toque; lleva el corazón relleno y rojo
                 cuando está puesto. Solo el socio tiene favoritos. */}

@@ -1,8 +1,9 @@
 'use client'
 
-import type { CSSProperties, MouseEvent } from 'react'
+import { useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { IconoCategoria } from '@/components/ui/icono-categoria'
+import { atributosDesborde, useDesborde } from './use-desborde'
 import estilos from './subcategorias-directorio.module.css'
 
 /*
@@ -52,6 +53,17 @@ function clicNormal(e: MouseEvent) {
   return !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
 }
 
+/** La fila de un grupo: se desliza de lado y se desvanece hacia donde sigue. */
+function FilaSubcategorias({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLUListElement>(null)
+  const desborde = useDesborde(ref)
+  return (
+    <ul ref={ref} className={estilos.fila} data-desliza {...atributosDesborde(desborde)}>
+      {children}
+    </ul>
+  )
+}
+
 export function SubcategoriasDirectorio({ grupos, onElegir, onTodo }: Props) {
   if (grupos.length === 0) return null
   return (
@@ -71,7 +83,7 @@ export function SubcategoriasDirectorio({ grupos, onElegir, onTodo }: Props) {
             <span className={estilos.titulo} aria-hidden="true">
               {g.categoria}
             </span>
-            <ul className={estilos.fila}>
+            <FilaSubcategorias>
               <li>
                 <a
                   href={g.hrefTodo}
@@ -117,7 +129,7 @@ export function SubcategoriasDirectorio({ grupos, onElegir, onTodo }: Props) {
                   </a>
                 </li>
               ))}
-            </ul>
+            </FilaSubcategorias>
           </nav>
         )
       })}
