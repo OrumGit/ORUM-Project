@@ -33,9 +33,11 @@ import {
   MENSAJE_FALTA_MIGRACION_VIDEOS,
   borrarVideo,
   confirmarVideo,
+  faltaColumnaEncuadre,
   faltaColumnaVideo,
   videoDe,
 } from '@/lib/videos/servidor'
+import { leerEncuadrePrevia } from '@/lib/videos/video'
 
 const SIN_PERMISO = 'No tienes permiso para realizar esta acción.'
 
@@ -106,6 +108,8 @@ export async function guardarPublicidad(
   // La columna solo se escribe si hay algo que decirle: sin la migración, una
   // imagen se sigue guardando como siempre.
   const conVideo = videoUrl !== null || videoAnterior !== null ? { video_url: videoUrl } : {}
+  // El encuadre de la vista previa (13/11/2026): con video, el elegido; sin él, nada.
+  const encuadre = videoUrl ? leerEncuadrePrevia(formData.get('video_encuadre')) : null
 
   // Clave nueva en cada subida, también al sustituir: la dirección cambia y
   // ni el navegador ni la CDN pueden seguir enseñando la anterior.
@@ -118,25 +122,34 @@ export async function guardarPublicidad(
   })
   if (!resultado.ok) return { error: resultado.error }
 
-  const { data: fila, error } = anterior
-    ? await admin
-        .from('publicidad')
-        .update({ imagen_url: resultado.url, descripcion: revisada.descripcion, ...conVideo })
-        .eq('id', anterior.id)
-        .select('id')
-        .maybeSingle()
-    : await admin
-        .from('publicidad')
-        .insert({
-          imagen_url: resultado.url,
-          descripcion: revisada.descripcion,
-          ...conVideo,
-          // Al final: las nuevas no desordenan las que ya había.
-          orden: (piezas ?? []).reduce((max, p) => Math.max(max, p.orden), 0) + 1,
-          creado_por: actorId,
-        })
-        .select('id')
-        .maybeSingle()
+  /* Con el encuadre; si la base aún no tiene su columna (migración
+     20261114120000, a mano), otra vez sin él: el video se guarda igual y su
+     vista previa sale centrada. */
+  const escribir = (conEncuadre: boolean) => {
+    const extra = { ...conVideo, ...(conEncuadre && 'video_url' in conVideo ? { video_encuadre: encuadre } : {}) }
+    return anterior
+      ? admin
+          .from('publicidad')
+          .update({ imagen_url: resultado.url, descripcion: revisada.descripcion, ...extra })
+          .eq('id', anterior.id)
+          .select('id')
+          .maybeSingle()
+      : admin
+          .from('publicidad')
+          .insert({
+            imagen_url: resultado.url,
+            descripcion: revisada.descripcion,
+            ...extra,
+            // Al final: las nuevas no desordenan las que ya había.
+            orden: (piezas ?? []).reduce((max, p) => Math.max(max, p.orden), 0) + 1,
+            creado_por: actorId,
+          })
+          .select('id')
+          .maybeSingle()
+  }
+  let respuesta = await escribir(true)
+  if (faltaColumnaEncuadre(respuesta.error)) respuesta = await escribir(false)
+  const { data: fila, error } = respuesta
 
   if (error || !fila) {
     // La fila no entró: lo recién subido no lo referencia nadie.

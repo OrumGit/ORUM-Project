@@ -3,6 +3,8 @@ import { EmptyState } from '@/components/ui/feedback'
 import { EstrellaOrum } from '@/components/ui/marca/marca'
 import { formatearFechaNovedad } from '@/lib/anuncios/fecha'
 import type { AnuncioResumen } from '@/lib/anuncios/tipos'
+import type { EncuadrePrevia } from '@/lib/videos/video'
+import { VideoNovedad } from './video-novedad'
 import styles from './lista-novedades.module.css'
 
 /*
@@ -36,7 +38,12 @@ export function ListaNovedades({ anuncios }: { anuncios: AnuncioResumen[] }) {
   return (
     <div className={styles.lista}>
       <article id={`novedad-${destacada.id}`} className={styles.destacada}>
-        <Imagen url={destacada.imagenUrl} video={destacada.videoUrl} titulo={destacada.titulo} />
+        <Imagen
+          url={destacada.imagenUrl}
+          video={destacada.videoUrl}
+          encuadre={destacada.videoEncuadre}
+          titulo={destacada.titulo}
+        />
         <div className={styles.destacadaTexto}>
           <p className={styles.meta}>
             <span className={styles.etiqueta}>Lo más reciente</span>
@@ -56,7 +63,7 @@ export function ListaNovedades({ anuncios }: { anuncios: AnuncioResumen[] }) {
             {anteriores.map((a) => (
               <li key={a.id}>
                 <article id={`novedad-${a.id}`} className={styles.tarjeta}>
-                  <Imagen url={a.imagenUrl} video={a.videoUrl} titulo={a.titulo} />
+                  <Imagen url={a.imagenUrl} video={a.videoUrl} encuadre={a.videoEncuadre} titulo={a.titulo} />
                   <div className={styles.tarjetaTexto}>
                     <p className={styles.meta}>
                       <time dateTime={a.createdAt}>{formatearFechaNovedad(a.createdAt)}</time>
@@ -76,22 +83,25 @@ export function ListaNovedades({ anuncios }: { anuncios: AnuncioResumen[] }) {
 
 /**
  * La imagen en 16:9, o la lámina de la marca si no tiene. Decorativa: el
- * título dice qué es. Con VIDEO (13/11/2026), el video con sus controles y su
- * portada: no arranca solo ni carga hasta que se le da a reproducir, y se ve
- * entero (sobre negro), porque se mira.
+ * título dice qué es. Con VIDEO (13/11/2026), su VISTA PREVIA ajustada y un
+ * botón de reproducir; tocarla lo abre completo, en su formato original, en
+ * una ventana encima (`VideoNovedad`).
  */
-function Imagen({ url, video, titulo }: { url: string | null; video: string | null; titulo: string }) {
+function Imagen({
+  url,
+  video,
+  encuadre,
+  titulo,
+}: {
+  url: string | null
+  video: string | null
+  encuadre?: EncuadrePrevia | null
+  titulo: string
+}) {
   if (video) {
     return (
       <div className={styles.imagen} data-video="">
-        <video
-          src={video}
-          poster={url ?? undefined}
-          controls
-          playsInline
-          preload="none"
-          aria-label={`Video: ${titulo}`}
-        />
+        <VideoNovedad video={video} portada={url} encuadre={encuadre} titulo={titulo} />
       </div>
     )
   }

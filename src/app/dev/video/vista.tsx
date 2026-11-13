@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { EditorVideo } from '@/components/videos/editor-video'
 import { exportarVideo } from '@/components/videos/exportar-video'
 import { CarruselFotos } from '@/components/ui/carrusel-fotos'
+import { VideoNovedad } from '@/components/novedades/video-novedad'
 import {
-  ENCUADRE_CENTRADO,
   PROPORCION_DESTINO,
   medidasSalida,
-  recorteParaMarco,
+  previaDesdeEncuadre,
   type DestinoVideo,
 } from '@/lib/videos/video'
 
@@ -55,11 +55,11 @@ export function VistaEditorVideo({ destino, segundos }: { destino: DestinoVideo;
   async function soloPreparar() {
     if (!archivo) return
     setResultado('Preparando…')
-    const recorte = recorteParaMarco({ ancho: 1280, alto: 720 }, PROPORCION_DESTINO[destino], ENCUADRE_CENTRADO)
-    const salida = medidasSalida({ ancho: recorte.width, alto: recorte.height })
+    // ENTERO, como se prepara ahora: la vista previa se encuadra aparte.
+    const salida = medidasSalida({ ancho: 1280, alto: 720 })
     const mp4 = await exportarVideo(archivo, {
       tramo: { inicio: 2, fin: 8 },
-      recorte,
+      recorte: null,
       salida,
       sinSonido: true,
       alProgresar: () => {},
@@ -95,6 +95,21 @@ export function VistaEditorVideo({ destino, segundos }: { destino: DestinoVideo;
       </button>
       {resultado && <p data-resultado="">{resultado}</p>}
       {preparado && <video src={preparado} controls muted data-preparado="" style={{ width: '100%' }} />}
+      {/* Y como en una tarjeta de Novedades (16:9), con otro encuadre. */}
+      {preparado && (
+        <div style={{ position: 'relative', maxWidth: 480, aspectRatio: '16 / 9', marginTop: 24 }} data-novedad-prueba="">
+          <VideoNovedad
+            video={preparado}
+            portada={null}
+            encuadre={previaDesdeEncuadre({ ancho: 1280, alto: 720 }, PROPORCION_DESTINO.novedades, {
+              x: 0.5,
+              y: 0.5,
+              zoom: 1.4,
+            })}
+            titulo="Video de prueba"
+          />
+        </div>
+      )}
       {/* El MP4 preparado dentro del carrusel de la portada, entre dos fotos. */}
       {preparado && (
         <div style={{ maxWidth: 480, aspectRatio: '4 / 3', marginTop: 24 }} data-carrusel-prueba="">
@@ -102,7 +117,17 @@ export function VistaEditorVideo({ destino, segundos }: { destino: DestinoVideo;
             etiqueta="Prueba del carrusel con video"
             fotos={[
               { url: '/icons/socio-512.png', alt: 'Foto 1' },
-              { url: '/icons/socio-512.png?2', alt: 'Video de prueba', video: preparado },
+              {
+                url: '/icons/socio-512.png?2',
+                alt: 'Video de prueba',
+                video: preparado,
+                // Un encuadre de ejemplo: a la izquierda y acercado.
+                encuadre: previaDesdeEncuadre({ ancho: 1280, alto: 720 }, PROPORCION_DESTINO.portada, {
+                  x: 0.3,
+                  y: 0.5,
+                  zoom: 1.5,
+                }),
+              },
               { url: '/icons/socio-512.png?3', alt: 'Foto 3' },
             ]}
           />

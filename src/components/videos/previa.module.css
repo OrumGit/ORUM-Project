@@ -1,0 +1,7 @@
+/* La vista previa ajustada: ver `previa.ts`. */
+.previa {
+  object-fit: cover;
+  object-position: var(--previa-x, 50%) var(--previa-y, 50%);
+  transform: scale(var(--previa-escala, 1));
+  transform-origin: var(--previa-ox, 50%) var(--previa-oy, 50%);
+}

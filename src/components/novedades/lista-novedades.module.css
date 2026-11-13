@@ -25,16 +25,9 @@
   object-fit: cover;
 }
 
-/* Un video se mira: entero, sobre negro (13/11/2026). */
+/* Con video: su vista previa ocupa la caja (ver `video-novedad`), sobre negro. */
 .imagen[data-video] {
   background: var(--negro-900);
-}
-
-.imagen video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 /* Sin imagen: una lámina de la marca, no un hueco. */
@@ -78,8 +71,7 @@
   padding-top: 56.25%;
 }
 
-.destacada .imagen img,
-.destacada .imagen video,
+.destacada .imagen > img,
 .destacada .lamina {
   position: absolute;
   inset: 0;

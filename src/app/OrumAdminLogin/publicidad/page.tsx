@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Alert } from '@/components/ui/alert'
 import { PageHeader } from '@/components/ui/layout'
 import type { PiezaPublicidad } from '@/lib/publicidad/publicidad'
-import { videoDe } from '@/lib/videos/servidor'
+import { encuadreDe, videoDe } from '@/lib/videos/servidor'
 import { GestorPublicidad } from './_components/gestor-portada'
 
 export const metadata = { title: 'Publicidad · ORUM' }
@@ -24,6 +24,7 @@ export default async function PublicidadPage() {
     id: p.id,
     url: p.imagen_url,
     video: videoDe(p),
+    encuadre: encuadreDe(p),
     descripcion: p.descripcion,
     activa: p.activo,
   }))

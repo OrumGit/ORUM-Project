@@ -9,6 +9,8 @@
   la descripción y cómo queda el orden al mover una pieza.
 */
 
+import type { EncuadrePrevia } from '../videos/video'
+
 /** Cuántas imágenes puede tener el carrusel, contando las ocultas. */
 export const TOPE_PUBLICIDAD = 10
 
@@ -25,6 +27,8 @@ export type PiezaPublicidad = {
   url: string
   /** El MP4, si la pieza es un video (13/11/2026). */
   video: string | null
+  /** El encuadre de su vista previa (13/11/2026), si lo tiene. */
+  encuadre?: EncuadrePrevia | null
   descripcion: string
   activa: boolean
 }

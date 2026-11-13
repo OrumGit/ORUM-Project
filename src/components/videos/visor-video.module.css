@@ -1,0 +1,46 @@
+/* El video en grande: entero, sobre negro, con su X (ver `visor-video.tsx`). */
+
+.visor {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--negro-900);
+  box-shadow: var(--shadow-overlay);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  max-height: 86dvh;
+  object-fit: contain;
+  background: var(--negro-900);
+}
+
+.cerrar {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--negro-900) 60%, transparent);
+  color: var(--blanco);
+  cursor: pointer;
+  transition: rotate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .cerrar:hover {
+    rotate: 90deg;
+  }
+}
+
+.cerrar:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

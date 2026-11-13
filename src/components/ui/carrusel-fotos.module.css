@@ -126,50 +126,16 @@
   outline-offset: 2px;
 }
 
-/* El visor: el video en grande dentro de la página (sin pantalla completa). */
-.visor {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--negro-900);
-  box-shadow: var(--shadow-overlay);
-}
-
-.visorVideo {
-  display: block;
+/* La pieza de un video: recorta, porque la vista previa lo acerca con `scale`. */
+.pieza {
+  flex: 0 0 100%;
   width: 100%;
-  max-height: 86dvh;
-  object-fit: contain;
-  background: var(--negro-900);
+  height: 100%;
+  overflow: hidden;
 }
 
-.visorCerrar {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--negro-900) 60%, transparent);
-  color: var(--blanco);
-  cursor: pointer;
-  transition: rotate var(--dur-fast) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .visorCerrar:hover {
-    rotate: 90deg;
-  }
-}
-
-.visorCerrar:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+.pieza > .foto {
+  display: block;
 }
 
 /* --- Controles: pausa y puntos, sobre un velo para leerse en cualquier foto */

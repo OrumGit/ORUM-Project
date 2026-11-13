@@ -3,6 +3,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import { vigentesAhora } from './programacion'
+import { leerEncuadrePrevia, type EncuadrePrevia } from '../videos/video'
 import type { AnuncioResumen } from './tipos'
 
 export type PortalAnuncios = 'publico' | 'miembros'
@@ -53,6 +54,7 @@ export async function obtenerAnunciosVisibles(
     publicar_desde?: string | null
     publicar_hasta?: string | null
     video_url?: string | null
+    video_encuadre?: unknown
   }
 
   const filas = ((respuesta.data ?? []) as unknown as Fila[]).map((f) => ({
@@ -68,6 +70,7 @@ export async function obtenerAnunciosVisibles(
     cuerpo: fila.cuerpo,
     imagenUrl: fila.imagen_url,
     videoUrl: fila.video_url?.trim() || null,
+    videoEncuadre: leerEncuadrePrevia(fila.video_encuadre),
     // Cuándo SALIÓ: su inicio programado, o cuándo se creó.
     createdAt: fila.desde ?? fila.created_at,
   }))
@@ -80,6 +83,7 @@ export type AnuncioEditable = {
   cuerpo: string
   imagenUrl: string | null
   videoUrl: string | null
+  videoEncuadre: EncuadrePrevia | null
   mostrarPublico: boolean
   mostrarMiembros: boolean
   desde: string | null
@@ -107,6 +111,7 @@ export async function leerAnuncioParaEditar(
     publicar_desde?: string | null
     publicar_hasta?: string | null
     video_url?: string | null
+    video_encuadre?: unknown
   } | null
   if (!fila) return null
   return {
@@ -115,6 +120,7 @@ export async function leerAnuncioParaEditar(
     cuerpo: fila.cuerpo,
     imagenUrl: fila.imagen_url,
     videoUrl: fila.video_url?.trim() || null,
+    videoEncuadre: leerEncuadrePrevia(fila.video_encuadre),
     mostrarPublico: fila.mostrar_publico,
     mostrarMiembros: fila.mostrar_miembros,
     desde: fila.publicar_desde ?? null,

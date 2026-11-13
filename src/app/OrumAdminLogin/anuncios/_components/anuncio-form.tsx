@@ -14,7 +14,7 @@ import {
   type OpcionesEncuadre,
 } from '@/components/imagenes/editor-encuadre'
 import { EditorVideo, type VideoListo } from '@/components/videos/editor-video'
-import { TIPOS_ACEPTADOS, urlPublicaVideo } from '@/lib/videos/video'
+import { TIPOS_ACEPTADOS, urlPublicaVideo, type EncuadrePrevia } from '@/lib/videos/video'
 import { largo, obligatorio, type Regla } from '@/lib/validacion/reglas'
 import {
   describirProgramacion,
@@ -34,6 +34,8 @@ export type AnuncioInicial = {
   imagenUrl: string | null
   /** El MP4 de la novedad, si tiene (su portada es `imagenUrl`). */
   videoUrl?: string | null
+  /** El encuadre de su vista previa. */
+  videoEncuadre?: EncuadrePrevia | null
   mostrarPublico: boolean
   mostrarMiembros: boolean
   /** La ventana programada (`null` = sin ese extremo). */
@@ -96,12 +98,20 @@ const OPCIONES_IMAGEN: OpcionesEncuadre = {
 type Imagen =
   | { tipo: 'actual'; url: string }
   | { tipo: 'nueva'; archivo: File; url: string }
-  | { tipo: 'videoActual'; url: string; video: string }
-  | { tipo: 'videoNuevo'; ruta: string; portada: File; url: string; video: string; original: File }
+  | { tipo: 'videoActual'; url: string; video: string; encuadre: EncuadrePrevia | null }
+  | {
+      tipo: 'videoNuevo'
+      ruta: string
+      portada: File
+      url: string
+      video: string
+      original: File
+      encuadre: EncuadrePrevia
+    }
   | { tipo: 'ninguna' }
 
 /** El video que se está ajustando en el paso del editor (`n` lo arranca de cero). */
-type VideoEnEdicion = { archivo: File; n: number }
+type VideoEnEdicion = { archivo: File; n: number; encuadre: EncuadrePrevia | null }
 
 /*
   LA NOVEDAD, EN UNA SOLA VENTANA (21/10/2026: «editar novedad está feo y
@@ -131,7 +141,7 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
 
   const inicial: Imagen =
     anuncio?.videoUrl && anuncio.imagenUrl
-      ? { tipo: 'videoActual', url: anuncio.imagenUrl, video: anuncio.videoUrl }
+      ? { tipo: 'videoActual', url: anuncio.imagenUrl, video: anuncio.videoUrl, encuadre: anuncio.videoEncuadre ?? null }
       : anuncio?.imagenUrl
         ? { tipo: 'actual', url: anuncio.imagenUrl }
         : { tipo: 'ninguna' }
@@ -210,16 +220,16 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     selectorVideo.current?.click()
   }
 
-  function abrirVideo(archivo: File | undefined) {
+  function abrirVideo(archivo: File | undefined, encuadre: EncuadrePrevia | null = null) {
     if (!archivo) return
     setErrorVideo(null)
-    setVideoEnEdicion((v) => ({ archivo, n: (v?.n ?? 0) + 1 }))
+    setVideoEnEdicion((v) => ({ archivo, n: (v?.n ?? 0) + 1, encuadre }))
   }
 
   /** Ajustar un video: el original si es nuevo; si ya estaba publicado, se descarga. */
   async function ajustarVideo() {
     if (imagen.tipo === 'videoNuevo') {
-      abrirVideo(imagen.original)
+      abrirVideo(imagen.original, imagen.encuadre)
       return
     }
     if (imagen.tipo !== 'videoActual') return
@@ -227,7 +237,7 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     try {
       const respuesta = await fetch(imagen.video)
       if (!respuesta.ok) throw new Error(String(respuesta.status))
-      abrirVideo(new File([await respuesta.blob()], 'video.mp4', { type: 'video/mp4' }))
+      abrirVideo(new File([await respuesta.blob()], 'video.mp4', { type: 'video/mp4' }), imagen.encuadre)
     } catch {
       setErrorVideo('No se pudo abrir el video publicado. Elige el archivo otra vez para ajustarlo.')
     } finally {
@@ -241,6 +251,7 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
     if (!original) return
     setImagen({
       tipo: 'videoNuevo',
+      encuadre: listo.encuadre,
       ruta: listo.ruta,
       portada: listo.portada,
       url: URL.createObjectURL(listo.portada),
@@ -312,6 +323,7 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
             la novedad se publica al guardar.
           </p>
           <EditorVideo
+            encuadreInicial={videoEnEdicion.encuadre}
             key={videoEnEdicion.n}
             archivo={videoEnEdicion.archivo}
             destino="novedades"
@@ -354,7 +366,12 @@ export function AnuncioForm({ anuncio }: { anuncio?: AnuncioInicial }) {
 
         {anuncio && <input type="hidden" name="id" value={anuncio.id} />}
         <input ref={adjunto} type="file" name="archivo" hidden />
-        {imagen.tipo === 'videoNuevo' && <input type="hidden" name="video_ruta" value={imagen.ruta} />}
+        {imagen.tipo === 'videoNuevo' && (
+          <>
+            <input type="hidden" name="video_ruta" value={imagen.ruta} />
+            <input type="hidden" name="video_encuadre" value={JSON.stringify(imagen.encuadre)} />
+          </>
+        )}
         {quitada && <input type="hidden" name="quitar_imagen" value="1" />}
 
         {/* ── LA IMAGEN ─────────────────────────────────────────────────── */}

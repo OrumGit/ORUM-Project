@@ -13,9 +13,11 @@ import {
   MENSAJE_FALTA_MIGRACION_VIDEOS,
   borrarVideo,
   confirmarVideo,
+  faltaColumnaEncuadre,
   faltaColumnaVideo,
   videoDe,
 } from '@/lib/videos/servidor'
+import { leerEncuadrePrevia } from '@/lib/videos/video'
 import {
   faltanColumnasDeProgramacion,
   instanteBogota,
@@ -167,10 +169,15 @@ async function aplicarImagen(
     const confirmado = await confirmarVideo(admin, rutaVideo, 'novedades')
     if (!confirmado.ok) return `La novedad se guardó, pero el video no: ${confirmado.error}`
     videoUrl = confirmado.url
-    const { error } = await admin
-      .from('anuncios')
-      .update({ video_url: videoUrl, updated_by: actorId })
-      .eq('id', anuncioId)
+    // Con el encuadre de la vista previa; sin su columna (migración a mano), sin él.
+    const encuadre = leerEncuadrePrevia(formData.get('video_encuadre'))
+    const escribir = (conEncuadre: boolean) =>
+      admin
+        .from('anuncios')
+        .update({ video_url: videoUrl, ...(conEncuadre ? { video_encuadre: encuadre } : {}), updated_by: actorId })
+        .eq('id', anuncioId)
+    let { error } = await escribir(true)
+    if (faltaColumnaEncuadre(error)) ({ error } = await escribir(false))
     if (error) {
       await borrarVideo(admin, videoUrl)
       return faltaColumnaVideo(error)

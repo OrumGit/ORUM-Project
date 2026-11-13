@@ -24,3 +24,11 @@ select 'novedad' as que, id, video_url from public.anuncios where video_url is n
 union all
 select 'portada', id, video_url from public.publicidad where video_url is not null
 order by que, id;
+
+-- 5. (20261114120000_videos_encuadre.sql) La columna del encuadre de la vista previa.
+select table_name, column_name, data_type
+from information_schema.columns
+where table_schema = 'public'
+  and column_name = 'video_encuadre'
+  and table_name in ('anuncios', 'publicidad')
+order by table_name;

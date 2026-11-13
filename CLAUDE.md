@@ -2123,10 +2123,28 @@ para recortarlo y ajustar la duración, para que se vea correctamente en los
 portales»). Una novedad o una pieza del carrusel puede ser un video en vez
 de una imagen.
 
-- **El editor es `EditorVideo`** (`components/videos/`): el MARCO del destino
-  (16:9 novedades, 4:3 carrusel) con «Llenar el marco» (arrastrar, flechas y
-  «Acercar») o «Video completo» (el marco es el del propio video, como las
-  fotos enteras); la LÍNEA DE TIEMPO con miniaturas y dos tiradores (ratón,
+- **VISTA PREVIA AJUSTADA, VISUALIZACIÓN COMPLETA** (13/11/2026: «la
+  visualización completa con el formato original, pero la previsualización
+  con un formato ajustado, que al editar se pueda ajustar»). El video se
+  sube ENTERO (sin recortar). Lo que se elige es qué parte enseña la VISTA
+  PREVIA —la pieza del carrusel, la tarjeta de la novedad—, y se GUARDA
+  aparte: `video_encuadre` (jsonb, `{x,y,w,h}` en fracciones del video;
+  `supabase/migrations/20261114120000_videos_encuadre.sql`, SE APLICA A
+  MANO; sin ella se guarda sin encuadre y sale centrada). Los portales lo
+  pintan con CSS (`CLASE_PREVIA` + `estiloPrevia`, `components/videos/previa.ts`:
+  `object-fit: cover` + `object-position` + `scale` con su origen; la cuenta
+  es pura y probada, `presentacionPrevia`), dentro de una caja con `overflow:
+  hidden`. Al agrandarlo (`VisorVideo`, la ventana encima que comparten el
+  carrusel y las novedades), el video COMPLETO en su formato original. En
+  `/novedades` la tarjeta enseña la vista previa con un botón de reproducir
+  (`VideoNovedad`) y no carga el video hasta tocarla. Volver a editar un
+  video abre con su encuadre (`encuadreInicial`, `encuadreDesdePrevia`). Los
+  videos subidos ANTES de esto ya venían recortados: se ven igual hasta que
+  se suban otra vez desde el original.
+- **El editor es `EditorVideo`** (`components/videos/`): «Vista previa» (el
+  marco del destino, 16:9 novedades o 4:3 carrusel: arrastrar, flechas y
+  «Acercar» eligen el encuadre) o «Video completo» (cómo se verá al
+  agrandarlo); la LÍNEA DE TIEMPO con miniaturas y dos tiradores (ratón,
   dedo o flechas; Mayús salta 10 s), que reproduce solo el tramo; y «Usar
   este video», que saca la portada, PREPARA y SUBE con una barra que dice qué
   hace. Lo publicado dura como mucho 5 minutos (`DURACION_MAXIMA`): un video
@@ -2134,8 +2152,8 @@ de una imagen.
   arrastra al otro. El sonido SE CONSERVA en los dos destinos (desde el
   13/11/2026); «Quitar el sonido» es opcional.
 - **Se prepara EN EL NAVEGADOR con Mediabunny** (WebCodecs, cargado con
-  `import()` solo al abrir el editor; `exportar-video.ts`): recorta el tramo
-  y el encuadre, baja a 720p como mucho, 30 cuadros, MP4 H.264 + AAC con
+  `import()` solo al abrir el editor; `exportar-video.ts`): recorta el TRAMO
+  (no el encuadre: el video va entero), baja a 720p como mucho, 30 cuadros, MP4 H.264 + AAC con
   `fastStart`, y la tasa justa para no pasar de 48 MB (`tasaVideo`). Lo que se
   sube es lo que se ve: los portales solo lo reproducen. Si el codificador del
   equipo se queda QUIETO 10 s (algunas tarjetas de video, pestaña en segundo

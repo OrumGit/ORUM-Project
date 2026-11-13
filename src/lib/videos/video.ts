@@ -202,3 +202,113 @@ export const TIPOS_ACEPTADOS = 'video/mp4,video/quicktime,video/webm,video/x-mat
 export function urlPublicaVideo(baseSupabase: string, ruta: string): string {
   return `${baseSupabase.replace(/\/+$/, '')}/storage/v1/object/public/${BUCKET_VIDEOS}/${ruta}`
 }
+
+/* ==========================================================================
+   LA VISTA PREVIA AJUSTADA (13/11/2026: «la visualización completa con el
+   formato original, pero la previsualización con un formato ajustado, que
+   al editar el video pueda ajustar esa previsualización»).
+
+   El video se sube ENTERO (sin recortar). Lo que se elige en el editor es
+   qué parte enseña la VISTA PREVIA —la pieza del carrusel, la tarjeta de la
+   novedad—, y se guarda como un rectángulo en fracciones del video
+   (`video_encuadre`). Los portales lo aplican con CSS (`object-fit: cover`
+   + `object-position` + `scale`); al agrandarlo, el video se ve completo.
+   ========================================================================== */
+
+/** El rectángulo de la vista previa, en fracciones (0–1) del video entero. */
+export type EncuadrePrevia = { x: number; y: number; w: number; h: number }
+
+/** El encuadre del editor, pasado a fracciones del video (lo que se guarda). */
+export function previaDesdeEncuadre(
+  video: { ancho: number; alto: number },
+  proporcionMarco: number,
+  encuadre: Encuadre,
+): EncuadrePrevia {
+  const r = recorteParaMarco(video, proporcionMarco, encuadre)
+  const red = (n: number) => Math.round(n * 10_000) / 10_000
+  return {
+    x: red(r.left / video.ancho),
+    y: red(r.top / video.alto),
+    w: red(r.width / video.ancho),
+    h: red(r.height / video.alto),
+  }
+}
+
+/** El rectángulo más grande con la proporción del marco que cabe en el video (en fracciones). */
+function coberturaMaxima(proporcionVideo: number, proporcionMarco: number): { w: number; h: number } {
+  return proporcionVideo >= proporcionMarco
+    ? { w: proporcionMarco / proporcionVideo, h: 1 }
+    : { w: 1, h: proporcionVideo / proporcionMarco }
+}
+
+/** Al volver a editar: el encuadre guardado, como lo entiende el editor. */
+export function encuadreDesdePrevia(
+  previa: EncuadrePrevia,
+  video: { ancho: number; alto: number },
+  proporcionMarco: number,
+): Encuadre {
+  const max = coberturaMaxima(video.ancho / video.alto, proporcionMarco)
+  return {
+    x: previa.x + previa.w / 2,
+    y: previa.y + previa.h / 2,
+    zoom: entre(max.w / previa.w, 1, ZOOM_MAXIMO),
+  }
+}
+
+/** Cómo pintar la vista previa con CSS, en porcentajes y escala. */
+export type PresentacionPrevia = { posX: number; posY: number; escala: number; origenX: number; origenY: number }
+
+const CENTRADA: PresentacionPrevia = { posX: 50, posY: 50, escala: 1, origenX: 50, origenY: 50 }
+
+/**
+ * Traduce el rectángulo guardado a CSS para un marco con `proporcionMarco`:
+ * `object-fit: cover` deja a la vista el rectángulo más grande con la
+ * proporción del marco; `object-position` lo coloca donde está el elegido; y
+ * `scale` con su `transform-origin` acerca hasta dejar SOLO el elegido. Sin
+ * encuadre, centrado (lo de siempre).
+ */
+export function presentacionPrevia(previa: EncuadrePrevia | null, proporcionMarco: number): PresentacionPrevia {
+  if (!previa || previa.w <= 0 || previa.h <= 0) return CENTRADA
+  // La proporción del video sale del propio rectángulo: tiene la del marco.
+  const proporcionVideo = (proporcionMarco * previa.h) / previa.w
+  const max = coberturaMaxima(proporcionVideo, proporcionMarco)
+  const escala = entre(max.w / previa.w, 1, ZOOM_MAXIMO)
+  // Lo que deja ver `cover` sin acercar, centrado en el elegido y sin salirse.
+  const vx = entre(previa.x + previa.w / 2 - max.w / 2, 0, 1 - max.w)
+  const vy = entre(previa.y + previa.h / 2 - max.h / 2, 0, 1 - max.h)
+  const pos = (v: number, lado: number) => (1 - lado > 1e-6 ? (v / (1 - lado)) * 100 : 50)
+  // Dónde está el elegido dentro de lo visible, para que `scale` lo deje a la vista.
+  const origen = (inicio: number, visible: number, lado: number) => {
+    if (escala - 1 < 1e-6) return 50
+    const a = (inicio - visible) / lado
+    return entre((a / (1 - 1 / escala)) * 100, 0, 100)
+  }
+  const r = (n: number) => Math.round(n * 100) / 100
+  return {
+    posX: r(pos(vx, max.w)),
+    posY: r(pos(vy, max.h)),
+    escala: Math.round(escala * 1000) / 1000,
+    origenX: r(origen(previa.x, vx, max.w)),
+    origenY: r(origen(previa.y, vy, max.h)),
+  }
+}
+
+/** Lee el encuadre que viene del formulario o de la base; `null` si no vale. */
+export function leerEncuadrePrevia(valor: unknown): EncuadrePrevia | null {
+  let v = valor
+  if (typeof v === 'string') {
+    if (v.trim() === '') return null
+    try {
+      v = JSON.parse(v)
+    } catch {
+      return null
+    }
+  }
+  if (!v || typeof v !== 'object') return null
+  const { x, y, w, h } = v as Record<string, unknown>
+  const nums = [x, y, w, h]
+  if (!nums.every((n) => typeof n === 'number' && Number.isFinite(n))) return null
+  const [nx, ny, nw, nh] = nums as number[]
+  if (nw <= 0 || nh <= 0 || nx < 0 || ny < 0 || nx + nw > 1.001 || ny + nh > 1.001) return null
+  return { x: nx, y: ny, w: nw, h: nh }
+}

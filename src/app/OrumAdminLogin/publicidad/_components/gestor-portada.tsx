@@ -15,7 +15,8 @@ import {
 } from '@/components/imagenes/editor-encuadre'
 import { EditorVideo, type VideoListo } from '@/components/videos/editor-video'
 import { ESTADO_SUBIDA_INICIAL, type EstadoSubida } from '@/lib/imagenes/estado'
-import { TIPOS_ACEPTADOS } from '@/lib/videos/video'
+import { PROPORCION_DESTINO, TIPOS_ACEPTADOS, type EncuadrePrevia } from '@/lib/videos/video'
+import { CLASE_PREVIA, estiloPrevia } from '@/components/videos/previa'
 import {
   DESCRIPCION_MAXIMA,
   TOPE_PUBLICIDAD,
@@ -88,7 +89,7 @@ type Objetivo = { id: number | null }
   imagen de la teja). «Editar» una pieza de video vuelve a abrir el que está
   publicado. `n` cambia en cada archivo: el editor arranca de cero.
 */
-type VideoEnEdicion = { id: number | null; archivo: File; n: number }
+type VideoEnEdicion = { id: number | null; archivo: File; n: number; encuadre: EncuadrePrevia | null }
 
 type Accion = (previo: EstadoSubida, datos: FormData) => Promise<EstadoSubida>
 
@@ -146,9 +147,9 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
     entradaVideo.current?.click()
   }
 
-  function abrirVideo(archivo: File | undefined, id: number | null) {
+  function abrirVideo(archivo: File | undefined, id: number | null, encuadre: EncuadrePrevia | null = null) {
     if (!archivo) return
-    setEnEdicion((v) => ({ id, archivo, n: (v?.n ?? 0) + 1 }))
+    setEnEdicion((v) => ({ id, archivo, n: (v?.n ?? 0) + 1, encuadre }))
   }
 
   /** Descarga el video publicado para volver a ajustarlo. */
@@ -159,7 +160,8 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
       const respuesta = await fetch(pieza.video)
       if (!respuesta.ok) throw new Error(String(respuesta.status))
       const blob = await respuesta.blob()
-      abrirVideo(new File([blob], 'video.mp4', { type: 'video/mp4' }), pieza.id)
+      // Abre con el encuadre de la vista previa que ya tenía.
+      abrirVideo(new File([blob], 'video.mp4', { type: 'video/mp4' }), pieza.id, pieza.encuadre ?? null)
     } catch {
       setObjetivoVideo(pieza.id)
       setError('No se pudo abrir el video publicado. Elige el archivo otra vez para ajustarlo.')
@@ -174,6 +176,7 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
     const datos = new FormData()
     datos.set('archivo', listo.portada)
     datos.set('video_ruta', listo.ruta)
+    datos.set('video_encuadre', JSON.stringify(listo.encuadre))
     datos.set('descripcion', descripcion)
     if (objetivoId !== null) datos.set('id', String(objetivoId))
 
@@ -350,7 +353,9 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
                   <img
                     src={pieza.url}
                     alt={pieza.descripcion}
-                    className={styles.foto}
+                    // Un video se ve con el encuadre de su vista previa, como en la portada.
+                    className={pieza.video ? [styles.foto, CLASE_PREVIA].join(' ') : styles.foto}
+                    style={pieza.video ? estiloPrevia(pieza.encuadre, PROPORCION_DESTINO.portada) : undefined}
                     loading="lazy"
                     decoding="async"
                   />
@@ -522,6 +527,7 @@ export function GestorPublicidad({ piezas }: { piezas: PiezaPublicidad[] }) {
             </Field>
             {error && <Alert tone="danger">{error}</Alert>}
             <EditorVideo
+              encuadreInicial={enEdicion.encuadre}
               key={enEdicion.n}
               archivo={enEdicion.archivo}
               destino="portada"

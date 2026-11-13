@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { Maximize2, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
-import { Modal } from './modal'
+import { Maximize2, Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import { CLASE_PREVIA, estiloPrevia } from '@/components/videos/previa'
+import { VisorVideo } from '@/components/videos/visor-video'
+import { PROPORCION_DESTINO } from '@/lib/videos/video'
 import { useMediaQuery } from '@/components/use-media-query'
 import type { FotoPublica } from '@/lib/publico/datos-publicos'
 import estilos from './carrusel-fotos.module.css'
@@ -100,7 +102,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const [enPantalla, setEnPantalla] = useState(false)
   const [conSonido, setConSonido] = useState(false)
-  const [visor, setVisor] = useState<number | null>(null)
+  // El video en grande: cuál y desde qué segundo iba.
+  const [visor, setVisor] = useState<{ i: number; desde: number } | null>(null)
   // ¿El último gesto fue un arrastre? Entonces el clic que lo sigue no abre el visor.
   const arrastro = useRef(false)
   // Los videos de los que se SABE que no tienen audio (no se les ofrece sonido).
@@ -160,9 +163,9 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
     }
   }
 
-  /** El video que está a la vista, en grande en la ventana encima. */
+  /** El video que está a la vista, en grande en la ventana encima, desde donde iba. */
   function verEnGrande() {
-    if (fotos[actual]?.video) setVisor(actual)
+    if (fotos[actual]?.video) setVisor({ i: actual, desde: videos.current[actual]?.currentTime ?? 0 })
   }
 
   /** Un toque en el video lo abre en grande; un arrastre no (pasa de pieza). */
@@ -172,21 +175,6 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
       return
     }
     if (actualEsVideo) verEnGrande()
-  }
-
-  /**
-   * El video de la ventana sigue desde donde iba el del carrusel, y CON
-   * SONIDO: quien lo abrió quiere verlo. Si el navegador no deja sonar, en
-   * silencio (sus controles permiten activarlo).
-   */
-  function alAbrirVisor(v: HTMLVideoElement) {
-    const desde = visor !== null ? videos.current[visor]?.currentTime : 0
-    if (desde && desde < v.duration - 0.5) v.currentTime = desde
-    v.muted = false
-    void v.play().catch(() => {
-      v.muted = true
-      void v.play().catch(() => {})
-    })
   }
 
   /** ¿Se sabe que este video no tiene audio? Solo Firefox y Safari lo dicen; si no, se ofrece. */
@@ -335,17 +323,18 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         >
           {fotos.map((foto, i) =>
             foto.video ? (
+              // La caja recorta: la vista previa acerca el video con `scale`.
+              <div key={foto.url} className={estilos.pieza} aria-hidden={i !== actual}>
               <video
-                key={foto.url}
                 ref={(v) => {
                   videos.current[i] = v
                 }}
                 src={foto.video}
                 poster={foto.url}
-                className={estilos.foto}
+                className={[estilos.foto, CLASE_PREVIA].join(' ')}
+                style={estiloPrevia(foto.encuadre, PROPORCION_DESTINO.portada)}
                 data-controles={reducirMovimiento || undefined}
                 aria-label={foto.alt}
-                aria-hidden={i !== actual}
                 muted
                 playsInline
                 // Carga cuando le toca: hasta entonces se ve su portada.
@@ -355,6 +344,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 onLoadedMetadata={(e) => revisarAudio(i, e.currentTarget)}
                 onEnded={() => alTerminarVideo(i)}
               />
+              </div>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
               <img
@@ -399,36 +389,14 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         </div>
       )}
 
-      {/* EN GRANDE: la ventana encima, con el velo y la entrada de los formularios. */}
-      <Modal
-        open={visor !== null}
-        onClose={() => setVisor(null)}
-        ariaLabel={visor !== null ? fotos[visor]?.alt : 'Video'}
-        desnudo
-        width="min(96vw, 1280px)"
-      >
-        {visor !== null && fotos[visor]?.video && (
-          <div className={estilos.visor}>
-            <button
-              type="button"
-              className={estilos.visorCerrar}
-              onClick={() => setVisor(null)}
-              aria-label="Cerrar el video"
-            >
-              <X size={20} aria-hidden="true" />
-            </button>
-            <video
-              src={fotos[visor].video ?? undefined}
-              poster={fotos[visor].url}
-              className={estilos.visorVideo}
-              controls
-              playsInline
-              onLoadedMetadata={(e) => alAbrirVisor(e.currentTarget)}
-              aria-label={fotos[visor].alt}
-            />
-          </div>
-        )}
-      </Modal>
+      {/* EN GRANDE: el video completo, en su formato original, en una ventana encima. */}
+      <VisorVideo
+        video={visor ? (fotos[visor.i]?.video ?? null) : null}
+        portada={visor ? fotos[visor.i]?.url : null}
+        descripcion={visor ? (fotos[visor.i]?.alt ?? 'Video') : 'Video'}
+        desde={visor?.desde ?? 0}
+        onCerrar={() => setVisor(null)}
+      />
 
       {total > 1 && (
         <div className={estilos.controles}>

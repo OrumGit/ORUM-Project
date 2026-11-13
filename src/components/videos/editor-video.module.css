@@ -10,6 +10,19 @@
 
 /* --- El marco ---------------------------------------------------------------- */
 
+/* Vista previa / Video completo, y lo que significa cada una. */
+.vistas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ayudaVista {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
 .marco {
   position: relative;
   /* El alto tiene tope (la ventana tiene que dejar ver la línea de tiempo):

@@ -12,6 +12,7 @@ import type { HorarioSucursal } from '@/lib/comercios/horario'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import { formatearBeneficio, formatearBeneficioCorto } from '@/lib/comercios/beneficios-formato'
 import { TOPE_PUBLICIDAD, textoAlternativo } from '@/lib/publicidad/publicidad'
+import { leerEncuadrePrevia, type EncuadrePrevia } from '@/lib/videos/video'
 import { hoyISO } from '@/lib/shared/fecha'
 import { compararNombres, ordenarCategorias, type CategoriaDeComercio } from './directorio'
 import { catalogoPara, faltaColumnaVisibilidad, leerVisibilidad, type Visibilidad } from '@/lib/comercios/visibilidad'
@@ -238,8 +239,11 @@ export type OpcionFiltro = { id: number; nombre: string }
 export type CategoriaFiltro = OpcionFiltro & { subcategorias: OpcionFiltro[] }
 
 /** Una fotografía de la fachada, con su texto alternativo ya resuelto. */
-/** Una pieza del carrusel: la imagen (o la portada de su video) y, si es un video, su MP4. */
-export type FotoPublica = { url: string; alt: string; video?: string | null }
+/**
+ * Una pieza del carrusel: la imagen (o la portada de su video) y, si es un
+ * video, su MP4 y el encuadre de su vista previa.
+ */
+export type FotoPublica = { url: string; alt: string; video?: string | null; encuadre?: EncuadrePrevia | null }
 
 export type DatosVitrina = {
   /** «Comercios destacados», hasta `TOPE_DESTACADOS`. */
@@ -516,7 +520,8 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
   return (data ?? []).flatMap((p) => {
     const url = (p.imagen_url ?? '').trim()
     const video = typeof p.video_url === 'string' && p.video_url.trim() ? p.video_url.trim() : null
-    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? ''), video }] : []
+    const encuadre = video ? leerEncuadrePrevia(p.video_encuadre) : null
+    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? ''), video, encuadre }] : []
   })
 }
 

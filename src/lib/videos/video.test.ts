@@ -8,6 +8,10 @@ import {
   TASA_VIDEO_MAXIMA,
   TASA_VIDEO_MINIMA,
   claveVideo,
+  encuadreDesdePrevia,
+  leerEncuadrePrevia,
+  presentacionPrevia,
+  previaDesdeEncuadre,
   esRutaVideo,
   medidasSalida,
   moverExtremo,
@@ -131,5 +135,53 @@ describe('las rutas', () => {
     const url = `https://x.supabase.co/storage/v1/object/public/${BUCKET_VIDEOS}/novedades/abc-def.mp4`
     expect(rutaDesdeUrlPublica(url)).toBe('novedades/abc-def.mp4')
     expect(rutaDesdeUrlPublica('https://otro.com/a.mp4')).toBeNull()
+  })
+})
+
+describe('la vista previa ajustada', () => {
+  const v169 = { ancho: 1920, alto: 1080 }
+
+  it('se guarda en fracciones del video entero', () => {
+    expect(previaDesdeEncuadre(v169, 4 / 3, ENCUADRE_CENTRADO)).toEqual({ x: 0.125, y: 0, w: 0.75, h: 1 })
+    expect(previaDesdeEncuadre(v169, 16 / 9, ENCUADRE_CENTRADO)).toEqual({ x: 0, y: 0, w: 1, h: 1 })
+  })
+
+  it('al volver a editar, el encuadre guardado vuelve igual', () => {
+    const encuadre = { x: 0.3, y: 0.4, zoom: 1.8 }
+    const previa = previaDesdeEncuadre(v169, 4 / 3, encuadre)
+    const vuelta = encuadreDesdePrevia(previa, v169, 4 / 3)
+    const otra = previaDesdeEncuadre(v169, 4 / 3, vuelta)
+    expect(otra.x).toBeCloseTo(previa.x, 3)
+    expect(otra.y).toBeCloseTo(previa.y, 3)
+    expect(otra.w).toBeCloseTo(previa.w, 3)
+  })
+
+  it('sin encuadre, centrada y sin acercar', () => {
+    expect(presentacionPrevia(null, 4 / 3)).toEqual({ posX: 50, posY: 50, escala: 1, origenX: 50, origenY: 50 })
+  })
+
+  it('el encuadre de un 16:9 en el marco 4:3, pegado a la izquierda', () => {
+    const previa = previaDesdeEncuadre(v169, 4 / 3, { x: 0, y: 0.5, zoom: 1 })
+    expect(presentacionPrevia(previa, 4 / 3)).toMatchObject({ posX: 0, escala: 1 })
+  })
+
+  it('acercado al doble en el centro: escala 2 alrededor del centro', () => {
+    const previa = previaDesdeEncuadre(v169, 16 / 9, { x: 0.5, y: 0.5, zoom: 2 })
+    expect(presentacionPrevia(previa, 16 / 9)).toEqual({ posX: 50, posY: 50, escala: 2, origenX: 50, origenY: 50 })
+  })
+
+  it('acercado en una esquina: el origen va a esa esquina', () => {
+    const previa = previaDesdeEncuadre(v169, 16 / 9, { x: 0, y: 0, zoom: 2 })
+    expect(presentacionPrevia(previa, 16 / 9)).toMatchObject({ escala: 2, origenX: 0, origenY: 0 })
+  })
+
+  it('lee el encuadre del formulario y rechaza lo que no vale', () => {
+    expect(leerEncuadrePrevia('{"x":0.1,"y":0,"w":0.75,"h":1}')).toEqual({ x: 0.1, y: 0, w: 0.75, h: 1 })
+    expect(leerEncuadrePrevia({ x: 0, y: 0, w: 1, h: 1 })).toEqual({ x: 0, y: 0, w: 1, h: 1 })
+    expect(leerEncuadrePrevia('')).toBeNull()
+    expect(leerEncuadrePrevia('no es json')).toBeNull()
+    expect(leerEncuadrePrevia({ x: 0.5, y: 0, w: 0.75, h: 1 })).toBeNull()
+    expect(leerEncuadrePrevia({ x: 0, y: 0, w: 0, h: 1 })).toBeNull()
+    expect(leerEncuadrePrevia(null)).toBeNull()
   })
 })

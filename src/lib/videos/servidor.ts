@@ -2,7 +2,14 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
-import { BUCKET_VIDEOS, esRutaVideo, rutaDesdeUrlPublica, type DestinoVideo } from './video'
+import {
+  BUCKET_VIDEOS,
+  esRutaVideo,
+  leerEncuadrePrevia,
+  rutaDesdeUrlPublica,
+  type DestinoVideo,
+  type EncuadrePrevia,
+} from './video'
 
 /*
   LO QUE HACE EL SERVIDOR CON UN VIDEO YA SUBIDO  ·  (13/11/2026)
@@ -53,4 +60,15 @@ export function videoDe(fila: object | null | undefined): string | null {
   if (!fila || !('video_url' in fila)) return null
   const v = (fila as { video_url?: unknown }).video_url
   return typeof v === 'string' && v.trim() !== '' ? v.trim() : null
+}
+
+/** ¿El error es porque la base aún no tiene la columna `video_encuadre`? */
+export function faltaColumnaEncuadre(error: { message?: string } | null | undefined): boolean {
+  return Boolean(error && /video_encuadre/.test(error.message ?? ''))
+}
+
+/** El encuadre de la vista previa de una fila leída con `select('*')` (sin la migración no viene). */
+export function encuadreDe(fila: object | null | undefined): EncuadrePrevia | null {
+  if (!fila || !('video_encuadre' in fila)) return null
+  return leerEncuadrePrevia((fila as { video_encuadre?: unknown }).video_encuadre)
 }

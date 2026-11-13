@@ -26,8 +26,11 @@ import {
   textoTiempo,
   textoTiempoLargo,
   tramoInicial,
+  encuadreDesdePrevia,
+  previaDesdeEncuadre,
   type DestinoVideo,
   type Encuadre,
+  type EncuadrePrevia,
   type Tramo,
 } from '@/lib/videos/video'
 import {
@@ -48,12 +51,15 @@ import styles from './editor-video.module.css'
   ajustar la duración, para que se vea correctamente en los portales».
 
   Tres cosas, de arriba abajo:
-    · EL MARCO, con la proporción del destino (16:9 novedades, 4:3 portada).
-      «Llenar el marco»: se arrastra para encuadrar y se acerca con la barra
-      (las flechas también mueven); es exactamente lo que se recorta al
-      preparar. «Video completo»: sin recortar, el marco es el del propio
-      video (como las fotos enteras). Si el video ya tiene la proporción del
-      marco, no hay nada que elegir.
+    · EL MARCO. Desde el 13/11/2026 el video se sube ENTERO, en su formato
+      original («la visualización completa con el formato original; la
+      previsualización ajustada, y que al editar se pueda ajustar»). «Vista
+      previa» enseña el marco del destino (16:9 novedades, 4:3 portada): se
+      arrastra y se acerca para elegir qué parte se ve en la pieza del
+      carrusel o en la tarjeta de la novedad; eso se GUARDA aparte
+      (`EncuadrePrevia`), no se recorta el video. «Video completo» enseña
+      cómo se verá al agrandarlo. Al volver a editar, el encuadre guardado
+      vuelve (`encuadreInicial`).
     · LA LÍNEA DE TIEMPO con miniaturas y DOS TIRADORES, inicio y fin (con
       ratón, dedo o flechas; Mayús salta 10 s). El tramo no puede pasar de 5
       minutos: un video más largo abre recortado a sus primeros 5 y el
@@ -74,6 +80,8 @@ export type VideoListo = {
   portada: File
   /** Cuánto dura lo publicado, en segundos. */
   duracion: number
+  /** Qué parte enseña la vista previa, en fracciones del video entero. */
+  encuadre: EncuadrePrevia
 }
 
 type Props = {
@@ -82,6 +90,8 @@ type Props = {
   textoGuardar?: string
   /** El padre está guardando lo ya subido: todo quieto y «Guardando…». */
   guardando?: boolean
+  /** El encuadre de la vista previa con el que abre (al volver a editar un video publicado). */
+  encuadreInicial?: EncuadrePrevia | null
   onListo: (video: VideoListo) => void
   onCancelar: () => void
   onElegirOtro: () => void
@@ -109,6 +119,7 @@ export function EditorVideo({
   destino,
   textoGuardar = 'Usar este video',
   guardando = false,
+  encuadreInicial = null,
   onListo,
   onCancelar,
   onElegirOtro,
@@ -127,7 +138,7 @@ export function EditorVideo({
   const [meta, setMeta] = useState<Meta | null>(null)
   const [errorCarga, setErrorCarga] = useState<string | null>(null)
   const [tramo, setTramo] = useState<Tramo>({ inicio: 0, fin: 0 })
-  const [modo, setModo] = useState<'llenar' | 'completo'>('llenar')
+  const [modo, setModo] = useState<'previa' | 'completo'>('previa')
   const [encuadre, setEncuadre] = useState<Encuadre>(ENCUADRE_CENTRADO)
   const [quitarSonido, setQuitarSonido] = useState(false)
   const [reproduciendo, setReproduciendo] = useState(false)
@@ -155,10 +166,11 @@ export function EditorVideo({
      y quien la ve lo activa con su botón. Quitarlo es opcional. */
   const sinSonido = quitarSonido
   const proporcion = PROPORCION_DESTINO[destino]
-  const mismaProporcion = meta !== null && Math.abs(meta.ancho / meta.alto - proporcion) < 0.02
-  const llenar = meta !== null && !mismaProporcion && modo === 'llenar'
-  const recorte = meta && llenar ? recorteParaMarco(meta, proporcion, encuadre) : null
-  const salida = meta ? medidasSalida(recorte ? { ancho: recorte.width, alto: recorte.height } : meta) : null
+  // La vista previa: el marco del destino, con el encuadre elegido (se guarda aparte).
+  const llenar = meta !== null && modo === 'previa'
+  const recorte = meta ? recorteParaMarco(meta, proporcion, encuadre) : null
+  // El video se prepara ENTERO: solo baja a 720p como mucho.
+  const salida = meta ? medidasSalida(meta) : null
   const ocupado = fase !== null || guardando
   const largoTramo = tramo.fin - tramo.inicio
 
@@ -206,8 +218,10 @@ export function EditorVideo({
       setErrorCarga('No se pudo leer este video. Prueba con otro archivo, mejor en MP4.')
       return
     }
-    setMeta({ duracion, ancho: v.videoWidth, alto: v.videoHeight })
+    const dimensiones = { ancho: v.videoWidth, alto: v.videoHeight }
+    setMeta({ duracion, ...dimensiones })
     setTramo(tramoInicial(duracion))
+    if (encuadreInicial) setEncuadre(encuadreDesdePrevia(encuadreInicial, dimensiones, proporcion))
   }
 
   /* --- Reproducir solo el tramo ------------------------------------------- */
@@ -296,7 +310,7 @@ export function EditorVideo({
   }
 
   function alApretarMarco(e: PointerEvent<HTMLDivElement>) {
-    if (!recorte || ocupado || (e.pointerType === 'mouse' && e.button !== 0)) return
+    if (!recorte || !llenar || ocupado || (e.pointerType === 'mouse' && e.button !== 0)) return
     e.currentTarget.setPointerCapture(e.pointerId)
     arrastre.current = {
       id: e.pointerId,
@@ -316,7 +330,7 @@ export function EditorVideo({
   }
 
   function alTeclearMarco(e: KeyboardEvent<HTMLDivElement>) {
-    if (!recorte || !meta) return
+    if (!recorte || !meta || !llenar) return
     const paso = (e.shiftKey ? 0.1 : 0.02) * recorte.width
     const dx = e.key === 'ArrowLeft' ? -paso : e.key === 'ArrowRight' ? paso : 0
     const dy = e.key === 'ArrowUp' ? -paso : e.key === 'ArrowDown' ? paso : 0
@@ -326,7 +340,7 @@ export function EditorVideo({
   }
 
   function acercar(zoom: number) {
-    if (!recorte) return
+    if (!recorte || !llenar) return
     encuadrarEn(recorte.left + recorte.width / 2, recorte.top + recorte.height / 2, zoom)
   }
 
@@ -373,13 +387,14 @@ export function EditorVideo({
         new Promise<void>((ok) => v.addEventListener('seeked', () => ok(), { once: true })),
         new Promise<void>((ok) => setTimeout(ok, 3000)),
       ])
-      const portada = await capturarPortada(v, recorte, salida)
+      // La portada, entera como el video: la vista previa la encuadra igual que a él.
+      const portada = await capturarPortada(v, null, salida)
       // Ya se está preparando, aunque el primer avance tarde en llegar.
       progreso('preparando', 0)
 
       const mp4 = await exportarVideo(archivo, {
         tramo,
-        recorte,
+        recorte: null,
         salida,
         sinSonido,
         alProgresar: (p) => progreso('preparando', p),
@@ -389,7 +404,7 @@ export function EditorVideo({
 
       ultimoPorcentaje.current = -1
       const ruta = await subirVideo(mp4, pedida, (p) => progreso('subiendo', p), control.signal)
-      onListo({ ruta, portada, duracion: largoTramo })
+      onListo({ ruta, portada, duracion: largoTramo, encuadre: previaDesdeEncuadre(meta, proporcion, encuadre) })
     } catch (e) {
       const cancelado =
         control.signal.aborted || (e instanceof Error && /cancel|abort/i.test(`${e.name} ${e.message}`))
@@ -417,8 +432,8 @@ export function EditorVideo({
   /* --- Pintar -------------------------------------------------------------- */
 
   const variables = {
-    '--proporcion': mismaProporcion || llenar || !meta ? proporcion : meta.ancho / meta.alto,
-    ...(recorte && meta
+    '--proporcion': llenar || !meta ? proporcion : meta.ancho / meta.alto,
+    ...(recorte && meta && llenar
       ? {
           '--v-ancho': `${(meta.ancho / recorte.width) * 100}%`,
           '--v-alto': `${(meta.alto / recorte.height) * 100}%`,
@@ -449,16 +464,23 @@ export function EditorVideo({
   return (
     <div className={styles.editor} style={variables}>
       {/* ── EL MARCO ─────────────────────────────────────────────────── */}
-      {meta && !mismaProporcion && (
-        <SegmentedControl
-          options={[
-            { value: 'llenar', label: 'Llenar el marco' },
-            { value: 'completo', label: 'Video completo' },
-          ]}
-          value={modo}
-          onChange={(m) => setModo(m)}
-          ariaLabel="Cómo se ajusta el video al marco"
-        />
+      {meta && (
+        <div className={styles.vistas}>
+          <SegmentedControl
+            options={[
+              { value: 'previa', label: 'Vista previa' },
+              { value: 'completo', label: 'Video completo' },
+            ]}
+            value={modo}
+            onChange={(m) => setModo(m)}
+            ariaLabel="Qué se ve en el marco"
+          />
+          <p className={styles.ayudaVista}>
+            {modo === 'previa'
+              ? `Así se verá en ${destino === 'portada' ? 'el carrusel de la portada' : 'la tarjeta de Novedades'}. Arrástralo y acércalo para que se vea lo mejor posible.`
+              : 'Así se verá al agrandarlo: completo, en su formato original.'}
+          </p>
+        </div>
       )}
 
       <div
