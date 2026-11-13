@@ -1070,7 +1070,14 @@ mientras quepan): abre la ventana con TODAS y un campo para buscar por
 nombre, sin tildes ni mayúsculas. La tira enseña hasta `LIMITE_TIRA` (24,
 `lib/comercios/tira-categorias.ts`, probado), más cualquier ELEGIDA que caiga
 después del corte. Favoritos, Ciudad y Ordenar siguen siendo píldoras, arriba.
-No vuelvas al botón que las escondía. **«Hay más si deslizas»** (12/11/2026):
+No vuelvas al botón que las escondía. **En el TELÉFONO, una fila de
+píldoras** (12/11/2026: «se ven muy grandes; que ocupen el menor espacio
+posible, pero que se sepa de qué es la categoría»): bajo 768 px de
+contenedor, cada categoría es una píldora (icono de 32 px a la izquierda y
+el NOMBRE ENTERO en un renglón, sin partir), en UNA sola fila que se
+desliza; lo elegido, con filo `--gold-600` en la píldora y anillo de 2px en
+el icono. Solo la tira: la ventana «Ver todas» y el ordenador siguen con
+los círculos en dos filas. **«Hay más si deslizas»** (12/11/2026):
 además del desvanecido del canto, la primera vez que la tira entra en
 pantalla con fichas más allá del borde, las fichas se ASOMAN a la izquierda
 y vuelven (`data-insinua`, solo `translate`, ~1,3 s): una vez por SESIÓN

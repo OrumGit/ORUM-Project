@@ -454,3 +454,107 @@
 
   box-shadow: var(--shadow-raised);
 }
+
+/*
+  EN EL TELÉFONO, UNA FILA DE PÍLDORAS (12/11/2026, encargo del propietario:
+  «los filtros de categorías se ven muy grandes; que ocupen el menor espacio
+  posible, pero los clientes tienen que saber de qué es la categoría»). Las
+  dos filas de círculos de 52 px con el nombre en hasta tres renglones
+  («Alimentos / y / Despensa») ocupaban media pantalla. Aquí cada categoría
+  es una píldora con el icono pequeño a la izquierda y el NOMBRE ENTERO en un
+  renglón, en una sola fila que se desliza de lado (con el gesto de «hay
+  más» de siempre). Lo elegido se sigue diciendo con el filo dorado, el peso
+  y la marca. Solo la TIRA: la ventana con todas (`.rejilla`) no cambia, y en
+  el ordenador siguen las dos filas de círculos.
+*/
+@container contenido (max-width: 767px) {
+  .pista {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: var(--space-2);
+    /* Aire para la sombra de las píldoras (baja 16 px): sin él, el
+       `overflow` la cortaba en cantos rectos. */
+    padding: var(--space-4) var(--space-3);
+    margin: calc(var(--space-4) * -1) calc(var(--space-3) * -1);
+  }
+
+  .pista .opcion,
+  .pista .verMas {
+    flex-direction: row;
+    gap: var(--space-2);
+    width: auto;
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
+    border: 1px solid color-mix(in srgb, var(--tinta-1) 15%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out);
+  }
+
+  .pista .icono {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    box-shadow: var(--filo-activo-inset);
+  }
+
+  .pista .icono svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pista .nombre {
+    font-size: var(--t-footnote-size);
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  /* La marca de «elegida», a la medida del círculo pequeño. */
+  .pista .marca {
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Apuntar o presionar mueve la píldora entera, no el circulito. */
+  .pista .opcion:active .icono {
+    scale: 1;
+    box-shadow: var(--filo-activo-inset);
+  }
+
+  .pista .opcion:active {
+    translate: 0 1px;
+  }
+
+  /* La elegida: filo dorado en la píldora y el circulito con su anillo más
+     grueso, sin crecer ni halo (en una píldora el halo se saldría). */
+  .pista .opcion[data-activa] {
+    border-color: var(--gold-600);
+  }
+
+  .pista .opcion[data-activa] .icono {
+    scale: 1;
+    box-shadow: inset 0 0 0 2px var(--gold-600);
+  }
+}
+
+@container contenido (max-width: 767px) {
+  @media (hover: hover) {
+    .pista .opcion:hover .icono {
+      scale: 1;
+      box-shadow: var(--filo-activo-inset);
+    }
+
+    /* Sin filo dorado al apuntar (el propietario no lo quiere en las
+       tarjetas): sube 1px, como el resto de lo que se apunta. */
+    .pista .opcion:hover {
+      translate: 0 -1px;
+    }
+  }
+}
