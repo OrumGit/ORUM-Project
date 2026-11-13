@@ -1113,8 +1113,9 @@ vacía no pinta su cinta. La cinta es la lista repetida hasta llenar media
 (`repeticionesDesfile`, `LOGOS_POR_MITAD`) y dos veces esa mitad: se mueve
 −50 % con `transform`, a `--dur-paso-logo` por logo; las repeticiones son
 `aria-hidden` + `inert` (el lector y el teclado ven cinco logos). Se para al
-apuntar, al enfocar y con el botón de pausa (WCAG 2.2.2); con movimiento
-reducido o menos de 3 logos (`MINIMO_DESFILE`) queda quieta. **No vuelvas a
+apuntar y al enfocar; **sin botón de pausa** (el propietario no lo quiso,
+12/11/2026, a sabiendas de WCAG 2.2.2); con movimiento reducido o menos de
+3 logos (`MINIMO_DESFILE`) queda quieta. **No vuelvas a
 las pestañas, al podio numerado ni a enseñar ventas o promedios.**
 Vista previa: `/dev/top-comercios` (`?caso=logos` con los logotipos reales,
 `?caso=vacio-calificados`, `?caso=uno`).

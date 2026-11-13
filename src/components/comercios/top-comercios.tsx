@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useId, useState, type CSSProperties } from 'react'
-import { Pause, Play, Star, Store } from 'lucide-react'
+import { useId, type CSSProperties } from 'react'
+import { Star, Store } from 'lucide-react'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
 import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import {
@@ -36,12 +36,13 @@ import styles from './top-comercios.module.css'
     · Solo `transform`, una capa por cinta: la cinta es la lista repetida
       hasta llenar media cinta (`repeticionesDesfile`) y DOS veces esa
       mitad, así que desplazarla −50 % vuelve exactamente al principio.
-    · Se detiene al apuntarla o al enfocar un logo, y con el botón de pausa
-      (WCAG 2.2.2: lo que se mueve solo más de 5 s se tiene que poder parar,
-      también sin ratón).
+    · Se detiene al apuntarla (para poder tocar un logo que se mueve) o al
+      enfocar un logo con el teclado. SIN botón de pausa: el propietario no
+      lo quiso (12/11/2026, «solo si le da clic a un comercio»), a sabiendas
+      de que WCAG 2.2.2 pide poder parar lo que se mueve solo.
     · La segunda cinta va al revés, para que las dos no se lean como una.
     · Con movimiento reducido NO se mueve: queda una fila con un logo por
-      comercio que se desliza con el dedo, y el botón de pausa no sale.
+      comercio que se desliza con el dedo.
     · Con menos de 3 logos tampoco se mueve (un logo dando vueltas solo).
 
   Accesibilidad: el primer juego de logos es el real (enlaces con nombre);
@@ -58,14 +59,11 @@ type Cinta = {
 
 export function TopComerciosSocio({ top }: { top: TopComercios }) {
   const titulo = useId()
-  const [pausado, setPausado] = useState(false)
 
   const cintas: Cinta[] = [
     { clave: 'ventas' as const, titulo: 'Donde más se usa ORUM', Icono: Store, items: top.ventas },
     { clave: 'calificados' as const, titulo: 'Los mejor calificados', Icono: Star, items: top.calificados },
   ].filter((c) => c.items.length > 0)
-
-  const algunaSeMueve = cintas.some((c) => c.items.length >= MINIMO_DESFILE)
 
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
@@ -74,17 +72,6 @@ export function TopComerciosSocio({ top }: { top: TopComercios }) {
           <TituloSeccion id={titulo} como="h2" tamano="bloque" texto="Comercios destacados" />
           <p className={styles.bajada}>Los que más disfrutan los socios este mes.</p>
         </div>
-        {algunaSeMueve && (
-          <button
-            type="button"
-            className={styles.pausa}
-            onClick={() => setPausado((p) => !p)}
-            aria-pressed={pausado}
-            aria-label={pausado ? 'Reanudar el paso de los logos' : 'Pausar el paso de los logos'}
-          >
-            {pausado ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
-          </button>
-        )}
       </div>
 
       {cintas.map((cinta, i) => (
@@ -92,14 +79,13 @@ export function TopComerciosSocio({ top }: { top: TopComercios }) {
           key={cinta.clave}
           cinta={cinta}
           inversa={i % 2 === 1}
-          pausada={pausado}
         />
       ))}
     </section>
   )
 }
 
-function CintaLogos({ cinta, inversa, pausada }: { cinta: Cinta; inversa: boolean; pausada: boolean }) {
+function CintaLogos({ cinta, inversa }: { cinta: Cinta; inversa: boolean }) {
   const rotulo = useId()
   const { items, Icono } = cinta
   const mueve = items.length >= MINIMO_DESFILE
@@ -114,11 +100,7 @@ function CintaLogos({ cinta, inversa, pausada }: { cinta: Cinta; inversa: boolea
         <Icono size={14} aria-hidden="true" />
         {cinta.titulo}
       </p>
-      <div
-        className={styles.ventana}
-        data-mueve={mueve || undefined}
-        data-pausada={pausada || undefined}
-      >
+      <div className={styles.ventana} data-mueve={mueve || undefined}>
         <ul
           className={styles.pista}
           aria-labelledby={rotulo}

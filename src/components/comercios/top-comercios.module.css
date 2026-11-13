@@ -38,56 +38,6 @@
   font-size: var(--t-footnote-size);
 }
 
-/* Pausar / reanudar: pequeño a la vista, 44 px al dedo. */
-.pausa {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  color: var(--text-2);
-  cursor: pointer;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    translate var(--dur-fast) var(--ease-out);
-}
-
-.pausa::after {
-  content: '';
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: var(--tap-min);
-  height: var(--tap-min);
-  translate: -50% -50%;
-}
-
-@media (hover: hover) {
-  .pausa:hover {
-    color: var(--text);
-    translate: 0 -1px;
-  }
-}
-
-.pausa:active {
-  translate: 0 1px;
-}
-
-.pausa:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-/* Con movimiento reducido no hay nada que pausar. */
-@media (prefers-reduced-motion: reduce) {
-  .pausa {
-    display: none;
-  }
-}
-
 .bloqueCinta {
   display: flex;
   flex-direction: column;
@@ -151,8 +101,7 @@
   animation-direction: reverse;
 }
 
-/* Se detiene al apuntarla, al enfocar un logo y con el botón. */
-.ventana[data-pausada] .pista,
+/* Se detiene al apuntarla y al enfocar un logo (sin botón de pausa). */
 .ventana:focus-within .pista {
   animation-play-state: paused;
 }
