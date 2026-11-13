@@ -332,7 +332,7 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
                 }}
               >
                 <span className={estilos.disparadorIcono} aria-hidden="true">
-                  <Heart size={13} fill={soloFavoritos ? 'currentColor' : 'none'} />
+                  <Heart size={15} fill={soloFavoritos ? 'currentColor' : 'none'} />
                 </span>
                 Favoritos
                 {soloFavoritos && <span className="sr-only"> (filtro activo)</span>}
@@ -345,9 +345,9 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
               <DropdownMenu
                 align="end"
                 trigger={
-                  <button type="button" className={estilos.disparador}>
+                  <button type="button" className={estilos.disparador} data-activa={ciudadActual ? '' : undefined}>
                     <span className={estilos.disparadorIcono} aria-hidden="true">
-                      <MapPin size={13} />
+                      <MapPin size={15} />
                     </span>
                     {/* En el teléfono, corto: el nombre del filtro o lo elegido. */}
                     <span className={estilos.textoLargo}>Ciudad: {ciudadActual?.nombre ?? 'Todas'}</span>
@@ -383,9 +383,9 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
               <DropdownMenu
                 align="end"
                 trigger={
-                  <button type="button" className={estilos.disparador}>
+                  <button type="button" className={estilos.disparador} data-activa={beneficioActual ? '' : undefined}>
                     <span className={estilos.disparadorIcono} aria-hidden="true">
-                      <Tag size={13} />
+                      <Tag size={15} />
                     </span>
                     <span className={estilos.textoLargo}>Beneficio: {beneficioActual?.etiqueta ?? 'Todos'}</span>
                     <span className={estilos.textoCorto}>{beneficioActual?.etiqueta ?? 'Beneficio'}</span>
@@ -420,7 +420,7 @@ export function DirectorioInteractivo({ base, directorio, titulo, bajada, socio,
               trigger={
                 <button type="button" className={estilos.disparador}>
                   <span className={estilos.disparadorIcono} aria-hidden="true">
-                    <ArrowUpDown size={13} />
+                    <ArrowUpDown size={15} />
                   </span>
                   <span className={estilos.textoLargo}>Ordenar: {ETIQUETAS_ORDEN[filtros.orden]}</span>
                   <span className={estilos.textoCorto}>

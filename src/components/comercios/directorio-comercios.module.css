@@ -267,6 +267,7 @@
        abre 12 a los lados: ese es el aire. El margen negativo lo cancela. */
     padding: var(--space-4) var(--space-3);
     margin: calc(var(--space-4) * -1) calc(var(--space-3) * -1);
+    scroll-padding-inline: var(--space-3);
   }
 
   .menus::-webkit-scrollbar {
@@ -276,11 +277,6 @@
   /* `:not(dialog)`: la ventana de categorías también es hija de esta fila. */
   .menus > :not(dialog) {
     flex: none;
-  }
-
-  .menus .disparador {
-    gap: var(--space-1);
-    padding: 0 var(--space-3) 0 var(--space-1);
   }
 
   .menus .chevron {
@@ -330,16 +326,40 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 
+  /* LA PÍLDORA DEL DIRECTORIO es una sola (12/11/2026, «todos alineados,
+     con el mismo estilo y efectos»): filtros, categorías del teléfono y
+     subcategorías miden, se ven y responden igual. Ver la nota en
+     `subcategorias-directorio.module.css`. */
   transition:
     border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
 }
 
+/* Apuntar levanta 1px con un escalón más de sombra; sin filo dorado. */
 @media (hover: hover) {
   .disparador:hover {
-    border-color: var(--brand-edge);
+    translate: 0 -1px;
     box-shadow: var(--shadow-raised);
   }
+
+  .disparador[data-activa]:hover {
+    box-shadow: inset 0 0 0 1px var(--gold-600), var(--shadow-raised);
+  }
+}
+
+/* Presionar hunde. */
+.disparador:active {
+  translate: 0 1px;
+  box-shadow: var(--shadow-press);
+}
+
+.disparador[data-activa] {
+  /* Un filtro con algo elegido («Tuluá», «Regalo»): como toda píldora
+     elegida del directorio, filo `--gold-600` y peso. */
+  border-color: var(--gold-600);
+  box-shadow: inset 0 0 0 1px var(--gold-600), var(--shadow-card);
+  font-weight: 700;
 }
 
 .disparador:focus-visible {
