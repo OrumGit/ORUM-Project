@@ -18,6 +18,8 @@ const PAGINAS_FIJAS: { ruta: string; prioridad: number }[] = [
   { ruta: '/novedades', prioridad: 0.6 },
   { ruta: '/terminos', prioridad: 0.2 },
   { ruta: '/privacidad', prioridad: 0.2 },
+  { ruta: '/reembolsos', prioridad: 0.2 },
+  { ruta: '/pqrs', prioridad: 0.2 },
   /* `/derechos-de-autor` se añade aquí cuando el abogado dé el visto bueno al
      texto (hoy es un borrador con `noindex`). */
 ]

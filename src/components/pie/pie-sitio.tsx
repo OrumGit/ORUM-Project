@@ -142,7 +142,13 @@ export function PieSitio({
             Términos y condiciones
           </Link>
           <Link href="/privacidad" className={estilos.enlaceLegal}>
-            Política de privacidad
+            Aviso de privacidad
+          </Link>
+          <Link href="/reembolsos" className={estilos.enlaceLegal}>
+            Reembolsos y cancelaciones
+          </Link>
+          <Link href="/pqrs" className={estilos.enlaceLegal}>
+            PQRSF
           </Link>
           <Link href="/derechos-de-autor" className={estilos.enlaceLegal}>
             Derechos de autor

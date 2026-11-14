@@ -9,24 +9,25 @@ export const metadata: Metadata = {
 }
 
 /*
-  BORRADOR GENÉRICO — pendiente de revisión legal.
+  BORRADOR — pendiente de revisión legal (este documento no está entre los
+  revisados por el abogado: Aviso de privacidad, Autorización, Reembolsos y
+  PQRSF).
 
-  Donde el texto necesita un dato real de la empresa (razón social, NIT,
-  domicilio) queda un marcador entre corchetes. No se inventa un NIT ni una
-  dirección: un dato legal falso es peor que un hueco visible.
+  Datos de la responsable: persona natural, sin NIT ni domicilio publicados.
+  Falta confirmar la ciudad de domicilio y el juez competente (§13).
 
   Sección 9 «Contenido que subes» (30/09/2026): borrador, pendiente de la
   revisión del abogado del propietario.
 */
 export default function TerminosPage() {
   return (
-    <PaginaLegal titulo="Términos y condiciones" actualizado="30 de septiembre de 2026">
+    <PaginaLegal titulo="Términos y condiciones" actualizado="14 de noviembre de 2026">
       <section>
         <h2>1. Quiénes somos</h2>
         <p>
           ORUM es un club de beneficios operado por{' '}
-          <strong>[Razón social — NIT]</strong>, con domicilio en{' '}
-          <strong>[Ciudad, Colombia]</strong>. Estos Términos y condiciones rigen el
+          <strong>Jessica Viviana García Fernández</strong>, persona natural que opera la
+          plataforma. Estos Términos y condiciones rigen el
           uso de la plataforma ORUM (el «Sitio»), disponible para visitantes,
           socios con membresía vigente y comercios aliados.
         </p>
@@ -138,7 +139,9 @@ export default function TerminosPage() {
           ORUM puede suspender o cancelar una cuenta que incumpla estos términos.
           El socio puede solicitar la cancelación de su membresía en cualquier
           momento; la cancelación no da lugar al reembolso del periodo ya
-          transcurrido, salvo que la ley disponga otra cosa.
+          transcurrido, salvo que la ley disponga otra cosa. Las condiciones de
+          cancelación, retracto, reembolso y reversión de pagos están en la{' '}
+          <Link href="/reembolsos">política de reembolsos y cancelaciones</Link>.
         </p>
       </section>
 
@@ -155,8 +158,7 @@ export default function TerminosPage() {
         <h2>13. Ley aplicable</h2>
         <p>
           Estos términos se rigen por las leyes de la República de Colombia.
-          Cualquier controversia se someterá a los jueces competentes de{' '}
-          <strong>[Ciudad, Colombia]</strong>.
+          Cualquier controversia se someterá a los jueces competentes de Colombia.
         </p>
       </section>
 
@@ -164,8 +166,10 @@ export default function TerminosPage() {
         <h2>14. Contacto</h2>
         <p>
           Para preguntas sobre estos términos escríbenos a{' '}
-          <strong>[correo de contacto]</strong> o por el WhatsApp de soporte que
-          aparece en el pie de cualquier página del Sitio.
+          <strong>orumplataforma@gmail.com</strong> o por el WhatsApp de soporte que
+          aparece en el pie de cualquier página del Sitio. Las peticiones, quejas y
+          reclamos se tramitan según la{' '}
+          <Link href="/pqrs">política de PQRSF</Link>.
         </p>
       </section>
     </PaginaLegal>
