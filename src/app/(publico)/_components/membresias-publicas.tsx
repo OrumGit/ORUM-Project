@@ -1,6 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import { WhatsAppButton } from '@/components/ui/whatsapp-button'
-import { MENSAJE_WHATSAPP_PUBLICO } from '@/lib/publico/whatsapp'
+import { Button } from '@/components/ui/button'
 import { formatearPesos, type PlanPublico } from '@/lib/publico/planes'
 import escaparate from '../escaparate.module.css'
 import { CtaSocio } from './cta-socio'
@@ -18,9 +17,9 @@ import estilos from './membresias-publicas.module.css'
   boceto decía «ahorra 2 meses» junto a unos precios con los que se
   ahorraban más de tres y medio.
 
-  «Adquirir» abre WhatsApp con el mensaje ÚNICO de la fachada
-  (`MENSAJE_WHATSAPP_PUBLICO`, 29/09/2026): la pregunta es cómo adquirir la
-  membresía, y el plan se concreta en la conversación.
+  «Adquirir» lleva a `/registro?plan=N` (14/11/2026, versión mínima de
+  prueba del pago con Mercado Pago). Antes abría WhatsApp con
+  `MENSAJE_WHATSAPP_PUBLICO` (29/09/2026); ese texto sigue en `lib/publico/whatsapp`.
 
   Las tarjetas son superficies levantadas: sombra, sin trazo. La del plan
   destacado sube un escalón (`--shadow-raised`) y lleva la etiqueta de su
@@ -95,26 +94,22 @@ export function MembresiasPublicas({ planes, soporte }: Props) {
                   </p>
                   <p className={estilos.descripcion}>{descripcionDe(plan)}</p>
 
-                  {soporte && (
-                    <span className={estilos.accion}>
-                      <WhatsAppButton
-                        telefono={soporte}
-                        mensaje={MENSAJE_WHATSAPP_PUBLICO}
-                        variant="secondary"
-                        size="lg"
-                        pildora
-                        fullWidth
-                        /* Como en el boceto: solo «Adquirir →». El nombre del
-                           plan lo recibe el lector de pantalla, porque dos
-                           «Adquirir» seguidos no dirían cuál es cuál. */
-                        icon={null}
-                        ariaLabel={`Adquirir el plan ${plan.nombre} por WhatsApp`}
-                      >
-                        Adquirir
-                        <ArrowRight size={16} aria-hidden="true" className={escaparate.flecha} />
-                      </WhatsAppButton>
-                    </span>
-                  )}
+                  <span className={estilos.accion}>
+                    <Button
+                      href={`/registro?plan=${plan.id}`}
+                      variant="secondary"
+                      size="lg"
+                      pildora
+                      fullWidth
+                      /* Como en el boceto: solo «Adquirir →». El nombre del
+                         plan lo recibe el lector de pantalla, porque dos
+                         «Adquirir» seguidos no dirían cuál es cuál. */
+                      aria-label={`Adquirir el plan ${plan.nombre}`}
+                    >
+                      Adquirir
+                      <ArrowRight size={16} aria-hidden="true" className={escaparate.flecha} />
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>
