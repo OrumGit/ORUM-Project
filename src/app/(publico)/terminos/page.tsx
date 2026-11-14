@@ -166,7 +166,7 @@ export default function TerminosPage() {
         <h2>14. Contacto</h2>
         <p>
           Para preguntas sobre estos términos escríbenos a{' '}
-          <strong>orumplataforma@gmail.com</strong> o por el WhatsApp de soporte que
+          <strong>soporte@cluborum.com</strong> o por el WhatsApp de soporte que
           aparece en el pie de cualquier página del Sitio. Las peticiones, quejas y
           reclamos se tramitan según la{' '}
           <Link href="/pqrs">política de PQRSF</Link>.

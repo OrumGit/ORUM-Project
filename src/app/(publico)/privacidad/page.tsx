@@ -29,7 +29,7 @@ export default function PrivacidadPage() {
           plataforma ORUM.
         </p>
         <p>
-          Correo electrónico: <strong>orumplataforma@gmail.com</strong>
+          Correo electrónico: <strong>soporte@cluborum.com</strong>
         </p>
       </section>
 
@@ -91,7 +91,7 @@ export default function PrivacidadPage() {
         </ul>
         <p>
           Para consultas y reclamos sobre datos personales escribe a{' '}
-          <strong>orumplataforma@gmail.com</strong>. El procedimiento está en la{' '}
+          <strong>soporte@cluborum.com</strong>. El procedimiento está en la{' '}
           <Link href="/pqrs">página de PQRSF</Link>.
         </p>
       </section>

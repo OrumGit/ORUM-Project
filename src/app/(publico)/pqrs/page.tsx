@@ -35,7 +35,7 @@ export default function PqrsPage() {
           natural que opera la plataforma ORUM.
         </p>
         <p>
-          Correo electrónico: <strong>orumplataforma@gmail.com</strong>
+          Correo electrónico: <strong>soporte@cluborum.com</strong>
         </p>
       </section>
 
@@ -65,7 +65,7 @@ export default function PqrsPage() {
         <p>Las PQRSF podrán presentarse mediante:</p>
         <ul>
           <li>
-            Correo electrónico: <strong>orumplataforma@gmail.com</strong>
+            Correo electrónico: <strong>soporte@cluborum.com</strong>
           </li>
           <li>Formularios electrónicos habilitados por ORUM.</li>
           <li>Los demás canales oficiales que lleguen a implementarse.</li>

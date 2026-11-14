@@ -48,7 +48,7 @@ export default function ReembolsosPage() {
           persona natural que opera la plataforma ORUM.
         </p>
         <p>
-          Correo electrónico: <strong>orumplataforma@gmail.com</strong>
+          Correo electrónico: <strong>soporte@cluborum.com</strong>
         </p>
       </section>
 
@@ -69,7 +69,7 @@ export default function ReembolsosPage() {
         <h3>4.1 Cancelación voluntaria</h3>
         <p>
           El usuario podrá solicitar la cancelación de su membresía en cualquier momento
-          mediante solicitud enviada a <strong>orumplataforma@gmail.com</strong>.
+          mediante solicitud enviada a <strong>soporte@cluborum.com</strong>.
         </p>
         <p>
           La cancelación producirá efectos sobre períodos posteriores o futuras renovaciones,
@@ -115,7 +115,7 @@ export default function ReembolsosPage() {
 
         <h3>5.2 Solicitud</h3>
         <p>
-          La solicitud deberá remitirse al correo <strong>orumplataforma@gmail.com</strong>,
+          La solicitud deberá remitirse al correo <strong>soporte@cluborum.com</strong>,
           indicando como mínimo:
         </p>
         <ul>
@@ -282,7 +282,7 @@ export default function ReembolsosPage() {
       <section>
         <h2>10. Contacto para cancelaciones, retractos, reembolsos y reversión de pagos</h2>
         <p>
-          Correo electrónico: <strong>orumplataforma@gmail.com</strong>
+          Correo electrónico: <strong>soporte@cluborum.com</strong>
         </p>
         <p>
           Responsable de atención: <strong>Jessica Viviana García Fernández</strong>, persona

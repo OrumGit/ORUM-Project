@@ -30,13 +30,6 @@ export default async function DerechosDeAutorPage() {
   return (
     <PaginaLegal titulo="Reclamos por derechos de autor" actualizado="30 de septiembre de 2026">
       <section>
-        <p>
-          <strong>Borrador pendiente de revisión legal.</strong> Este texto puede cambiar antes
-          de su publicación definitiva.
-        </p>
-      </section>
-
-      <section>
         <h2>1. Qué puedes reportar</h2>
         <p>
           Los socios de ORUM pueden subir una foto a su perfil. Si eres titular de derechos
@@ -63,7 +56,11 @@ export default async function DerechosDeAutorPage() {
         <h2>3. Dónde enviarlo</h2>
         {correo ? (
           <p>
-            Escribe a <a href={`mailto:${correo}`}>{correo}</a>.
+            Escribe a{' '}
+            <a href={`mailto:${correo}`}>
+              <strong>{correo}</strong>
+            </a>
+            .
           </p>
         ) : (
           <p>El canal de reclamos no está disponible en este momento. Vuelve a intentarlo pronto.</p>
