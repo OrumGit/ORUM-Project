@@ -1,7 +1,7 @@
 # Mercado Pago · Plan de frontend
 
 - **Fecha:** 2026-11-09
-- **Estado:** Planeación. Nada implementado. Depende de las decisiones de §1 y de las preguntas de §8.
+- **Estado:** Parcial desde el 18/11/2026. Lo mínimo para pagar de punta a punta ya funciona en Preview; el resto de la interfaz (§13) sigue pendiente. Ver «Estado al 18/11/2026» al final de §13.
 - **Par:** [`2026-11-09-mercado-pago-backend.md`](2026-11-09-mercado-pago-backend.md)
 
 ## 1. Decisiones que este plan ya asume
@@ -171,3 +171,24 @@ Lo que falta, en orden de prioridad:
 7. **Revisión de accesibilidad y móvil** de las pantallas nuevas (`accessibility-auditor`, `mobile-ux-specialist`) antes de darlas por terminadas.
 
 Bloqueante de datos: el correo del comprador de prueba (`MP_PAGADOR_PRUEBA`, solo en el preview). Sin él no se puede probar el pago de punta a punta, y por tanto tampoco los estados 2 a 4.
+
+### Estado al 18/11/2026
+
+**Hecho**
+
+- ✅ **Enlace de «Adquirir» a `/registro?plan=N`** (`abac71f`). Ya no abre WhatsApp. Sigue en la fachada, pero **el overlay no existe**: el botón abre la página provisional.
+- ✅ **Pago de punta a punta en Preview.** Desde el formulario hasta la membresía activa, con el comprador de prueba. Es el bloqueante de datos que estaba en la lista de arriba: **resuelto**.
+- ✅ **`/registro/pago/retorno` concilia la suscripción** (`07abeb7`): si el webhook no llegó, la página consulta las cuotas en Mercado Pago y completa el alta. Esto cambia la descripción de §13.3: la página ya no solo muestra un estado, también aplica el cobro. Su texto de «confirmando» sigue siendo provisional.
+- ✅ **Mensajes de error del pago.** «No pudimos abrir el pago» se mantiene para fallos de creación. El detalle técnico va al log, no a la persona.
+
+**Pendiente, en orden**
+
+1. 🔴 **Overlay de registro desde precios (§13.1).** Sigue siendo prioridad: la página provisional `/registro` no está pensada para el público.
+2. 🔴 **Retorno con sondeo (§13.3 y §5.2).** La conciliación está en el servidor, pero la pantalla no sondea: si el alta tarda, la persona ve «confirmando» sin reintentar. Falta el sondeo con tope de 60 s, «Revisar de nuevo» y los mensajes de rechazo.
+3. 🟠 **Pantalla «Completa tu membresía» en miembros (§13.2).** Sigue sin existir fuera de `/registro/confirmar`.
+4. 🟠 **Pago pendiente y rechazo (§5.3).** Hasta ahora solo se ha probado el pago aprobado. Falta confirmar los estados que devuelve Mercado Pago en un rechazo o en un pago pendiente, con el comprador de prueba.
+5. 🟠 **Renovaciones en el perfil (§6).** Depende del webhook (ver backend): sin él, la pantalla no puede mostrar «se renueva el…» con datos reales.
+6. 🟡 **Mensaje de `cedula_ya_es_socio` (§13.5).** Sigue pendiente de decidir el texto.
+7. 🟡 **Vistas previas en `/dev/` (§13.6)** y revisión de accesibilidad y móvil (§13.7).
+
+**Nota de cierre:** el backend de la membresía de punta a punta funciona en Preview. Lo que falta del frontend es presentación y estados de error, no el flujo de cobro. El webhook sigue siendo un pendiente del backend (ver `2026-11-09-mercado-pago-backend.md`, §10, «Estado al 18/11/2026»).
