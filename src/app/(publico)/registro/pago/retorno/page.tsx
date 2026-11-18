@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { PantallaAcceso } from '@/components/ui/pantalla-acceso'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { conciliarSuscripcion } from '@/lib/mercadopago/conciliar'
 
 /*
-  Mercado Pago devuelve aquí a la persona al terminar el pago. La membresía no
-  se activa en esta página: la activa el webhook cuando Mercado Pago confirma el
-  cobro. Aquí solo se dice en qué punto está el registro.
+  Mercado Pago devuelve aquí a la persona al terminar el pago. La membresía la
+  activa el webhook al confirmarse el cobro. Como respaldo, si el webhook no
+  llegó, esta página concilia la suscripción con la API de Mercado Pago (la
+  misma lógica, idempotente) antes de decir en qué punto está el registro.
 */
 export default async function RetornoPagoPage() {
   const supabase = await createClient()
@@ -16,7 +18,18 @@ export default async function RetornoPagoPage() {
 
   let completado = false
   if (user) {
-    const { data: registro } = await createAdminClient()
+    const admin = createAdminClient()
+    const { data: pendiente } = await admin
+      .from('registros_pendientes')
+      .select('estado, mp_preapproval_id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+    if (pendiente?.estado === 'pendiente' && pendiente.mp_preapproval_id) {
+      await conciliarSuscripcion(admin, pendiente.mp_preapproval_id).catch((error) =>
+        console.error('[registro] no se pudo conciliar la suscripción', error),
+      )
+    }
+    const { data: registro } = await admin
       .from('registros_pendientes')
       .select('estado')
       .eq('auth_user_id', user.id)

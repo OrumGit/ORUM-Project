@@ -58,6 +58,13 @@ export function obtenerSuscripcion(id: string): Promise<SuscripcionMP> {
   return leer<SuscripcionMP>(`/preapproval/${encodeURIComponent(id)}`)
 }
 
+/** Cuotas (`authorized_payments`) de una suscripción. Para conciliar lo que el webhook no entregó. */
+export function listarCuotasSuscripcion(
+  preapprovalId: string,
+): Promise<{ results?: Array<{ id: number | string }> }> {
+  return leer(`/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`)
+}
+
 async function escribir<T>(metodo: 'POST' | 'PUT', ruta: string, cuerpo: unknown): Promise<T> {
   const token = process.env.MP_ACCESS_TOKEN
   if (!token) throw new Error('Falta MP_ACCESS_TOKEN.')
