@@ -33,7 +33,12 @@ async function leer<T>(ruta: string): Promise<T> {
     signal: AbortSignal.timeout(TIEMPO_MAXIMO_MS),
   })
   if (!respuesta.ok) {
-    throw new ErrorMercadoPago(respuesta.status, `Mercado Pago respondió ${respuesta.status} en ${ruta}`)
+    // El cuerpo dice QUÉ campo rechaza (back_url, payer_email…): sin él, el log solo dice «400».
+    const detalle = (await respuesta.text().catch(() => '')).slice(0, 400)
+    throw new ErrorMercadoPago(
+      respuesta.status,
+      `Mercado Pago respondió ${respuesta.status} en ${ruta}${detalle ? `: ${detalle}` : ''}`,
+    )
   }
   return (await respuesta.json()) as T
 }
@@ -69,7 +74,12 @@ async function escribir<T>(metodo: 'POST' | 'PUT', ruta: string, cuerpo: unknown
     signal: AbortSignal.timeout(TIEMPO_MAXIMO_MS),
   })
   if (!respuesta.ok) {
-    throw new ErrorMercadoPago(respuesta.status, `Mercado Pago respondió ${respuesta.status} en ${ruta}`)
+    // El cuerpo dice QUÉ campo rechaza (back_url, payer_email…): sin él, el log solo dice «400».
+    const detalle = (await respuesta.text().catch(() => '')).slice(0, 400)
+    throw new ErrorMercadoPago(
+      respuesta.status,
+      `Mercado Pago respondió ${respuesta.status} en ${ruta}${detalle ? `: ${detalle}` : ''}`,
+    )
   }
   return (await respuesta.json()) as T
 }
