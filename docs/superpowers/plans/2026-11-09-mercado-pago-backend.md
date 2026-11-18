@@ -210,6 +210,27 @@ Estado al 13/11/2026 (✅ hecho · 🟡 escrito, sin probar · ⬜ pendiente):
 
 El frontend (`2026-11-09-mercado-pago-frontend.md`) se monta sobre el paso 5 en adelante.
 
+### Estado al 18/11/2026 (cierre de la sesión de pruebas)
+
+**Hecho y verificado**
+
+- ✅ **Pago de punta a punta en Preview.** Registro 12 → suscripción `1a6f4ded…` autorizada en Mercado Pago → cobro de $30.000 `processed` → registro `completado` y membresía 71 activa (17/11 a 17/12). Verificado en la base y en la API de Mercado Pago.
+- ✅ **Error «User bad request» (400) al crear la suscripción.** Causa: en Preview el pagador no era un comprador de prueba válido. Mercado Pago exige `payer_email` al crear la suscripción (la variante «sin pagador» de `11e9a99` se descartó: respondía `payer_email is required`). Solución: `MP_PAGADOR_PRUEBA` = correo del comprador de prueba del sandbox, configurada solo en Preview (`6007a0c`).
+- ✅ **Diagnóstico con el cuerpo del error.** `cliente.ts` ahora incluye la respuesta de Mercado Pago en el mensaje (`4fb545e`). Antes el log solo decía «respondió 400».
+- ✅ **Conciliación desde la página de retorno** (`07abeb7`). `conciliarSuscripcion` (`src/lib/mercadopago/conciliar.ts`) lista las cuotas de la suscripción en `GET /authorized_payments/search` y las pasa por `procesarNotificacion`, que es idempotente. Así el alta no depende del webhook. Solo corre si el socio vuelve a `/registro/pago/retorno` con sesión iniciada.
+- ✅ **Protección de Vercel desactivada** en Preview para que Mercado Pago pueda llamar al webhook. Producción no se tocó.
+- ✅ **Planes documentados.** Activos: Mensual ($30.000, 1 mes) y Anual ($250.000, 12 meses). Los demás están borrados desde el 25/09. La fecha de fin sale de `duracion_meses` (`activar_membresia_desde_cobro`).
+
+**Pendiente**
+
+1. 🔴 **El webhook no recibe nada de Mercado Pago.** El historial de notificaciones de la API está vacío y `eventos_mercadopago` no tiene filas nuevas, aunque la configuración del panel esté bien. Sin esto, las **renovaciones automáticas no se aplican**: cada cuota mensual o anual llega por el webhook (`subscription_authorized_payment`). Revisar: URL exacta del panel frente a la URL de Preview, temas marcados (suscripciones) y, de nuevo, la protección de Vercel. Mercado Pago tampoco reenvía avisos de autorizaciones pasadas.
+2. 🔴 **`MP_WEBHOOK_SECRET` en Preview.** Debe ser la clave secreta de firma del panel, no el Access Token. Sin ella el webhook responde 401 (`firma_invalida`).
+3. 🟠 **Renovación temprana.** `activar_membresia_desde_cobro` cuenta el nuevo periodo desde hoy (`greatest(fecha_fin, hoy + meses)`). Debe contar desde `fecha_fin` vigente. Es una migración nueva con su prueba.
+4. 🟠 **Conciliación periódica** de las suscripciones activas (cron con `CRON_SECRET`), para que una renovación no dependa solo del webhook.
+5. 🟠 **Cancelación del socio:** confirmar que la membresía sigue activa hasta `fecha_fin` y que la gracia (`marcar_cobro_rechazado`) funciona.
+6. 🟡 **Limpieza en el sandbox.** Hay suscripciones de prueba pendientes o autorizadas en la cuenta de prueba. Solo se canceló la de diagnóstico (`aad390c3…`). Las de los registros 10 a 12 siguen autorizadas en el sandbox; no tienen efecto en producción, pero conviene cancelarlas.
+7. 🟡 **Producción.** Antes de activarla: sin `MP_PAGADOR_PRUEBA` ni `MP_MODO_PRUEBA`, con credenciales de producción, webhook apuntando al dominio de producción y `MP_WEBHOOK_SECRET` de producción.
+
 ## 10. Registro previo al pago (decidido 11/11/2026)
 
 **Estado (13/11/2026):**
