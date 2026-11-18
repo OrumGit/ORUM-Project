@@ -46,14 +46,19 @@ describe('construirCuerpoSuscripcion', () => {
 })
 
 describe('correoPagador', () => {
-  it('usa el correo del registro si no hay correo de prueba', () => {
-    expect(correoPagador('Persona@Correo.com ', undefined)).toBe('persona@correo.com')
-    expect(correoPagador('persona@correo.com', '   ')).toBe('persona@correo.com')
+  it('fija como pagador el correo del registro fuera de pruebas', () => {
+    expect(correoPagador('Persona@Correo.com ', false)).toBe('persona@correo.com')
   })
 
-  it('usa el correo de prueba cuando está definido', () => {
-    expect(correoPagador('persona@correo.com', ' test_user_1@testuser.com ')).toBe(
-      'test_user_1@testuser.com',
-    )
+  it('no fija pagador en modo de prueba', () => {
+    expect(correoPagador('persona@correo.com', true)).toBeNull()
+  })
+})
+
+describe('construirCuerpoSuscripcion con pagador ausente', () => {
+  it('omite payer_email cuando no se fija el pagador', () => {
+    const c = construirCuerpoSuscripcion({ ...base, emailPagador: null })
+    expect(c).not.toHaveProperty('payer_email')
+    expect(c.status).toBe('pending')
   })
 })

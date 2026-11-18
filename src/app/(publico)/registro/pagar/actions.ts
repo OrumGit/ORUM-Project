@@ -76,7 +76,7 @@ export async function iniciarPagoRegistro(
     razon: `Membresía ORUM · ${plan.nombre}`,
     monto: Number(plan.precio),
     duracionMeses: plan.duracion_meses,
-    emailPagador: correoPagador(registro.correo, process.env.MP_PAGADOR_PRUEBA),
+    emailPagador: correoPagador(registro.correo, process.env.MP_MODO_PRUEBA === '1'),
     urlRetorno: `${origen}/registro/pago/retorno`,
     referenciaExterna: String(registro.id),
   })

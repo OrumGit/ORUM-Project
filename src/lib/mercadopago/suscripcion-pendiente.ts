@@ -13,8 +13,11 @@ export type ArgsSuscripcionPendiente = {
   monto: number
   /** Duración del periodo del plan, en meses (1 = mensual, 12 = anual). */
   duracionMeses: number
-  /** Correo del registro: Mercado Pago lo usa como pagador. */
-  emailPagador: string
+  /**
+   * Correo del pagador, o `null` para no fijarlo (solo en pruebas): Mercado
+   * Pago entonces deja que la persona pague con cualquier cuenta de prueba.
+   */
+  emailPagador: string | null
   /** Página de ORUM a la que vuelve la persona después de pagar. */
   urlRetorno: string
   /** Id del registro pendiente, para casar la notificación con el registro. */
@@ -24,7 +27,8 @@ export type ArgsSuscripcionPendiente = {
 export type CuerpoSuscripcion = {
   reason: string
   external_reference: string
-  payer_email: string
+  /** Ausente cuando no se fija el pagador (modo de prueba). */
+  payer_email?: string
   back_url: string
   status: 'pending'
   auto_recurring: {
@@ -38,10 +42,9 @@ export type CuerpoSuscripcion = {
 const MAX_RAZON = 120
 
 export function construirCuerpoSuscripcion(args: ArgsSuscripcionPendiente): CuerpoSuscripcion {
-  return {
+  const cuerpo: CuerpoSuscripcion = {
     reason: args.razon.trim().slice(0, MAX_RAZON),
     external_reference: args.referenciaExterna,
-    payer_email: args.emailPagador.trim().toLowerCase(),
     back_url: args.urlRetorno,
     status: 'pending',
     auto_recurring: {
@@ -51,15 +54,19 @@ export function construirCuerpoSuscripcion(args: ArgsSuscripcionPendiente): Cuer
       currency_id: 'COP',
     },
   }
+  if (args.emailPagador !== null) {
+    cuerpo.payer_email = args.emailPagador.trim().toLowerCase()
+  }
+  return cuerpo
 }
 
 /**
- * Correo que Mercado Pago recibe como pagador. Con credenciales de prueba el
- * pagador tiene que ser un usuario de prueba; si `MP_PAGADOR_PRUEBA` está
- * definida (solo en entornos de prueba), se usa ese correo en vez del del
- * registro. En producción la variable no existe y el pagador es el del registro.
+ * Correo que se fija como pagador de la suscripción. En producción es el del
+ * registro: Mercado Pago rechaza el pago si la cuenta que paga no es ese correo.
+ * En modo de prueba (`MP_MODO_PRUEBA=1`, solo Preview) devuelve `null`: no se
+ * fija pagador y la persona paga con el comprador de prueba que inicie sesión.
  */
-export function correoPagador(correoRegistro: string, correoPrueba: string | undefined): string {
-  const prueba = correoPrueba?.trim()
-  return (prueba ? prueba : correoRegistro).trim().toLowerCase()
+export function correoPagador(correoRegistro: string, modoPrueba: boolean): string | null {
+  if (modoPrueba) return null
+  return correoRegistro.trim().toLowerCase()
 }
