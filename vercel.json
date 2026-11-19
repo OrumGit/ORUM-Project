@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/limpiar-pendientes",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/conciliar-suscripciones",
+      "schedule": "0 * * * *"
     }
   ]
 }
