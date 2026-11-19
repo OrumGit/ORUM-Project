@@ -192,3 +192,44 @@ Bloqueante de datos: el correo del comprador de prueba (`MP_PAGADOR_PRUEBA`, sol
 7. 🟡 **Vistas previas en `/dev/` (§13.6)** y revisión de accesibilidad y móvil (§13.7).
 
 **Nota de cierre:** el backend de la membresía de punta a punta funciona en Preview. Lo que falta del frontend es presentación y estados de error, no el flujo de cobro. El webhook sigue siendo un pendiente del backend (ver `2026-11-09-mercado-pago-backend.md`, §10, «Estado al 18/11/2026»).
+
+## 14. Traspaso a frontend (19/11/2026)
+
+Esta sección es para quien implemente la interfaz. Resume qué ya está resuelto en el servidor, en qué orden conviene hacer el resto y qué espera a otra cosa. No cambia las decisiones de §1 a §13.
+
+### 14.1 Lo que ya funciona y puedes dar por bueno
+
+- **El cobro de punta a punta** en Preview: registro → confirmación de correo → pago en Mercado Pago → membresía activa. Probado el 17/11 con el comprador de prueba.
+- **La conciliación desde el retorno**: `/registro/pago/retorno` aplica la suscripción si el webhook no llegó. Ver `src/lib/mercadopago/conciliar.ts`.
+- **El acceso respeta la gracia** (19/11): un socio con cobro rechazado conserva el acceso hasta `gracia_hasta`. La puerta del portal (`requireMiembroVigente`), el carnet, el perfil y los listados ya lo tienen en cuenta. **La interfaz no tiene que recalcularlo**: usa `derivarEstadoMembresia` con la gracia que le pasan.
+- **La renovación cuenta desde `fecha_fin`** (19/11). La pantalla de perfil puede mostrar el día de fin sin corregirlo.
+
+### 14.2 Orden de trabajo
+
+1. **Overlay de registro desde precios (§13.1).** Sustituye la página provisional `/registro?plan=N`. Sin dependencias de backend.
+2. **Retorno con sondeo (§13.3 y §5.2).** Al volver de Mercado Pago, reintentar la consulta durante 60 s como máximo, mostrar «Revisar de nuevo» y los mensajes de rechazo. El servidor ya concilia; la pantalla solo consulta.
+3. **«Completa tu membresía» en miembros (§13.2).** Para el socio que pagó a medias o no tiene membresía.
+4. **Pago pendiente y rechazo (§5.3).** Construir con vistas previas en `/dev/`. La verificación real depende del escenario D del plan de pruebas.
+
+Los puntos 1 a 3 pueden avanzar sin esperar a ninguna prueba del sandbox.
+
+### 14.3 Lo que espera a otra cosa
+
+- **Renovaciones en el perfil (§6):** necesita que el webhook funcione (punto 1 de la lista de backend). Sin él, «se renueva el…» no tendría datos reales.
+- **Revisión de accesibilidad y móvil (§13.7):** al final, con las cuatro pantallas hechas. Pasar por `accessibility-auditor` y `mobile-ux-specialist`.
+
+### 14.4 Decisión pendiente de producto
+
+- **Texto del mensaje `cedula_ya_es_socio` (§13.5).** Lo decide el propietario. Hasta entonces, usar el texto provisional y dejarlo marcado en el código.
+
+### 14.5 Reglas que no cambian
+
+- Las pantallas de registro y pago se abren **como overlay**, no como página nueva (CLAUDE.md, «Formularios: overlay, no página»).
+- Los estados de la membresía se leen **siempre derivados**, nunca `membresias.estado` en crudo.
+- El oro no se usa como texto sobre fondo claro; el botón principal puede ser relleno dorado solo si cumple los dos ratios de contraste que indica CLAUDE.md.
+- Antes de dar algo por terminado: `tsc`, ESLint y pruebas, y revisión visual en Preview.
+
+### 14.6 Dónde mirar el backend
+
+- Estado y decisiones: `2026-11-09-mercado-pago-backend.md`, sección «Estado al 19/11/2026».
+- Pruebas pendientes: `2026-11-18-mercado-pago-pruebas.md`.
