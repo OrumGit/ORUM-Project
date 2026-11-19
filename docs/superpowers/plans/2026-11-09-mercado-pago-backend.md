@@ -231,6 +231,27 @@ El frontend (`2026-11-09-mercado-pago-frontend.md`) se monta sobre el paso 5 en 
 6. 🟡 **Limpieza en el sandbox.** Hay suscripciones de prueba pendientes o autorizadas en la cuenta de prueba. Solo se canceló la de diagnóstico (`aad390c3…`). Las de los registros 10 a 12 siguen autorizadas en el sandbox; no tienen efecto en producción, pero conviene cancelarlas.
 7. 🟡 **Producción.** Antes de activarla: sin `MP_PAGADOR_PRUEBA` ni `MP_MODO_PRUEBA`, con credenciales de producción, webhook apuntando al dominio de producción y `MP_WEBHOOK_SECRET` de producción.
 
+### Estado al 19/11/2026 (puntos 3 a 6 de la lista del 18/11)
+
+| # | Punto | Estado | Dónde |
+|---|---|---|---|
+| 3 | Renovación desde `fecha_fin` | ✅ código y migración subidos (`67880b0`); migración aplicada en la base compartida | `supabase/migrations/20261118120000_renovacion_desde_fecha_fin.sql` |
+| 4 | Conciliación periódica | ✅ cron horario subido (`12a991b`, `f5b1dac`); probado con `curl`: `200`, `ya_estaban: 1` | `src/app/api/cron/conciliar-suscripciones/`, `vercel.json` |
+| 5 | Gracia da acceso (opción B) | ✅ código y migración subidos (`0ddebfe`); migración aplicada; **sin probar de punta a punta** | `supabase/migrations/20261118130000_gracia_acceso.sql`, `src/lib/miembros/gracia.ts` |
+| 6 | Limpieza del sandbox | ⬜ pendiente de decisión. Verificado: la consulta no devuelve huérfanas; el registro 12 es el único con suscripción en ORUM | — |
+| 7 | Pasos para producción | ⬜ pendiente. Se redacta cuando 3 a 5 estén probados | — |
+
+**Decisiones tomadas:** gracia opción B (el acceso respeta `gracia_hasta` en caja, reseñas, portal y listados); cuenta de Vercel Pro (cron horario).
+
+**Pendientes que bloquean producción:**
+- Punto 1 de la lista del 18/11: el webhook no recibe avisos de Mercado Pago. Sin esto, las renovaciones dependen solo del cron.
+- `CRON_SECRET` en Production (solo se ha configurado en Preview).
+- El cron de `limpiar-pendientes` no ha corrido nunca: le faltaba el secreto. Revisar antes de activarlo en producción, porque borra cuentas de la base compartida.
+
+**Siguiente paso:** el plan de pruebas `2026-11-18-mercado-pago-pruebas.md`, con su script de verificación `supabase/verificacion/renovacion_y_gracia_verificacion.sql`. Ejecutar A, B y C (SQL dentro de transacciones con `rollback`) y después decidir D y E en el sandbox.
+
+**Nota:** el commit `67880b0` dice «no aplicada en producción». Como la base es compartida, el mensaje ya no es exacto. No se reescribió.
+
 ## 10. Registro previo al pago (decidido 11/11/2026)
 
 **Estado (13/11/2026):**
