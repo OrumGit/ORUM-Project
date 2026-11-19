@@ -4,6 +4,7 @@ import {
   type EstadoDerivado,
   type EstadoMembresia,
 } from '@/lib/miembros/membresias'
+import { graciasVigentes } from '@/lib/miembros/gracia'
 import { hoyISO } from '@/lib/shared/fecha'
 
 /*
@@ -71,11 +72,12 @@ export async function buscarMiembros(
   const ids = miembros.map((m) => m.id)
   const { data: membresias } = await admin
     .from('membresias')
-    .select('miembro_id, estado, fecha_fin, plan_id, planes_membresia(nombre)')
+    .select('id, miembro_id, estado, fecha_fin, plan_id, planes_membresia(nombre)')
     .in('miembro_id', ids)
     .order('fecha_fin', { ascending: false })
 
   type FilaMembresia = {
+    id: number
     miembro_id: number
     estado: EstadoMembresia
     fecha_fin: string
@@ -83,6 +85,7 @@ export async function buscarMiembros(
   }
 
   const hoy = hoyISO()
+  const gracias = await graciasVigentes(hoy)
   const porMiembro = new Map<number, { estado: EstadoDerivado; plan: string | null }>()
 
   for (const fila of (membresias ?? []) as FilaMembresia[]) {
@@ -94,7 +97,7 @@ export async function buscarMiembros(
     const plan = Array.isArray(relacion) ? (relacion[0]?.nombre ?? null) : (relacion?.nombre ?? null)
 
     porMiembro.set(fila.miembro_id, {
-      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy),
+      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy, gracias.get(fila.id) ?? null),
       plan,
     })
   }

@@ -16,6 +16,7 @@ import {
 } from '@/lib/miembros/membresias'
 import { esNumeroRegistroValido } from '@/lib/miembros/numeros-registro'
 import { revisarRevocacion } from '@/lib/miembros/revocacion'
+import { graciaPorMembresia } from '@/lib/miembros/gracia'
 import { construirEnlaceActivacion, urlBaseSitio } from '@/lib/auth/activacion'
 import { errorDeCorreoOcupado } from '@/lib/auth/correo-registrado'
 import { cambiarCorreoDeCuenta } from '@/lib/auth/cambiar-correo'
@@ -486,7 +487,8 @@ export async function revocarMembresia(_prev: RevocarState, formData: FormData):
     .maybeSingle()
   if (!membresia) return { error: 'No encontramos esa membresía.' }
 
-  const derivado = derivarEstadoMembresia(membresia.estado as EstadoMembresia, membresia.fecha_fin, hoyISO())
+  const gracia = (await graciaPorMembresia([membresia.id])).get(membresia.id) ?? null
+  const derivado = derivarEstadoMembresia(membresia.estado as EstadoMembresia, membresia.fecha_fin, hoyISO(), gracia)
   if (!derivado.activa) return { error: 'Esta membresía ya no está vigente: no hay nada que revocar.' }
 
   const { error } = await admin

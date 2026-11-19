@@ -3,6 +3,7 @@ import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hoyISO } from '@/lib/shared/fecha'
 import { derivarEstadoMembresia, type EstadoMembresia } from './membresias'
+import { graciasVigentes } from './gracia'
 import type { FilaMiembro } from './listado'
 
 /*
@@ -61,13 +62,15 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
 
   const nombrePlan = new Map((planes ?? []).map((p) => [p.id, p.nombre]))
   const hoy = hoyISO()
+  const gracias = await graciasVigentes(hoy)
 
   // Ya vienen de la más reciente a la más antigua: la primera de cada
   // miembro es la que manda.
-  const ultima = new Map<number, { estado: EstadoMembresia; fecha_fin: string; plan_id: number | null }>()
+  const ultima = new Map<number, { id: number; estado: EstadoMembresia; fecha_fin: string; plan_id: number | null }>()
   for (const m of membresias) {
     if (!ultima.has(m.miembro_id)) {
       ultima.set(m.miembro_id, {
+        id: m.id,
         estado: m.estado as EstadoMembresia,
         fecha_fin: m.fecha_fin,
         plan_id: m.plan_id,
@@ -86,7 +89,7 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
       fotoUrl: (m.foto_url ?? '').trim() || null,
       plan: u?.plan_id != null ? (nombrePlan.get(u.plan_id) ?? null) : null,
       planId: u?.plan_id ?? null,
-      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy) : null,
+      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy, gracias.get(u.id) ?? null) : null,
       fechaFin: u?.fecha_fin ?? null,
     }
   })

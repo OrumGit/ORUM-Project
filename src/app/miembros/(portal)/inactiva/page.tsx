@@ -3,6 +3,7 @@ import { requireRolMiembro } from '@/lib/miembros/requerir-miembro'
 import { createClient } from '@/lib/supabase/server'
 import { derivarEstadoMembresia, type MotivoInactiva } from '@/lib/miembros/membresias'
 import { hoyISO } from '@/lib/shared/fecha'
+import { graciaPorMembresia } from '@/lib/miembros/gracia'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Stack } from '@/components/ui/layout'
@@ -123,7 +124,7 @@ export default async function MembresiaInactivaPage() {
   if (miembro) {
     const { data: membresias } = await supabase
       .from('membresias')
-      .select('estado, fecha_fin')
+      .select('id, estado, fecha_fin')
       .eq('miembro_id', miembro.id)
       .order('fecha_fin', { ascending: false })
       .limit(1)
@@ -139,7 +140,8 @@ export default async function MembresiaInactivaPage() {
         Si el estado derivado saliera activo —solo ocurre si alguien escribe
         esta URL a mano— no se inventa un motivo: cae en la variante genérica.
       */
-      const estado = derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoyISO())
+      const gracia = (await graciaPorMembresia([ultima.id])).get(ultima.id) ?? null
+      const estado = derivarEstadoMembresia(ultima.estado, ultima.fecha_fin, hoyISO(), gracia)
       if (!estado.activa) {
         motivo = estado.motivo
         fecha = fechaLegible(ultima.fecha_fin)

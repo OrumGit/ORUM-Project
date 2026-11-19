@@ -112,6 +112,7 @@ export default async function PerfilMiembroPage() {
     miembro.membresiaVigente.estado,
     miembro.membresiaVigente.fechaFin,
     hoyISO(),
+    miembro.membresiaVigente.graciaHasta,
   )
 
   const nombreCompleto = `${miembro.nombres} ${miembro.apellidos}`.trim()

@@ -3,6 +3,7 @@ import { Ban, Camera, CreditCard, Pencil, Trash2 } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { derivarEstadoMembresia, type EstadoMembresia } from '@/lib/miembros/membresias'
+import { graciasVigentes } from '@/lib/miembros/gracia'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
 import { ETIQUETA_MOTIVO_REVOCACION, esMotivoRevocacion } from '@/lib/miembros/revocacion'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -202,9 +203,10 @@ export default async function FichaMiembroPage({
   }
 
   const hoy = hoyISO()
+  const gracias = await graciasVigentes(hoy)
   const historial = (membresias ?? []).map((m) => ({
     ...m,
-    derivado: derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy),
+    derivado: derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy, gracias.get(m.id) ?? null),
     plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
   }))
 
