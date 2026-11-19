@@ -126,6 +126,7 @@ export default async function MembresiaInactivaPage() {
       .select('estado, fecha_fin')
       .eq('miembro_id', miembro.id)
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
 
     const ultima = membresias?.[0]

@@ -69,7 +69,11 @@ export async function requireMiembroVigente(): Promise<MiembroActual> {
     .from('membresias')
     .select('id, plan_id, tipo, estado, fecha_inicio, fecha_fin')
     .eq('miembro_id', miembro.id)
+    // Dos membresías con el mismo fin (una revocada y su renovación del mismo
+    // día) empataban y Postgres podía devolver la cancelada. El desempate por
+    // `id` toma siempre la más reciente.
     .order('fecha_fin', { ascending: false })
+    .order('id', { ascending: false })
     .limit(1)
 
   if (membresiasError) {
