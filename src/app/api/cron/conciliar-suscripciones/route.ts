@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { conciliarSuscripcion } from '@/lib/mercadopago/conciliar'
+import { sumarResumenes, type ResumenConciliacion } from '@/lib/mercadopago/resumen-conciliacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /*
@@ -40,11 +41,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'No se pudieron leer las suscripciones.' }, { status: 500 })
   }
 
-  let cuotasAplicadas = 0
+  const resumenes: ResumenConciliacion[] = []
   const fallidas: string[] = []
   for (const fila of data ?? []) {
     try {
-      cuotasAplicadas += await conciliarSuscripcion(admin, fila.preapproval_id)
+      resumenes.push(await conciliarSuscripcion(admin, fila.preapproval_id))
     } catch (err) {
       // Una suscripción que falla no detiene a las demás. Queda para la siguiente hora.
       console.error('[cron conciliar-suscripciones]', fila.preapproval_id, err)
@@ -52,10 +53,19 @@ export async function GET(request: Request) {
     }
   }
 
+  const total = sumarResumenes(resumenes)
   return NextResponse.json({
     ok: fallidas.length === 0,
-    revisadas: data?.length ?? 0,
-    cuotas_aplicadas: cuotasAplicadas,
-    fallidas: fallidas.length,
+    suscripciones: data?.length ?? 0,
+    suscripciones_fallidas: fallidas.length,
+    cuotas: {
+      revisadas: total.revisadas,
+      aplicadas_ahora: total.aplicadas,
+      ya_estaban: total.yaEstaban,
+      en_espera: total.enEspera,
+      rechazadas: total.rechazadas,
+      sin_pago: total.sinPago,
+      no_aplicables: total.noAplicables,
+    },
   })
 }

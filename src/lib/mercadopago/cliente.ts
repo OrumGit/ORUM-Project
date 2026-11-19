@@ -61,7 +61,7 @@ export function obtenerSuscripcion(id: string): Promise<SuscripcionMP> {
 /** Cuotas (`authorized_payments`) de una suscripción. Para conciliar lo que el webhook no entregó. */
 export function listarCuotasSuscripcion(
   preapprovalId: string,
-): Promise<{ results?: Array<{ id: number | string }> }> {
+): Promise<{ results?: Array<{ id: number | string; payment?: { id?: number | string | null } | null }> }> {
   return leer(`/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`)
 }
 

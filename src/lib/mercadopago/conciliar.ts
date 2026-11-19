@@ -10,30 +10,69 @@ import 'server-only'
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { listarCuotasSuscripcion } from './cliente'
 import { NotificacionNoAplicable, procesarNotificacion } from './procesar'
+import { resumirConciliacion, type ResultadoCuota, type ResumenConciliacion } from './resumen-conciliacion'
 
 type Admin = ReturnType<typeof createAdminClient>
 
 /**
- * Devuelve cuántas cuotas se pasaron por el procesado. Las que no se pueden
- * aplicar todavía (pendientes, ya registradas) se omiten sin error. Cualquier
- * otro fallo sí se lanza, para que quien llama lo registre.
+ * Pagos de esta suscripción que ya tienen membresía asociada. Una cuota cuyo
+ * pago está aquí ya fue aplicada: no hace falta procesarla otra vez.
  */
-export async function conciliarSuscripcion(admin: Admin, preapprovalId: string): Promise<number> {
+async function pagosYaAplicados(admin: Admin, preapprovalId: string): Promise<Set<string>> {
+  const { data: sus, error: errSus } = await admin
+    .from('suscripciones_mercadopago')
+    .select('id')
+    .eq('preapproval_id', preapprovalId)
+    .maybeSingle()
+  if (errSus) throw errSus
+  if (!sus) return new Set()
+
+  const { data: pagos, error: errPagos } = await admin
+    .from('pagos_mercadopago')
+    .select('payment_id')
+    .eq('suscripcion_id', sus.id)
+    .not('membresia_id', 'is', null)
+  if (errPagos) throw errPagos
+
+  return new Set((pagos ?? []).map((p) => String(p.payment_id)))
+}
+
+/**
+ * Concilia las cuotas de una suscripción y devuelve qué pasó con cada una.
+ * Un fallo inesperado se lanza, para que quien llama lo registre.
+ */
+export async function conciliarSuscripcion(
+  admin: Admin,
+  preapprovalId: string,
+): Promise<ResumenConciliacion> {
   const { results = [] } = await listarCuotasSuscripcion(preapprovalId)
-  let procesadas = 0
+  const aplicados = await pagosYaAplicados(admin, preapprovalId)
+
+  const resultados: ResultadoCuota[] = []
   for (const cuota of results) {
+    const pagoId = cuota.payment?.id
+    if (pagoId == null) {
+      resultados.push('sin_pago')
+      continue
+    }
+    if (aplicados.has(String(pagoId))) {
+      resultados.push('ya_estaba')
+      continue
+    }
+
     try {
-      await procesarNotificacion(admin, {
+      const { accion } = await procesarNotificacion(admin, {
         idNotificacion: `conciliacion:${cuota.id}`,
         tipo: 'subscription_authorized_payment',
         accion: null,
         recursoId: String(cuota.id),
         liveMode: false,
       })
-      procesadas++
+      resultados.push(accion === 'aprobado' ? 'aplicada' : accion === 'rechazado' ? 'rechazada' : 'en_espera')
     } catch (error) {
       if (!(error instanceof NotificacionNoAplicable)) throw error
+      resultados.push('no_aplicable')
     }
   }
-  return procesadas
+  return resumirConciliacion(resultados)
 }
