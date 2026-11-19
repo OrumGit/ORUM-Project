@@ -36,6 +36,7 @@ export async function cargarRevocacion(miembroId: number): Promise<DatosRevocaci
       .eq('miembro_id', miembroId)
       .eq('estado', 'activa')
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1),
   ])
   if (!miembro) return null

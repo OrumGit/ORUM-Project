@@ -39,6 +39,7 @@ export async function cargarCortesia(miembroId: number): Promise<DatosCortesia |
       .select('estado, fecha_fin, plan_id, es_cortesia')
       .eq('miembro_id', miembroId)
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1),
   ])
   if (!miembro) return null

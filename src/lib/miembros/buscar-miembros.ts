@@ -74,6 +74,7 @@ export async function buscarMiembros(
     .select('miembro_id, estado, fecha_fin, plan_id, planes_membresia(nombre)')
     .in('miembro_id', ids)
     .order('fecha_fin', { ascending: false })
+    .order('id', { ascending: false })
 
   type FilaMembresia = {
     miembro_id: number

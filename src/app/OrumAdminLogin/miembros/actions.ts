@@ -346,6 +346,7 @@ export async function renovarMembresia(
       .eq('miembro_id', miembro_id)
       .eq('estado', 'activa')
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
       .maybeSingle(),
     resolverEmpleadoId(admin, actor.userId),
@@ -470,6 +471,7 @@ export async function anadirCortesia(_prev: CortesiaState, formData: FormData): 
       .eq('miembro_id', miembro_id)
       .eq('estado', 'activa')
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
       .maybeSingle(),
     // Sin una activa, el plan de la última que tuvo.
@@ -478,6 +480,7 @@ export async function anadirCortesia(_prev: CortesiaState, formData: FormData): 
       .select('plan_id')
       .eq('miembro_id', miembro_id)
       .order('fecha_fin', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
       .maybeSingle(),
     resolverEmpleadoId(admin, actor.userId),
