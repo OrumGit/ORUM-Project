@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { Ban, Camera, CreditCard, Gift, Pencil, Trash2 } from 'lucide-react'
+import { Ban, Camera, CreditCard, Gift, Hash, Pencil, Trash2 } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { derivarEstadoMembresia, estadoEnHistorial, type EstadoMembresia } from '@/lib/miembros/membresias'
@@ -296,6 +296,17 @@ export default async function FichaMiembroPage({
                 icon={<Ban size={16} />}
               >
                 Revocar membresía
+              </Button>
+            )}
+            {/* Reasignar el número (19/11/2026): solo el administrador. La
+                ventana dice si el miembro tiene ventas y no deja cambiarlo. */}
+            {actor.rolCodigo === 'super_admin' && (
+              <Button
+                href={`/OrumAdminLogin/miembros/${miembro.id}/numero`}
+                variant="secondary"
+                icon={<Hash size={16} />}
+              >
+                Reasignar número
               </Button>
             )}
             {/* Días de cortesía DETRÁS de lo pagado (13/11/2026): solo el
