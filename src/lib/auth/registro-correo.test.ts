@@ -28,6 +28,20 @@ describe('construirCorreoConfirmacionRegistro', () => {
     expect(c.html).toContain(`href="${enlace.replace(/&/g, '&amp;')}"`)
   })
 
+  it('con código: lo pone en el asunto, en el texto y en el HTML', () => {
+    const c = construirCorreoConfirmacionRegistro({ nombre: 'María', enlace, codigo: '482915' })
+    expect(c.asunto).toContain('482915')
+    expect(c.texto).toContain('482915')
+    expect(c.html).toContain('482915')
+    expect(c.texto).toContain(enlace)
+  })
+
+  it('un código que no son seis cifras no se pinta', () => {
+    const c = construirCorreoConfirmacionRegistro({ nombre: 'María', enlace, codigo: '<b>1</b>' })
+    expect(c.html).not.toContain('<b>1</b>')
+    expect(c.asunto).not.toContain('<b>')
+  })
+
   it('saluda con el nombre', () => {
     const c = construirCorreoConfirmacionRegistro({ nombre: 'María', enlace })
     expect(c.texto.startsWith('Hola María,')).toBe(true)

@@ -29,7 +29,7 @@ const ERROR_PAGO = 'No pudimos abrir el pago. Inténtalo de nuevo en un momento.
  */
 export async function iniciarPagoRegistro(
   _previo: IniciarPagoState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<IniciarPagoState> {
   const supabase = await createClient()
   const {
@@ -49,14 +49,29 @@ export async function iniciarPagoRegistro(
   if (!permiso.ok) return { error: MENSAJE_POR_MOTIVO[permiso.motivo] }
   if (!registro) return { error: MENSAJE_POR_MOTIVO.sin_registro }
 
+  // «Cambiar plan» (ventana del registro y «Completa tu membresía»): el plan
+  // que llega del formulario manda si es uno vigente; se anota en el registro
+  // ANTES de abrir el pago, que es de donde lo leen el alta y la conciliación.
+  const pedido = Number(formData.get('plan_id'))
+  const planId = Number.isInteger(pedido) && pedido > 0 ? pedido : registro.plan_id
+
   const { data: plan, error: errPlan } = await admin
     .from('planes_membresia')
     .select('nombre, precio, duracion_meses')
-    .eq('id', registro.plan_id)
+    .eq('id', planId)
     .eq('activo', true)
     .is('deleted_at', null)
     .maybeSingle()
   if (errPlan || !plan) return { error: 'Ese plan ya no está disponible. Elige otro.' }
+
+  if (planId !== registro.plan_id) {
+    const { error: errCambio } = await admin
+      .from('registros_pendientes')
+      .update({ plan_id: planId, updated_at: new Date().toISOString() })
+      .eq('id', registro.id)
+      .eq('estado', 'pendiente')
+    if (errCambio) return { error: ERROR_PAGO }
+  }
 
   // Cancelar el intento anterior. Si falla, no se crea otro.
   if (registro.mp_preapproval_id) {

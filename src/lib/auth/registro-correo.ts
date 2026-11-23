@@ -8,15 +8,25 @@
  * `NEXT_PUBLIC_SITE_URL` puede traer una ruta (`https://…/activar-cuenta`), y
  * pegarle la nuestra daría `…/activar-cuenta/registro/confirmar`, que no existe.
  */
-export function enlaceConfirmacionRegistro(urlBase: string, tokenHash: string): string {
+export function enlaceConfirmacionRegistro(
+  urlBase: string,
+  tokenHash: string,
+  /** `magiclink` cuando el código se reenvía (ver `reenviarCodigoRegistro`). */
+  tipo: 'signup' | 'magiclink' = 'signup',
+): string {
   const origen = new URL(urlBase).origin
-  const params = new URLSearchParams({ token_hash: tokenHash, type: 'signup' })
+  const params = new URLSearchParams({ token_hash: tokenHash, type: tipo })
   return `${origen}/registro/confirmar?${params.toString()}`
 }
 
 export type InputCorreoConfirmacionRegistro = {
   nombre: string
   enlace: string
+  /**
+   * El código de 6 dígitos (`email_otp` de `generateLink`). Con él la persona
+   * confirma sin salir de la ventana del registro; el enlace queda de respaldo.
+   */
+  codigo?: string | null
 }
 
 export type CuerpoCorreoConfirmacion = {
@@ -39,12 +49,23 @@ export function construirCorreoConfirmacionRegistro(
 ): CuerpoCorreoConfirmacion {
   const nombre = input.nombre.trim()
   const saludo = nombre ? `Hola ${nombre},` : 'Hola,'
-  const asunto = 'Confirma tu correo para completar tu membresía ORUM'
+  const codigo = input.codigo && /^\d{6}$/.test(input.codigo) ? input.codigo : null
+  const asunto = codigo
+    ? `${codigo} es tu código para confirmar tu correo en ORUM`
+    : 'Confirma tu correo para completar tu membresía ORUM'
 
   const texto = [
     saludo,
     '',
-    'Recibimos tu registro en ORUM. Para continuar con el pago, confirma tu correo abriendo este enlace:',
+    ...(codigo
+      ? [
+          'Tu código para confirmar tu correo en ORUM es:',
+          '',
+          codigo,
+          '',
+          'Escríbelo en la ventana del registro. También puedes confirmar abriendo este enlace:',
+        ]
+      : ['Recibimos tu registro en ORUM. Para continuar con el pago, confirma tu correo abriendo este enlace:']),
     '',
     input.enlace,
     '',
@@ -53,11 +74,18 @@ export function construirCorreoConfirmacionRegistro(
     'ORUM',
   ].join('\n')
 
+  const bloqueCodigo = codigo
+    ? `
+    <p>Tu código para confirmar tu correo en ORUM es:</p>
+    <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 16px 0;">${codigo}</p>
+    <p>Escríbelo en la ventana del registro. También puedes confirmar con este botón:</p>`
+    : `
+    <p>Recibimos tu registro en ORUM. Para continuar con el pago, confirma tu correo:</p>`
+
   const html = `<!doctype html>
 <html lang="es">
   <body style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
-    <p>${escapar(saludo)}</p>
-    <p>Recibimos tu registro en ORUM. Para continuar con el pago, confirma tu correo:</p>
+    <p>${escapar(saludo)}</p>${bloqueCodigo}
     <p><a href="${escapar(input.enlace)}">Confirmar mi correo</a></p>
     <p>Si no fuiste tú quien se registró, ignora este mensaje.</p>
     <p>ORUM</p>

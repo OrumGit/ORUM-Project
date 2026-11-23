@@ -23,6 +23,11 @@ export type RegistroState = {
   ok: boolean
   mensaje?: string
   errores?: ErroresRegistro
+  /**
+   * El correo al que se mandó el código, para el paso «Tu correo». Es el que
+   * la persona acaba de escribir; se devuelve igual exista o no la cuenta.
+   */
+  correo?: string
 }
 
 /**
@@ -117,7 +122,7 @@ export async function iniciarRegistro(
   if (correoOcupado === null) return { ok: false, mensaje: ERROR_GENERICO }
   if (correoOcupado) {
     await avisarCuentaExistente(datos.correo)
-    return { ok: true, mensaje: MENSAJE_REVISA }
+    return { ok: true, mensaje: MENSAJE_REVISA, correo: datos.correo }
   }
 
   // Cédula de un socio ya existente: también se responde igual.
@@ -128,7 +133,7 @@ export async function iniciarRegistro(
     .is('deleted_at', null)
     .maybeSingle()
   if (errMiembro) return { ok: false, mensaje: ERROR_GENERICO }
-  if (miembro) return { ok: true, mensaje: MENSAJE_REVISA }
+  if (miembro) return { ok: true, mensaje: MENSAJE_REVISA, correo: datos.correo }
 
   // Usuario de autenticación sin confirmar. generateLink NO envía correo.
   const { data: generado, error: errUsuario } = await admin.auth.admin.generateLink({
@@ -142,7 +147,7 @@ export async function iniciarRegistro(
     // Si ya existe la cuenta, se responde igual.
     if (errUsuario?.message?.toLowerCase().includes('already')) {
       await avisarCuentaExistente(datos.correo)
-      return { ok: true, mensaje: MENSAJE_REVISA }
+      return { ok: true, mensaje: MENSAJE_REVISA, correo: datos.correo }
     }
     return { ok: false, mensaje: ERROR_GENERICO }
   }
@@ -165,12 +170,16 @@ export async function iniciarRegistro(
     // Sin registro pendiente no puede haber cuenta: se borra la del paso anterior.
     await admin.auth.admin.deleteUser(usuario.id)
     // Cédula o correo ya en otro registro pendiente: mismo mensaje neutro.
-    if (errRegistro.code === '23505') return { ok: true, mensaje: MENSAJE_REVISA }
+    if (errRegistro.code === '23505') return { ok: true, mensaje: MENSAJE_REVISA, correo: datos.correo }
     return { ok: false, mensaje: ERROR_GENERICO }
   }
 
   const enlace = enlaceConfirmacionRegistro(urlBaseSitio(), tokenHash)
-  const cuerpo = construirCorreoConfirmacionRegistro({ nombre: datos.nombres, enlace })
+  const cuerpo = construirCorreoConfirmacionRegistro({
+    nombre: datos.nombres,
+    enlace,
+    codigo: generado?.properties?.email_otp ?? null,
+  })
   const enviado = await enviarCorreoConResultado({
     para: datos.correo,
     nombre: datos.nombres,
@@ -187,7 +196,7 @@ export async function iniciarRegistro(
     }
   }
 
-  return { ok: true, mensaje: MENSAJE_REVISA }
+  return { ok: true, mensaje: MENSAJE_REVISA, correo: datos.correo }
 }
 
 /**

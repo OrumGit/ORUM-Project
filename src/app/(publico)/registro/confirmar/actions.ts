@@ -1,5 +1,6 @@
 'use server'
 
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export type EstadoConfirmacion =
@@ -26,14 +27,19 @@ export async function confirmarCorreoRegistro(
   const tokenHash = String(formData.get('token_hash') ?? '')
   if (!FORMA_TOKEN.test(tokenHash)) return { estado: 'invalido', mensaje: MENSAJE_INVALIDO }
 
+  // `magiclink` cuando el enlace llegó con un código reenviado (`reenviarCodigoRegistro`).
+  const tipo = formData.get('type') === 'magiclink' ? 'magiclink' : 'signup'
+
   const supabase = await createClient()
   const { data, error } = await supabase.auth.verifyOtp({
-    type: 'signup',
+    type: tipo,
     token_hash: tokenHash,
   })
 
   if (error || !data.user) {
     return { estado: 'invalido', mensaje: MENSAJE_INVALIDO }
   }
-  return { estado: 'confirmado' }
+  // El correo queda confirmado y la sesión abierta: sigue al pago, con el
+  // mismo diseño que la ventana del registro.
+  redirect('/registro/completar')
 }
