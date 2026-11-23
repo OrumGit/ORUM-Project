@@ -66,3 +66,50 @@ export function construirCorreoConfirmacionRegistro(
 
   return { asunto, html, texto }
 }
+
+export type InputCorreoCuentaExistente = {
+  /** Página de entrada del Portal de Miembros. */
+  enlaceEntrar: string
+  /** Página para recuperar la contraseña. */
+  enlaceRecuperar: string
+}
+
+/**
+ * Correo para quien se registra con un correo que YA tiene cuenta (23/11/2026).
+ * La pantalla responde igual que a un correo nuevo, para no revelar qué cuentas
+ * existen; antes, además, no llegaba nada y la persona esperaba un correo que
+ * nunca venía. Ahora le llega este, que solo lee el dueño del buzón. No lleva el
+ * nombre tecleado: puede no ser el de la cuenta.
+ */
+export function construirCorreoCuentaExistente(
+  input: InputCorreoCuentaExistente,
+): CuerpoCorreoConfirmacion {
+  const asunto = 'Ya tienes una cuenta en ORUM'
+
+  const texto = [
+    'Hola,',
+    '',
+    'Alguien intentó registrarse en ORUM con este correo, pero ya tiene una cuenta.',
+    '',
+    `Entra con tu correo o tu número de socio: ${input.enlaceEntrar}`,
+    `¿No recuerdas tu contraseña? Crea una nueva aquí: ${input.enlaceRecuperar}`,
+    '',
+    'Si no fuiste tú, ignora este mensaje: tu cuenta no ha cambiado.',
+    '',
+    'ORUM',
+  ].join('\n')
+
+  const html = `<!doctype html>
+<html lang="es">
+  <body style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+    <p>Hola,</p>
+    <p>Alguien intentó registrarse en ORUM con este correo, pero ya tiene una cuenta.</p>
+    <p><a href="${escapar(input.enlaceEntrar)}">Entrar a mi cuenta</a> con tu correo o tu número de socio.</p>
+    <p>¿No recuerdas tu contraseña? <a href="${escapar(input.enlaceRecuperar)}">Crea una nueva</a>.</p>
+    <p>Si no fuiste tú, ignora este mensaje: tu cuenta no ha cambiado.</p>
+    <p>ORUM</p>
+  </body>
+</html>`
+
+  return { asunto, html, texto }
+}

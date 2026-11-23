@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { construirCorreoConfirmacionRegistro, enlaceConfirmacionRegistro } from './registro-correo'
+import {
+  construirCorreoConfirmacionRegistro,
+  construirCorreoCuentaExistente,
+  enlaceConfirmacionRegistro,
+} from './registro-correo'
 
 describe('enlaceConfirmacionRegistro', () => {
   it('usa solo el origen cuando la base trae una ruta', () => {
@@ -41,5 +45,22 @@ describe('construirCorreoConfirmacionRegistro', () => {
   it('sin nombre usa un saludo genérico', () => {
     const c = construirCorreoConfirmacionRegistro({ nombre: '  ', enlace })
     expect(c.texto.startsWith('Hola,')).toBe(true)
+  })
+})
+
+describe('construirCorreoCuentaExistente', () => {
+  const correo = construirCorreoCuentaExistente({
+    enlaceEntrar: 'https://www.cluborum.com/miembros/login',
+    enlaceRecuperar: 'https://www.cluborum.com/miembros/login/recuperar',
+  })
+
+  it('dice que ya hay cuenta y da los dos caminos', () => {
+    expect(correo.asunto).toBe('Ya tienes una cuenta en ORUM')
+    expect(correo.texto).toContain('https://www.cluborum.com/miembros/login')
+    expect(correo.html).toContain('https://www.cluborum.com/miembros/login/recuperar')
+  })
+
+  it('no saluda con un nombre: el tecleado puede no ser el de la cuenta', () => {
+    expect(correo.texto.startsWith('Hola,')).toBe(true)
   })
 })

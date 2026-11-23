@@ -114,6 +114,40 @@ export async function cupoDeSolicitudAliado(ip: string): Promise<boolean> {
   return porIp && global
 }
 
+export const ERROR_LIMITE_REGISTRO =
+  'Hemos recibido demasiados registros desde aquí. Espera un rato e inténtalo de nuevo.'
+
+/**
+ * Cupo para un registro público (cada uno crea una cuenta y manda un correo):
+ * por IP, por correo y un techo global al día. Falla hacia «bloquear»: ver
+ * `AlFallar`.
+ */
+export async function cupoDeRegistro(correo: string): Promise<boolean> {
+  const ip = await ipDelCliente()
+  const [porIp, porCorreo, global] = await Promise.all([
+    hayCupo(claveCupo('registro', 'ip', ip), LIMITES.registroPorIp, 'bloquear'),
+    hayCupo(claveCupo('registro', 'cuenta', huella(correo)), LIMITES.registroPorCorreo, 'bloquear'),
+    hayCupo(claveCupo('registro', 'global', 'dia'), LIMITES.registroGlobalDia, 'bloquear'),
+  ])
+  return porIp && porCorreo && global
+}
+
+export const ERROR_LIMITE_CODIGO =
+  'Demasiados intentos con el código. Espera unos minutos o pide uno nuevo.'
+
+/**
+ * Cupo para probar un código de confirmación: por correo (lo que impide
+ * adivinarlo) y por IP. Falla hacia «bloquear»: sin contador no hay techo.
+ */
+export async function cupoDeCodigo(correo: string): Promise<boolean> {
+  const ip = await ipDelCliente()
+  const [porCorreo, porIp] = await Promise.all([
+    hayCupo(claveCupo('codigo', 'cuenta', huella(correo)), LIMITES.codigoPorCorreo, 'bloquear'),
+    hayCupo(claveCupo('codigo', 'ip', ip), LIMITES.codigoPorIp, 'bloquear'),
+  ])
+  return porCorreo && porIp
+}
+
 /** Pone a cero el contador de `clave` (el login, al acertar). Nunca lanza. */
 export async function reiniciarCupo(clave: string): Promise<void> {
   try {

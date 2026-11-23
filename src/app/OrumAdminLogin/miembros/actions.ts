@@ -22,6 +22,7 @@ import {
 import { esNumeroRegistroValido } from '@/lib/miembros/numeros-registro'
 import { revisarRevocacion } from '@/lib/miembros/revocacion'
 import { graciaPorMembresia } from '@/lib/miembros/gracia'
+import { cortarCobrosDelSocio } from '@/lib/mercadopago/renovacion'
 import { construirEnlaceActivacion, urlBaseSitio } from '@/lib/auth/activacion'
 import { errorDeCorreoOcupado } from '@/lib/auth/correo-registrado'
 import { cambiarCorreoDeCuenta } from '@/lib/auth/cambiar-correo'
@@ -650,6 +651,10 @@ export async function revocarMembresia(_prev: RevocarState, formData: FormData):
     .eq('estado', 'activa')
   if (error) return { error: mensajeDeError('No se pudo revocar la membresía', error) }
 
+  // Si la pagaba con Mercado Pago, se corta el cobro automático: si no, el
+  // cobro del mes siguiente le crearía una membresía nueva y deshacería esto.
+  const corte = await cortarCobrosDelSocio(admin, miembroId)
+
   await registrarActividad(admin, {
     actorId: actor.userId,
     accion: 'revocacion',
@@ -660,6 +665,9 @@ export async function revocarMembresia(_prev: RevocarState, formData: FormData):
       fecha_fin: membresia.fecha_fin,
       motivo: revision.motivo,
       nota: revision.nota,
+      ...(corte.canceladas + corte.fallidas > 0 && {
+        cobro_mercadopago: corte.fallidas > 0 ? 'no_se_pudo_cancelar' : 'cancelado',
+      }),
     },
   })
 
@@ -667,5 +675,13 @@ export async function revocarMembresia(_prev: RevocarState, formData: FormData):
   revalidatePath(`/OrumAdminLogin/miembros/${miembroId}`)
   revalidatePath('/OrumAdminLogin')
   revalidatePath('/miembros', 'layout')
+  if (corte.fallidas > 0) {
+    // La ventana se queda abierta con el aviso: hay algo que hacer a mano.
+    return {
+      error:
+        'La membresía quedó revocada, pero no pudimos cancelar su cobro automático en Mercado Pago. ' +
+        'Cancélalo desde la cuenta de Mercado Pago de ORUM para que no se le vuelva a cobrar.',
+    }
+  }
   return { ok: true }
 }

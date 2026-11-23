@@ -37,6 +37,15 @@ export const LIMITES = {
   loginPorCuentaYIp: { tope: 10, ventanaSegundos: 15 * 60 },
   loginPorIp: { tope: 30, ventanaSegundos: 15 * 60 },
   loginPorCuenta: { tope: 100, ventanaSegundos: HORA },
+  // Registro público con pago (23/11/2026): cada intento crea una cuenta y
+  // manda un correo, así que se limita por IP, por correo y en total al día.
+  registroPorIp: { tope: 5, ventanaSegundos: HORA },
+  registroPorCorreo: { tope: 3, ventanaSegundos: HORA },
+  registroGlobalDia: { tope: 300, ventanaSegundos: DIA },
+  // Código de confirmación del correo: 6 dígitos son un millón de opciones, así
+  // que pocos intentos por correo bastan para que adivinarlo sea imposible.
+  codigoPorCorreo: { tope: 5, ventanaSegundos: 15 * 60 },
+  codigoPorIp: { tope: 20, ventanaSegundos: 15 * 60 },
 } as const satisfies Record<string, Limite>
 
 /** Valor de `ipDeCabeceras` cuando la petición no trae ninguna IP (solo en local). */

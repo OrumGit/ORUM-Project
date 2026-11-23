@@ -89,14 +89,30 @@ export async function iniciarPagoRegistro(
     return { error: ERROR_PAGO }
   }
 
-  const { error: errGuardar } = await admin
+  // Se guarda SOLO si nadie cambió el intento mientras tanto (dos pestañas, un
+  // doble clic). Sin esta condición, dos peticiones a la vez dejaban dos
+  // enlaces de pago abiertos y solo uno guardado: si la persona pagaba el otro,
+  // Mercado Pago cobraba —y seguía cobrando cada mes— y ORUM no sabía de quién
+  // era el cobro. La que pierde cancela el suyo.
+  let guardar = admin
     .from('registros_pendientes')
     .update({ mp_preapproval_id: suscripcion.id, updated_at: new Date().toISOString() })
     .eq('id', registro.id)
-  if (errGuardar) {
+    .eq('estado', 'pendiente')
+  guardar = registro.mp_preapproval_id
+    ? guardar.eq('mp_preapproval_id', registro.mp_preapproval_id)
+    : guardar.is('mp_preapproval_id', null)
+  const { data: guardado, error: errGuardar } = await guardar.select('id')
+  if (errGuardar || !guardado || guardado.length === 0) {
     // Sin guardar el id no se puede casar la notificación: se cancela lo creado.
-    await cancelarSuscripcion(suscripcion.id).catch(() => undefined)
-    return { error: ERROR_PAGO }
+    await cancelarSuscripcion(suscripcion.id).catch((error) =>
+      console.error('[registro] no se pudo cancelar el intento sobrante', suscripcion.id, error),
+    )
+    return {
+      error: errGuardar
+        ? ERROR_PAGO
+        : 'Ya estamos abriendo tu pago en otra ventana. Si la cerraste, inténtalo de nuevo.',
+    }
   }
 
   redirect(suscripcion.init_point)

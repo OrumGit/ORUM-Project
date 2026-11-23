@@ -11,8 +11,10 @@ import {
 } from '@/lib/auth/registro-entrada'
 import {
   construirCorreoConfirmacionRegistro,
+  construirCorreoCuentaExistente,
   enlaceConfirmacionRegistro,
 } from '@/lib/auth/registro-correo'
+import { cupoDeRegistro, ERROR_LIMITE_REGISTRO } from '@/lib/auth/limitador'
 import { ERROR_TURNSTILE, verificarTurnstileDeFormulario } from '@/lib/auth/turnstile-request'
 import { enviarCorreoConResultado } from '@/lib/correo/correo'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -78,6 +80,10 @@ export async function iniciarRegistro(
     return { ok: false, mensaje: 'Revisa los campos marcados.', errores: validacion.errores }
   }
   const datos = validacion.datos
+
+  // Cada registro crea una cuenta y manda un correo: por IP, por correo y al día.
+  if (!(await cupoDeRegistro(datos.correo))) return { ok: false, mensaje: ERROR_LIMITE_REGISTRO }
+
   const admin = createAdminClient()
 
   // La ciudad tiene que existir: el formulario solo ofrece las de la tabla, pero
@@ -109,7 +115,10 @@ export async function iniciarRegistro(
   // Correo ya usado: se responde igual, sin crear nada.
   const correoOcupado = await correoYaRegistrado(admin, datos.correo)
   if (correoOcupado === null) return { ok: false, mensaje: ERROR_GENERICO }
-  if (correoOcupado) return { ok: true, mensaje: MENSAJE_REVISA }
+  if (correoOcupado) {
+    await avisarCuentaExistente(datos.correo)
+    return { ok: true, mensaje: MENSAJE_REVISA }
+  }
 
   // Cédula de un socio ya existente: también se responde igual.
   const { data: miembro, error: errMiembro } = await admin
@@ -132,6 +141,7 @@ export async function iniciarRegistro(
   if (errUsuario || !usuario || !tokenHash) {
     // Si ya existe la cuenta, se responde igual.
     if (errUsuario?.message?.toLowerCase().includes('already')) {
+      await avisarCuentaExistente(datos.correo)
       return { ok: true, mensaje: MENSAJE_REVISA }
     }
     return { ok: false, mensaje: ERROR_GENERICO }
@@ -178,4 +188,24 @@ export async function iniciarRegistro(
   }
 
   return { ok: true, mensaje: MENSAJE_REVISA }
+}
+
+/**
+ * A quien se registra con un correo que ya tiene cuenta le llega un correo que
+ * se lo dice (23/11/2026). La pantalla le responde lo mismo que a cualquiera:
+ * solo el dueño del buzón se entera. Si el envío falla, no se dice nada.
+ */
+async function avisarCuentaExistente(correo: string): Promise<void> {
+  const origen = new URL(urlBaseSitio()).origin
+  const cuerpo = construirCorreoCuentaExistente({
+    enlaceEntrar: `${origen}/miembros/login`,
+    enlaceRecuperar: `${origen}/miembros/login/recuperar`,
+  })
+  await enviarCorreoConResultado({
+    para: correo,
+    nombre: '',
+    asunto: cuerpo.asunto,
+    html: cuerpo.html,
+    texto: cuerpo.texto,
+  })
 }
