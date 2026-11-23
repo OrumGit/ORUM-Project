@@ -1,0 +1,54 @@
+/* El ojo de la contraseña (ver `ojo-animado.tsx`). */
+
+.ojo {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.forma {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+
+.tachado {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset var(--dur-base) var(--ease-out) 110ms;
+}
+
+.ojo[data-visible] .tachado {
+  stroke-dashoffset: 0;
+}
+
+.ojo[data-parpadeo='a'] .forma {
+  animation: parpadeo-a var(--dur-slow) var(--ease-in-out);
+}
+
+.ojo[data-parpadeo='b'] .forma {
+  animation: parpadeo-b var(--dur-slow) var(--ease-in-out);
+}
+
+@keyframes parpadeo-a {
+  45% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes parpadeo-b {
+  45% {
+    transform: scaleY(0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ojo[data-parpadeo] .forma {
+    animation: none;
+  }
+
+  .tachado {
+    transition: none;
+  }
+}

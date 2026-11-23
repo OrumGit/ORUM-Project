@@ -1,0 +1,77 @@
+/* Las seis casillas del código (ver `codigo-verificacion.tsx`). */
+
+.grupo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.casillas {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 56px));
+  gap: var(--space-2);
+  width: 100%;
+  justify-content: center;
+}
+
+.casilla {
+  width: 100%;
+  min-width: 0;
+  height: 64px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--blanco);
+  color: var(--tinta-1);
+  text-align: center;
+  font: 600 1.625rem/1 var(--font-sans);
+  font-variant-numeric: lining-nums tabular-nums;
+  caret-color: var(--brand-edge);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
+}
+
+.casilla:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--brand-edge);
+}
+
+.casilla[data-error] {
+  border-color: var(--danger);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--danger);
+  text-align: center;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 380px) {
+  .casillas {
+    gap: var(--space-1);
+  }
+
+  .casilla {
+    height: 56px;
+    font-size: 1.375rem;
+  }
+}

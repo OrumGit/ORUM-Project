@@ -1,0 +1,124 @@
+/* Los tres pasos del registro (ver `pasos-pago.tsx`). */
+
+.pasos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.paso[data-estado='hecho'],
+.paso[data-estado='ahora'] {
+  color: var(--tinta-1);
+}
+
+.linea {
+  width: var(--space-6);
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--w-200);
+}
+
+.paso[data-estado='hecho'] + .paso .linea,
+.paso[data-estado='ahora'] .linea {
+  background: var(--gold-300);
+}
+
+.circulo {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--w-200);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.paso[data-estado='hecho'] .circulo {
+  border-color: transparent;
+  background: var(--gold-200);
+  color: var(--gold-650);
+}
+
+.paso[data-estado='ahora'] .circulo {
+  /* El filo es el oro de filos (3:1 contra el blanco); el relleno, el claro. */
+  border-color: var(--brand-edge);
+  background: var(--gold-200);
+  font-weight: 700;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.compacto {
+  display: none;
+}
+
+/* Teléfono: «Paso 1 de 3 · Tus datos» y una barra de tres segmentos. */
+@media (max-width: 767px) {
+  .pasos {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .compacto {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .compactoTexto {
+    margin: 0;
+    font-size: var(--t-footnote-size);
+    font-weight: 600;
+    color: var(--text-2);
+  }
+
+  .compactoTexto span {
+    color: var(--tinta-1);
+  }
+
+  .barra {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .barra span {
+    height: 4px;
+    border-radius: var(--radius-full);
+    background: var(--w-200);
+  }
+
+  .barra span[data-estado='hecho'] {
+    background: var(--gold-300);
+  }
+
+  .barra span[data-estado='ahora'] {
+    background: var(--brand-edge);
+  }
+}

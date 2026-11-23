@@ -33,6 +33,8 @@ type Props = {
    * hay dentro.
    */
   ariaLabel?: string
+  /** La cabecera propia (pasos del registro), a la izquierda de la X. */
+  encabezado?: ReactNode
   footer?: ReactNode
   /** Ancho del diálogo en escritorio. */
   width?: string
@@ -62,6 +64,7 @@ export function Overlay({
   title,
   description,
   ariaLabel,
+  encabezado,
   footer,
   width,
   detent = 'large',
@@ -94,6 +97,7 @@ export function Overlay({
         title={title}
         description={description}
         ariaLabel={ariaLabel}
+        encabezado={encabezado}
         footer={footer}
         width={width}
         sinEntrada={continua}
@@ -110,6 +114,7 @@ export function Overlay({
       title={title}
       description={description}
       ariaLabel={ariaLabel}
+      encabezado={encabezado}
       footer={footer}
       detent={detent}
       sinEntrada={continua}

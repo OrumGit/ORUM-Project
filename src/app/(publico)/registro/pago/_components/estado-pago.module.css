@@ -1,0 +1,326 @@
+/* Al volver de Mercado Pago (ver `estado-pago.tsx`). */
+
+.pagina {
+  /* El botón principal en el ORO DE MARCA, como las puertas de acceso:
+     relleno `--gold-500` con texto en tinta (8,5:1). */
+  --action-gold: var(--gold-500);
+  --action-gold-fg: var(--tinta-1);
+  min-height: calc(100dvh - var(--topbar-h));
+  box-sizing: border-box;
+  padding: var(--space-10) var(--space-4);
+  display: grid;
+  place-items: center;
+}
+
+.confirmando {
+  width: 100%;
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-display-2-size);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--tinta-1);
+  -webkit-font-smoothing: auto;
+}
+
+.titulo em {
+  color: var(--brand);
+}
+
+.texto {
+  margin: 0;
+  font-size: var(--t-body-size);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* --- La línea de tiempo ------------------------------------------------------- */
+
+.linea {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.hito {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: var(--space-4);
+  padding-bottom: var(--space-5);
+}
+
+.hito:last-child {
+  padding-bottom: 0;
+}
+
+.riel {
+  position: relative;
+}
+
+.punto {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+}
+
+.hito[data-estado='hecho'] .punto {
+  background: color-mix(in srgb, var(--success) 12%, var(--blanco));
+  color: var(--success);
+}
+
+.hito[data-estado='ahora'] .punto {
+  background: var(--blanco);
+  box-shadow: var(--shadow-card);
+}
+
+.hito[data-estado='falta'] .punto {
+  background: var(--w-50);
+  color: var(--text-3);
+}
+
+.tramo {
+  position: absolute;
+  left: 15px;
+  top: 38px;
+  bottom: calc(var(--space-5) * -1 + 6px);
+  width: 2px;
+  border-radius: var(--radius-full);
+  background: var(--w-200);
+  overflow: hidden;
+}
+
+.hito[data-estado='hecho'] .tramo {
+  background: color-mix(in srgb, var(--success) 30%, var(--blanco));
+}
+
+/* Lo de ahora: un arco dorado que gira alrededor del punto… */
+.arco {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--radius-full);
+  background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--gold-300) 40%, transparent) 120deg, var(--brand-edge) 330deg, transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), black calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), black calc(100% - 2px));
+  animation: arco 1.1s linear infinite;
+}
+
+/* …con la estrella de ORUM titilando dentro… */
+.chispa {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  animation: chispa 1.4s var(--ease-in-out) infinite;
+}
+
+/* …y el tramo siguiente, guiones dorados que fluyen hacia abajo. */
+.flujo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;
+  bottom: -12px;
+  background: repeating-linear-gradient(to bottom, var(--brand-edge) 0 5px, transparent 5px 12px);
+  animation: flujo 0.9s linear infinite;
+}
+
+.estrellaGris {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.hitoTitulo {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--t-body-size);
+  font-weight: 600;
+  color: var(--tinta-1);
+}
+
+.hito[data-estado='falta'] .hitoTitulo {
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.hitoNota {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.enCurso {
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.puntos span {
+  display: inline-block;
+  animation: puntito 1.2s var(--ease-in-out) infinite;
+}
+
+.puntos span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.puntos span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.pie {
+  margin: 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--t-footnote-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* --- Rechazado, pendiente, tardando ------------------------------------------ */
+
+.aviso {
+  width: 100%;
+  max-width: 26rem;
+  box-sizing: border-box;
+  padding: var(--space-7);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-lg);
+  background: var(--blanco);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: aparece var(--dur-slow) var(--ease-out);
+}
+
+.aro {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand-edge);
+}
+
+.estado {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+}
+
+.estado[data-tono='peligro'] {
+  color: var(--danger);
+}
+
+.estado[data-tono='aviso'] {
+  color: var(--warning);
+}
+
+.estadoPunto {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+
+.aviso .titulo {
+  font-size: var(--t-title-1-size);
+}
+
+.avisoCuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.avisoCuerpo p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--t-callout-size);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.avisoCuerpo strong {
+  color: var(--tinta-1);
+}
+
+@keyframes arco {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes chispa {
+  0%,
+  100% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@keyframes flujo {
+  to {
+    transform: translateY(12px);
+  }
+}
+
+@keyframes puntito {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arco,
+  .chispa,
+  .flujo,
+  .puntos span,
+  .aviso {
+    animation: none;
+  }
+
+  .puntos span {
+    opacity: 1;
+  }
+}

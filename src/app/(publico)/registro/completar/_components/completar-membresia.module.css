@@ -1,0 +1,175 @@
+/* «Completa tu membresía» (ver `completar-membresia.tsx`). */
+
+.pagina {
+  min-height: calc(100dvh - var(--topbar-h));
+  box-sizing: border-box;
+  padding: var(--space-10) var(--space-4);
+  display: grid;
+  place-items: center;
+}
+
+.tarjeta {
+  /* El botón principal en el ORO DE MARCA, como las puertas de acceso:
+     relleno `--gold-500` con texto en tinta (8,5:1). */
+  --action-gold: var(--gold-500);
+  --action-gold-fg: var(--tinta-1);
+  width: 100%;
+  max-width: 40rem;
+  box-sizing: border-box;
+  padding: var(--space-7) var(--space-8);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-lg);
+  background: var(--blanco);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.titulo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--t-display-2-size);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--tinta-1);
+  -webkit-font-smoothing: auto;
+}
+
+.titulo em {
+  color: var(--brand);
+}
+
+.texto {
+  margin: 0;
+  font-size: var(--t-body-size);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.planes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+/* Cada plan es una tarjeta que se puede levantar; el elegido lleva el filo
+   dorado y la ✓ (nunca solo color). */
+.plan {
+  position: relative;
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-md);
+  background: var(--blanco);
+  box-shadow: var(--shadow-card);
+  color: var(--tinta-1);
+  font-family: var(--font-sans);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  cursor: pointer;
+  transition:
+    translate var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .plan:hover {
+    translate: 0 -2px;
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+.plan:active {
+  translate: 0 1px;
+  box-shadow: var(--shadow-press);
+}
+
+.plan[aria-checked='true'] {
+  box-shadow: var(--filo-activo), var(--shadow-raised);
+}
+
+.plan:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.planNombre {
+  font-size: var(--t-body-size);
+  font-weight: 600;
+}
+
+.planPrecio {
+  font-family: var(--font-display);
+  font-size: var(--t-title-1-size);
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+  -webkit-font-smoothing: auto;
+}
+
+.planPeriodo {
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.marca {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--gold-300);
+  color: var(--tinta-1);
+  display: grid;
+  place-items: center;
+  animation: marca var(--dur-base) var(--ease-spring);
+}
+
+.pie {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.nota {
+  margin: 0;
+  font-size: var(--t-caption-size);
+  color: var(--text-2);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .pagina {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .tarjeta {
+    padding: var(--space-5);
+  }
+}
+
+@keyframes marca {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca {
+    animation: none;
+  }
+}

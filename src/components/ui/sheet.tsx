@@ -52,6 +52,12 @@ type Props = {
    * lo nombra por mucho que se lea después.
    */
   ariaLabel?: string
+  /**
+   * Lo que va en la cabecera, a la izquierda de la X, en vez de (o además de)
+   * el título: el indicador de pasos de la ventana del registro. Sin `title`,
+   * el diálogo se nombra con `ariaLabel`.
+   */
+  encabezado?: ReactNode
   footer?: ReactNode
   /**
    * Oculta la X de cerrar. Por defecto NO se oculta, y el defecto importa:
@@ -76,6 +82,7 @@ export function Sheet({
   open,
   onClose,
   title,
+  encabezado,
   description,
   ariaLabel,
   footer,
@@ -381,9 +388,10 @@ export function Sheet({
           cabecera. Antes colgaba solo de `title || description` y dejaba la
           ficha de comercio sin salida visible en móvil.
         */}
-        {(title || description || !hideClose) && (
+        {(encabezado || title || description || !hideClose) && (
           <div className={styles.cabecera}>
             <div className={styles.textos}>
+              {encabezado}
               {title && (
                 <h2 className={styles.titulo} id={tituloId}>
                   {title}

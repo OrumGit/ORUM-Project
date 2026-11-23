@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilActual } from '@/lib/auth/auth'
 import { ERROR_TURNSTILE, verificarTurnstileDeFormulario } from '@/lib/auth/turnstile-request'
@@ -8,7 +9,15 @@ import { cupoDeLogin, ERROR_LIMITE_LOGIN, reiniciarLogin } from '@/lib/auth/limi
 import { resolverCorreoPorNumeroMembresia } from '@/lib/miembros/auth-miembro'
 import { clasificarIdentificador } from '@/lib/miembros/identificador-acceso'
 
-export type LoginMiembroState = { error?: string }
+export type LoginMiembroState = {
+  error?: string
+  /**
+   * La contraseña era correcta pero el correo de un registro con pago aún no
+   * está confirmado: el formulario enseña las seis casillas del código. Solo se
+   * devuelve tras acertar la contraseña, así que no delata cuentas.
+   */
+  confirmarCorreo?: string
+}
 
 const ERROR_CREDENCIALES = 'Número de socio, correo o contraseña incorrectos.'
 
@@ -48,11 +57,32 @@ export async function iniciarSesionMiembro(
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email: correo, password })
   if (error) {
+    if (error.code === 'email_not_confirmed') {
+      return {
+        error: 'Confirma tu correo para seguir: escribe el código de 6 cifras que te enviamos.',
+        confirmarCorreo: correo,
+      }
+    }
     return { error: ERROR_CREDENCIALES }
   }
   await reiniciarLogin(identificador.valor)
 
   const perfil = await getPerfilActual()
+  // Registro con pago sin terminar: aún no tiene perfil (nace con el primer
+  // cobro aprobado). No es una cuenta inactiva: le falta pagar.
+  if (!perfil) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (user) {
+      const { data: registro } = await createAdminClient()
+        .from('registros_pendientes')
+        .select('estado')
+        .eq('auth_user_id', user.id)
+        .maybeSingle()
+      if (registro?.estado === 'pendiente') redirect('/registro/completar')
+    }
+  }
   if (!perfil || !perfil.activo) {
     await supabase.auth.signOut()
     return { error: 'Tu cuenta está inactiva. Contacta a soporte.' }

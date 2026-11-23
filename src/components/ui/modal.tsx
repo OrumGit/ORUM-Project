@@ -62,6 +62,12 @@ type Props = {
   title?: string
   /** Nombre accesible del diálogo cuando NO hay `title` visible. */
   ariaLabel?: string
+  /**
+   * Lo que va en la cabecera, a la izquierda de la X, en vez de (o además de)
+   * el título: el indicador de pasos de la ventana del registro. Sin `title`,
+   * el diálogo se nombra con `ariaLabel`.
+   */
+  encabezado?: ReactNode
   description?: string
   /** Botonera inferior. En móvil se apila invertida (la acción principal arriba). */
   footer?: ReactNode
@@ -137,6 +143,7 @@ export function Modal({
   open,
   onClose,
   title,
+  encabezado,
   description,
   footer,
   width = '480px',
@@ -332,7 +339,7 @@ export function Modal({
     if (cerrarAlPulsarFuera && e.target === ref.current && enFondo) onClose()
   }
 
-  const tieneCabecera = Boolean(title || description || !hideClose)
+  const tieneCabecera = Boolean(encabezado || title || description || !hideClose)
 
   return (
     <dialog
@@ -357,6 +364,7 @@ export function Modal({
           {tieneCabecera && (
             <div className={styles.cabecera}>
               <div className={styles.textos}>
+                {encabezado}
                 {title && (
                   <h2 className={styles.titulo} id={tituloId}>
                     {title}

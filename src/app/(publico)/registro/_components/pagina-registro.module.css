@@ -1,0 +1,54 @@
+/* El registro a pantalla completa y las páginas del pago (retorno, completar):
+   una tarjeta blanca centrada sobre la fachada. */
+
+.pagina {
+  /* El botón principal en el ORO DE MARCA, como las puertas de acceso:
+     relleno `--gold-500` con texto en tinta (8,5:1). */
+  --action-gold: var(--gold-500);
+  --action-gold-fg: var(--tinta-1);
+  min-height: calc(100dvh - var(--topbar-h));
+  box-sizing: border-box;
+  padding: var(--space-8) var(--space-4) var(--space-10);
+  display: grid;
+  place-items: start center;
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 38.75rem;
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-lg);
+  background: var(--blanco);
+  box-shadow: var(--shadow-raised);
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera {
+  padding: var(--space-5) var(--space-7) 0;
+}
+
+.cuerpo {
+  padding: var(--space-5) var(--space-7);
+}
+
+.pie {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-4) var(--space-7) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: var(--blanco);
+}
+
+@media (max-width: 600px) {
+  .pagina {
+    padding: var(--space-4) var(--space-3) var(--space-8);
+  }
+
+  .cabecera,
+  .cuerpo,
+  .pie {
+    padding-inline: var(--space-5);
+  }
+}

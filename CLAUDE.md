@@ -2235,6 +2235,73 @@ de una imagen.
   sí. Un `.mov` en HEVC del iPhone no lo abren todos los navegadores: el
   editor lo dice y pide otro archivo.
 
+**EL PAGO CON MERCADO PAGO: registro, código y pago en UNA ventana**
+(rama `feat/mercadopago-backend`, 23/11/2026; diseño aprobado en el
+artifact «ORUM — Pago con Mercado Pago»; **NO está en producción**). El
+backend es el de los planes `docs/superpowers/plans/2026-11-09-mercado-pago-*.md`.
+
+- **«Adquirir» abre el registro ENCIMA de la portada**: ruta interceptada
+  `(publico)/@modal/(.)registro` (`VentanaRegistro`); un enlace directo a
+  `/registro?plan=N` abre lo mismo a pantalla completa (`PaginaRegistro`).
+  Las dos montan `FlujoRegistro` (`registro/_components/flujo-registro.tsx`)
+  con un MARCO distinto. Los tres pasos viven montados a la vez (el que no
+  toca va `hidden`): volver a «Tus datos» conserva lo escrito.
+- **1 · Tus datos**: la tarjeta del plan (blanca, monograma suelto, «Cambiar
+  plan» despliega los demás), nombres, apellidos, cédula, celular, correo,
+  ciudad (`SelectMenu`), dirección, `CampoContrasenaNueva` + «Repítela»
+  (`igualA`), términos (casilla propia: redondeada, sin borde, animada —
+  pedida así—) y Turnstile. 2 · **Tu correo**: el CÓDIGO de 6 cifras en la
+  misma ventana (`CodigoVerificacion`: pegar llena las seis, la sexta envía
+  sola). 3 · **Pago**: el resumen y «Pagar $X con Mercado Pago».
+- **Los pasos van en la cabecera de la ventana** (`PasosPago`, por la prop
+  nueva `encabezado` de `Modal`/`Sheet`/`Overlay`), a la IZQUIERDA y en la
+  paleta CLARA: hecho = dorado muy claro con ✓ en oro, ahora = el mismo con
+  filo `--brand-edge`, falta = filo gris. **Nada negro al completar** (lo
+  rechazó el propietario). En el teléfono, «Paso N de 3» y una barra de tres.
+- **El botón de cada paso va en el PIE pegado** y apunta a su formulario con
+  `form=`. Los botones principales del pago son el oro de marca
+  (`--action-gold: --gold-500`, texto en tinta), como las puertas de acceso.
+- **El código** (`registro/codigo-actions.ts`): `confirmarCodigoRegistro`
+  canjea el `email_otp` de `generateLink` con `verifyOtp` (abre la sesión) con
+  `cupoDeCodigo` (5 intentos por correo cada 15 min); `reenviarCodigoRegistro`
+  manda uno nuevo con un enlace mágico (confirma el correo de un usuario sin
+  confirmar sin pedir la contraseña). Ninguna respuesta revela si la cuenta
+  existe. El correo trae el código Y el enlace (`/registro/confirmar`, que al
+  canjear lleva a «Completa tu membresía»). Lógica pura y probada:
+  `lib/auth/codigo-verificacion.ts`.
+- **Al volver de Mercado Pago** (`/registro/pago/retorno`, la `back_url`):
+  la página NO escribe al cargar. `EstadoPago` pregunta a
+  `consultarPagoRegistro` (`registro/pago/actions.ts`, con límite por
+  persona) cada 3 s durante un minuto como máximo
+  (`SONDEO_CADA_MS`/`SONDEO_TOPE_MS`); la acción concilia la suscripción y lee
+  el ÚLTIMO pago en Mercado Pago (un primer cobro rechazado no deja rastro en
+  ORUM). La decisión es pura y probada (`lib/mercadopago/estado-pago-registro.ts`).
+  Mientras confirma: `CargadorLogo` (la estrella sale del centro, traza la
+  «O» REAL del monograma —un `mask` que la descubre en abanico— y vuelve al
+  centro) y la línea de tiempo (hecho en verde suave, lo de ahora con un
+  arco dorado que gira y la estrella titilando, lo que falta en gris). Al
+  minuto, «Está tardando más de lo normal» con «Revisar de nuevo» (sin sondeo
+  infinito). Rechazado y pendiente tienen su tarjeta.
+- **La bienvenida** (`BienvenidaSocio`, `components/pago/`): la tarjeta del
+  socio blanca SIN borde, la marca UNA vez, «Activa», el número en la letra
+  de la marca con cifras parejas (`lining-nums`) en dos bloques con un punto
+  dorado, copiar con SOLO el icono (44 px de toque), y al pie lo pagado y la
+  próxima renovación. Saludo neutro: «Te damos la bienvenida a ORUM, …».
+- **«Completa tu membresía»** (`/registro/completar`): quien tiene cuenta y un
+  registro sin pagar (llega al entrar, desde el enlace del correo o tras un
+  rechazo). Elige plan (`iniciarPagoRegistro` acepta `plan_id`) y paga.
+- **El login de socios** ya no dice «cuenta inactiva» a un registro sin
+  terminar: sin perfil y con registro pendiente → `/registro/completar`; con
+  la contraseña bien pero el correo sin confirmar → las seis casillas
+  (`ConfirmarCorreoLogin`).
+- **El ojo de la contraseña parpadea** (`OjoAnimado`, `components/auth/`): el
+  párpado se cierra y la raya se dibuja; solo al tocarlo. Lo usan
+  `CampoContrasenaNueva` (también al activar la cuenta) y el login.
+- Vista previa con datos falsos, solo en desarrollo: `/dev/pago`
+  (`?caso=` datos · codigo · pagar · pagina · completar · confirmando ·
+  tardando · rechazado · pendiente · bienvenida). **No pulses los botones de
+  enviar**: llaman a las acciones reales y la base es la de producción.
+
 **Una contraseña NUEVA tiene que ser segura** (27/10/2026: «que el
 usuario no pueda poner una contraseña insegura»; con las fuentes oficiales:
 NIST SP 800-63B-4 §3.1.1.2 y el Authentication Cheat Sheet de OWASP). Hay
@@ -2701,3 +2768,12 @@ existe antes. Con Node 20 el instalador falla con `No such built-in module`.
     en la del socio, y mirarlo a 1366 y 820 px. La migración
     `20261024120000_sucursal_horarios.sql` se aplica a mano: hasta entonces
     el código se comporta como «sin horarios».
+17. **El pago con Mercado Pago no se ha probado de punta a punta con su
+    interfaz** (23/11/2026, rama `feat/mercadopago-backend`). Se miró en
+    `/dev/pago` con datos falsos (1280 y 375 px; a 320 nada se sale). Falta,
+    en la versión de prueba de la rama: un registro real con el código que
+    llega al correo (que `verifyOtp` acepte el `email_otp` con `type:
+    'email'`), reenviar el código a una cuenta sin confirmar, un pago con el
+    comprador de prueba, la vuelta con el sondeo y la bienvenida, un rechazo,
+    y el login de un registro sin pagar. Y aplicar la migración
+    `20261123120000_mercadopago_cobro_encadenado.sql`.

@@ -2,7 +2,8 @@
 
 import { useActionState, useState } from 'react'
 import Link from 'next/link'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
+import { OjoAnimado } from '@/components/auth/ojo-animado'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -10,6 +11,7 @@ import { Input, InputButton } from '@/components/ui/input'
 import { estilosAuth } from '@/components/ui/pantalla-auth'
 import { Turnstile, useTurnstile } from '@/components/ui/turnstile'
 import { iniciarSesionMiembro, type LoginMiembroState } from '../actions'
+import { ConfirmarCorreoLogin } from './confirmar-correo-login'
 
 const estadoInicial: LoginMiembroState = {}
 
@@ -19,6 +21,18 @@ export function LoginMiembroForm({ mensajeInicial }: { mensajeInicial?: string }
   const [verPassword, setVerPassword] = useState(false)
 
   const error = state.error ?? mensajeInicial
+
+  // Contraseña correcta, correo de un registro con pago sin confirmar: el código.
+  if (state.confirmarCorreo) {
+    return (
+      <>
+        <Alert tone="info" className={estilosAuth.alerta}>
+          {state.error}
+        </Alert>
+        <ConfirmarCorreoLogin correo={state.confirmarCorreo} />
+      </>
+    )
+  }
 
   return (
     <form action={formAction} className={estilosAuth.formulario} noValidate>
@@ -57,7 +71,7 @@ export function LoginMiembroForm({ mensajeInicial }: { mensajeInicial?: string }
               label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               onClick={() => setVerPassword((v) => !v)}
             >
-              {verPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              <OjoAnimado visible={verPassword} />
             </InputButton>
           }
         />

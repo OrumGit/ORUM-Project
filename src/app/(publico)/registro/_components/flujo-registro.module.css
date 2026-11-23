@@ -1,0 +1,494 @@
+/* El registro con pago en una ventana (ver `flujo-registro.tsx`). */
+
+.flujo {
+  /* El botón principal en el ORO DE MARCA, como las puertas de acceso:
+     relleno `--gold-500` con texto en tinta (8,5:1). */
+  --action-gold: var(--gold-500);
+  --action-gold-fg: var(--tinta-1);
+  container-type: inline-size;
+  container-name: registro;
+}
+
+.paso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.paso[hidden] {
+  display: none;
+}
+
+.centrado {
+  align-items: center;
+  text-align: center;
+}
+
+.titulo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--t-title-1-size);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--tinta-1);
+  -webkit-font-smoothing: auto;
+}
+
+.centrado .titulo {
+  justify-content: center;
+}
+
+.titulo em {
+  color: var(--brand);
+}
+
+.texto {
+  margin: 0;
+  max-width: 26rem;
+  font-size: var(--t-body-size);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.texto strong {
+  color: var(--tinta-1);
+}
+
+/* El correo, en su propio renglón; solo se parte si no cabe entero. */
+.correo {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* --- La tarjeta del plan ----------------------------------------------------- */
+
+.tarjetaPlan,
+.resumen {
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-md);
+  background: var(--blanco);
+  box-shadow: var(--shadow-card);
+}
+
+.tarjetaPlan {
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+}
+
+.planFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+}
+
+.planDatos {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.planLogo {
+  flex: none;
+  width: auto;
+  height: 40px;
+}
+
+.planTextos {
+  min-width: 0;
+}
+
+.planNombre {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-title-3-size);
+  font-weight: 600;
+  color: var(--tinta-1);
+  -webkit-font-smoothing: auto;
+}
+
+.planPrecio {
+  margin: 2px 0 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.planPrecio strong {
+  color: var(--tinta-1);
+  font-variant-numeric: lining-nums;
+}
+
+.cambiar {
+  flex: none;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--blanco);
+  color: var(--tinta-1);
+  font: 600 var(--t-footnote-size) var(--font-sans);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .cambiar:hover {
+    translate: 0 -1px;
+  }
+}
+
+.cambiar:active {
+  translate: 0 1px;
+}
+
+.cambiar:focus-visible,
+.opcionPlan:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.planes {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  gap: var(--space-2);
+  animation: despliega var(--dur-base) var(--ease-out);
+}
+
+.opcionPlan {
+  min-height: var(--tap-min);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--blanco);
+  color: var(--tinta-1);
+  font-family: var(--font-sans);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: translate var(--dur-fast) var(--ease-out);
+}
+
+.opcionPlan[aria-checked='true'] {
+  border-color: var(--brand-edge);
+  box-shadow: var(--filo-activo);
+}
+
+@media (hover: hover) {
+  .opcionPlan:hover {
+    translate: 0 -1px;
+  }
+}
+
+.opcionNombre {
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+}
+
+.opcionPrecio {
+  font-size: var(--t-body-size);
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+}
+
+.opcionPrecio span {
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* --- Los campos -------------------------------------------------------------- */
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.ancho {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.coinciden {
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-caption-size);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.coinciden::before {
+  content: '✓ ';
+}
+
+.errorCampo {
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--danger);
+}
+
+@container registro (max-width: 520px) {
+  .rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- La casilla de los términos ----------------------------------------------
+   Pedida así (23/11/2026): esquinas redondeadas, sin borde, tonos claros y
+   animada. Sin borde la caja vacía se distingue poco del blanco: la nombra el
+   texto de al lado, toda la fila se toca y el foco lleva su anillo. */
+
+.casilla {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--t-footnote-size);
+  line-height: 1.45;
+  color: var(--tinta-1);
+  cursor: pointer;
+}
+
+.casillaInput {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.casillaCaja {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  background: var(--w-50);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  display: grid;
+  place-items: center;
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    scale var(--dur-rebote) var(--ease-spring);
+}
+
+.casillaCaja svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--tinta-1);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset 260ms var(--ease-out) 60ms;
+}
+
+.casillaInput:checked + .casillaCaja {
+  background: var(--gold-300);
+  box-shadow: none;
+}
+
+.casillaInput:checked + .casillaCaja svg {
+  stroke-dashoffset: 0;
+}
+
+.casillaInput:active + .casillaCaja {
+  scale: 0.88;
+}
+
+.casillaInput:focus-visible + .casillaCaja {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .casilla:hover .casillaCaja {
+    background: var(--w-100);
+  }
+
+  .casilla:hover .casillaInput:checked + .casillaCaja {
+    background: var(--gold-300);
+  }
+}
+
+/* --- Paso 2 -------------------------------------------------------------------- */
+
+.aro {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand-edge);
+}
+
+.formCodigo {
+  width: 100%;
+}
+
+.ayudas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lineaAyuda {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.espera {
+  font-weight: 600;
+  color: var(--tinta-1);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: 600 var(--t-footnote-size) var(--font-sans);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.enlace:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.enlace:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* --- Paso 3 -------------------------------------------------------------------- */
+
+.resumen {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.resumenFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.resumenNombre {
+  margin: 0;
+  font-size: var(--t-body-size);
+  font-weight: 600;
+  color: var(--tinta-1);
+}
+
+.resumenPrecio {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-title-1-size);
+  font-weight: 600;
+  font-variant-numeric: lining-nums;
+  color: var(--tinta-1);
+  white-space: nowrap;
+  -webkit-font-smoothing: auto;
+}
+
+.resumenLista {
+  margin: 0;
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--border-subtle);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.resumenLista li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--t-callout-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.resumenLista svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
+.resumenLista strong {
+  color: var(--tinta-1);
+  font-weight: 600;
+}
+
+/* --- El pie --------------------------------------------------------------------- */
+
+.pie {
+  /* El botón principal en el ORO DE MARCA, como las puertas de acceso:
+     relleno `--gold-500` con texto en tinta (8,5:1). */
+  --action-gold: var(--gold-500);
+  --action-gold-fg: var(--tinta-1);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.nota {
+  margin: 0;
+  font-size: var(--t-caption-size);
+  line-height: 1.5;
+  color: var(--text-2);
+  text-align: center;
+}
+
+@keyframes despliega {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planes {
+    animation: none;
+  }
+
+  .casillaCaja,
+  .casillaCaja svg {
+    transition: none;
+  }
+}

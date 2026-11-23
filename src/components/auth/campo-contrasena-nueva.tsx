@@ -1,6 +1,7 @@
 'use client'
 
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Check } from 'lucide-react'
+import { OjoAnimado } from './ojo-animado'
 import { Field } from '@/components/ui/field'
 import { Input, InputButton } from '@/components/ui/input'
 import {
@@ -89,7 +90,7 @@ export function CampoContrasenaNueva({
           endAdornment={
             onVer ? (
               <InputButton label={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={onVer}>
-                {ver ? <EyeOff size={17} /> : <Eye size={17} />}
+                <OjoAnimado visible={ver} />
               </InputButton>
             ) : undefined
           }

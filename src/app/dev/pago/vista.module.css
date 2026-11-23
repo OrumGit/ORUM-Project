@@ -1,0 +1,15 @@
+/* El fondo de la fachada para la vista previa del pago. */
+.fondo {
+  --topbar-h: 0px;
+  /* Lo que la fachada pública remapea (publico.module.css): fondo blanco y el oro de texto de la fachada. */
+  --w-0: var(--blanco);
+  --brand: var(--gold-650);
+  --shadow-card: var(--sombra-fachada-1);
+  --shadow-raised: var(--sombra-fachada-2);
+  --shadow-flotante: var(--sombra-fachada-3);
+  --border-subtle: color-mix(in srgb, var(--tinta-1) 12%, transparent);
+  min-height: 100dvh;
+  background: var(--blanco);
+  color: var(--tinta-1);
+  font-family: var(--font-sans);
+}
