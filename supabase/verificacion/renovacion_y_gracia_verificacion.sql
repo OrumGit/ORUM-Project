@@ -8,7 +8,12 @@
 -- Usa la suscripción del registro 12 (la prueba de punta a punta del 17/11,
 -- membresía 71). Si ese dato cambia, ajusta el preapproval_id.
 --
--- Valores esperados con los datos del 18/11/2026:
+-- ⚠️ Desde la migración 20261123120000 (23/11/2026) el bloque A ya no alarga la
+-- membresía 71: crea una membresía NUEVA detrás (del 2026-12-18 al
+-- 2027-01-18) y deja la 71 en 'vencida' con su fecha intacta. Para esa
+-- versión usa mercadopago_cobro_encadenado_verificacion.sql.
+--
+-- Valores esperados con los datos del 18/11/2026 (antes de esa migración):
 --   · membresia 71 fecha_fin = 2026-12-17, plan mensual (1 mes)
 --   · la renovación adelantada extiende a 2027-01-17 (fin vigente + 1 mes)
 --     y NO a 2026-12-18 (hoy + 1 mes, que era el error).

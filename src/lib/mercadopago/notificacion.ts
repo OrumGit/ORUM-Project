@@ -102,6 +102,19 @@ export function argsRegistrarCobro(
 }
 
 /**
+ * ¿El cobro aprobado es por lo que vale el plan? Segunda barrera (23/11/2026):
+ * el monto lo fija ORUM al crear la suscripción, pero un cobro que no cuadre
+ * —otra moneda, menos dinero— no debe dar membresía sin que alguien lo mire.
+ * Se tolera medio peso por redondeo. Más dinero del precio sí cuadra.
+ */
+export function montoCuadra(pago: PagoMP, precioPlan: number): boolean {
+  if ((pago.currency_id ?? 'COP') !== 'COP') return false
+  const monto = pago.transaction_amount
+  if (typeof monto !== 'number' || !Number.isFinite(monto)) return false
+  return monto >= precioPlan - 0.5
+}
+
+/**
  * Id de la suscripción de un pago, si Mercado Pago lo deja en los metadatos.
  * PENDIENTE DE VERIFICAR con un pago real de suscripción: no está confirmado
  * que el pago de una cuota traiga `metadata.preapproval_id`.

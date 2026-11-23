@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { argsRegistrarCobro, leerNotificacion, preapprovalDePago } from './notificacion'
+import { argsRegistrarCobro, leerNotificacion, montoCuadra, preapprovalDePago } from './notificacion'
 
 describe('leerNotificacion', () => {
   it('toma el tipo, el recurso y el id de la notificación del cuerpo', () => {
@@ -79,5 +79,33 @@ describe('preapprovalDePago', () => {
     expect(preapprovalDePago({ id: 1 })).toBeNull()
     expect(preapprovalDePago({ id: 1, metadata: { preapproval_id: 5 } })).toBeNull()
     expect(preapprovalDePago({ id: 1, metadata: { preapproval_id: '' } })).toBeNull()
+  })
+})
+
+describe('montoCuadra', () => {
+  const pago = (extra: object) => ({ id: 1, status: 'approved', transaction_amount: 30000, currency_id: 'COP', ...extra })
+
+  it('cuadra el precio exacto del plan', () => {
+    expect(montoCuadra(pago({}), 30000)).toBe(true)
+  })
+
+  it('tolera medio peso de redondeo', () => {
+    expect(montoCuadra(pago({ transaction_amount: 29999.6 }), 30000)).toBe(true)
+  })
+
+  it('no cuadra si se cobró menos', () => {
+    expect(montoCuadra(pago({ transaction_amount: 3000 }), 30000)).toBe(false)
+  })
+
+  it('no cuadra en otra moneda', () => {
+    expect(montoCuadra(pago({ currency_id: 'USD' }), 30000)).toBe(false)
+  })
+
+  it('sin monto no cuadra', () => {
+    expect(montoCuadra(pago({ transaction_amount: null }), 30000)).toBe(false)
+  })
+
+  it('sin moneda se entiende COP, la única con la que ORUM crea suscripciones', () => {
+    expect(montoCuadra(pago({ currency_id: null }), 30000)).toBe(true)
   })
 })

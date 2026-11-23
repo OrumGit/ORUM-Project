@@ -31,12 +31,28 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient()
 
-  const { data, error } = await admin
+  // Por turnos (23/11/2026): primero las que nunca se conciliaron y luego las
+  // que hace más tiempo. Ordenar por `updated_at` repasaba siempre las mismas
+  // 200 —conciliar sin cambios no lo toca— y de la 201 en adelante nunca se
+  // revisaban. Sin la migración 20261123120000 (sin `conciliada_at`) se usa el
+  // orden de antes.
+  let porTurnos = true
+  let lectura = await admin
     .from('suscripciones_mercadopago')
-    .select('preapproval_id')
+    .select('id, preapproval_id')
     .eq('estado_mp', 'authorized')
-    .order('updated_at', { ascending: true })
+    .order('conciliada_at', { ascending: true, nullsFirst: true })
     .limit(MAX_SUSCRIPCIONES)
+  if (lectura.error && /conciliada_at/.test(lectura.error.message ?? '')) {
+    porTurnos = false
+    lectura = await admin
+      .from('suscripciones_mercadopago')
+      .select('id, preapproval_id')
+      .eq('estado_mp', 'authorized')
+      .order('updated_at', { ascending: true })
+      .limit(MAX_SUSCRIPCIONES)
+  }
+  const { data, error } = lectura
   if (error) {
     return NextResponse.json({ ok: false, error: 'No se pudieron leer las suscripciones.' }, { status: 500 })
   }
@@ -46,6 +62,13 @@ export async function GET(request: Request) {
   for (const fila of data ?? []) {
     try {
       resumenes.push(await conciliarSuscripcion(admin, fila.preapproval_id))
+      if (porTurnos) {
+        // Al final de la cola. Un fallo al anotarlo no deshace la conciliación.
+        await admin
+          .from('suscripciones_mercadopago')
+          .update({ conciliada_at: new Date().toISOString() })
+          .eq('id', fila.id)
+      }
     } catch (err) {
       // Una suscripción que falla no detiene a las demás. Queda para la siguiente hora.
       console.error('[cron conciliar-suscripciones]', fila.preapproval_id, err)

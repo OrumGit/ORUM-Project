@@ -840,6 +840,7 @@ export type Database = {
       }
       suscripciones_mercadopago: {
         Row: {
+          conciliada_at?: string | null
           created_at: string
           estado_mp: string
           gracia_hasta: string | null
@@ -852,6 +853,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          conciliada_at?: string | null
           created_at?: string
           estado_mp: string
           gracia_hasta?: string | null
@@ -864,6 +866,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          conciliada_at?: string | null
           created_at?: string
           estado_mp?: string
           gracia_hasta?: string | null

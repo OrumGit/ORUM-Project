@@ -10,6 +10,7 @@ import { accionCobro, accionSuscripcion } from './estados'
 import { obtenerCobroRecurrente, obtenerPago, obtenerSuscripcion } from './cliente'
 import {
   argsRegistrarCobro,
+  montoCuadra,
   preapprovalDePago,
   type NotificacionMP,
   type PagoMP,
@@ -88,6 +89,17 @@ async function registrarPago(
   const args = argsRegistrarCobro(pago, preapprovalId)
   if (!args) throw new NotificacionNoAplicable('pago_incompleto')
 
+  // Un cobro aprobado que no cuadra con el precio del plan no da membresía:
+  // queda en la bitácora de eventos para revisarlo a mano.
+  if (decision.tipo === 'registrar_aprobado') {
+    const precio = await precioDelPlan(admin, preapprovalId)
+    if (precio !== null && !montoCuadra(pago, precio)) {
+      throw new NotificacionNoAplicable(
+        `monto_no_coincide:${pago.transaction_amount ?? '?'} ${pago.currency_id ?? '?'} (plan ${precio})`,
+      )
+    }
+  }
+
   // Primer cobro aprobado de un registro público: se da de alta el socio y su
   // suscripción con plan antes de registrar el cobro. Para socios existentes
   // la función no encuentra registro y no hace nada.
@@ -116,4 +128,38 @@ async function registrarPago(
     throw error
   }
   return { accion: String((data as { accion?: string } | null)?.accion ?? 'registrado') }
+}
+
+/**
+ * Precio del plan de esta suscripción: el de su fila en ORUM si el socio ya
+ * existe, o el del registro público que la creó. `null` si no se conoce (la
+ * función de la base dirá entonces que la suscripción es desconocida).
+ */
+async function precioDelPlan(admin: Admin, preapprovalId: string): Promise<number | null> {
+  const { data: sus, error: errSus } = await admin
+    .from('suscripciones_mercadopago')
+    .select('plan_id')
+    .eq('preapproval_id', preapprovalId)
+    .maybeSingle()
+  if (errSus) throw errSus
+
+  let planId = sus?.plan_id ?? null
+  if (planId === null) {
+    const { data: reg, error: errReg } = await admin
+      .from('registros_pendientes')
+      .select('plan_id')
+      .eq('mp_preapproval_id', preapprovalId)
+      .maybeSingle()
+    if (errReg) throw errReg
+    planId = reg?.plan_id ?? null
+  }
+  if (planId === null) return null
+
+  const { data: plan, error: errPlan } = await admin
+    .from('planes_membresia')
+    .select('precio')
+    .eq('id', planId)
+    .maybeSingle()
+  if (errPlan) throw errPlan
+  return plan ? Number(plan.precio) : null
 }
