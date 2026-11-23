@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { ResenasAdmin } from '@/app/admin/comercios/[id]/_components/resenas-admin'
+import { ResenasAdmin } from '@/app/OrumAdminLogin/comercios/[id]/_components/resenas-admin'
 import type { ResenaGestion } from '@/lib/resenas/mapeo'
 import portal from '@/app/miembros/(portal)/portal.module.css'
 import estilos from './dev.module.css'
@@ -60,7 +60,7 @@ export default async function DevResenasAdminPage({
   const { caso } = await searchParams
   const vacio = caso === 'vacio'
 
-  // `?caso=apartado`: como en `/admin/resenas`, con el comercio de cada una
+  // `?caso=apartado`: como en `/OrumAdminLogin/resenas`, con el comercio de cada una
   // y las de menos de 4 estrellas por revisar.
   if (caso === 'apartado') {
     const comercios = ['Dulces Momentos', 'Café de prueba', 'Bendito Brunch']

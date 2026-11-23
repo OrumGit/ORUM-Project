@@ -149,6 +149,44 @@
   );
 }
 
+/*
+  EL GESTO DE «HAY MÁS» (12/11/2026). Todas las fichas se asoman a la vez
+  hacia la izquierda —lo que hay tras el canto entra un poco por la máscara—
+  y vuelven a su sitio. Solo `translate` (no mueve el desplazamiento real ni
+  pelea con el dedo) y solo sin movimiento reducido; lo dispara el
+  componente una vez por sesión (`data-insinua`).
+*/
+@media (prefers-reduced-motion: no-preference) {
+  /*
+    La ENTRADA de cada ficha (`entrarFicha`) se queda en la lista: si el
+    gesto la sustituyera, al quitarlo el navegador la volvería a empezar y
+    las fichas parpadearían justo después de asomarse (visto en producción
+    el 12/11/2026). Como ya terminó, conservarla no mueve nada; `insinuar`
+    va detrás y manda mientras dura. Los retrasos van por animación —el de
+    la entrada en 0, ya cumplido— para que el gesto no herede el escalonado
+    de las `:nth-child` y vayan todas a la vez.
+  */
+  .pista[data-insinua] > li:nth-child(n) {
+    animation-name: entrarFicha, insinuar;
+    animation-duration: var(--dur-slow), calc(var(--dur-page) * 3);
+    animation-timing-function: var(--ease-out), var(--ease-in-out);
+    animation-fill-mode: backwards, both;
+    animation-delay: 0ms, var(--dur-slow);
+  }
+}
+
+@keyframes insinuar {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  40%,
+  62% {
+    translate: calc(var(--space-8) * -1) 0;
+  }
+}
+
 /* --- Las flechas -----------------------------------------------------------
    Un disco blanco con su sombra en cada canto, a media altura. Solo con
    ratón: en táctil la tira se desliza con el dedo y un botón encima de las
@@ -415,4 +453,125 @@
   --border-control: var(--gold-600);
 
   box-shadow: var(--shadow-raised);
+}
+
+/*
+  EN EL TELÉFONO, UNA FILA DE PÍLDORAS (12/11/2026, encargo del propietario:
+  «los filtros de categorías se ven muy grandes; que ocupen el menor espacio
+  posible, pero los clientes tienen que saber de qué es la categoría»). Las
+  dos filas de círculos de 52 px con el nombre en hasta tres renglones
+  («Alimentos / y / Despensa») ocupaban media pantalla. Aquí cada categoría
+  es una píldora con el icono pequeño a la izquierda y el NOMBRE ENTERO en un
+  renglón, en una sola fila que se desliza de lado (con el gesto de «hay
+  más» de siempre). Lo elegido se sigue diciendo con el filo dorado, el peso
+  y la marca. Solo la TIRA: la ventana con todas (`.rejilla`) no cambia, y en
+  el ordenador siguen las dos filas de círculos.
+*/
+@container contenido (max-width: 767px) {
+  .pista {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: var(--space-2);
+    /* Aire para la sombra de las píldoras (baja 16 px): sin él, el
+       `overflow` la cortaba en cantos rectos. */
+    padding: var(--space-4) var(--space-3);
+    margin: calc(var(--space-4) * -1) calc(var(--space-3) * -1);
+    /* Igual que su relleno: con 8 px el encaje de la primera ficha corría
+       la tira 4 px a la izquierda de los filtros. */
+    scroll-padding-inline: var(--space-3);
+  }
+
+  .pista .opcion,
+  .pista .verMas {
+    flex-direction: row;
+    gap: var(--space-2);
+    width: auto;
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4) 0 var(--space-2);
+    border: 1px solid color-mix(in srgb, var(--tinta-1) 15%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    color: var(--text);
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out);
+  }
+
+  /* El icono, el de las demás píldoras: 28 px con anillo de 1,5px. */
+  .pista .icono {
+    width: 28px;
+    height: 28px;
+    flex: none;
+    box-shadow: inset 0 0 0 1.5px var(--brand);
+  }
+
+  .pista .icono svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .pista .nombre {
+    font-size: var(--t-footnote-size);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  /* La marca de «elegida», a la medida del círculo pequeño. */
+  .pista .marca {
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Apuntar o presionar mueve la píldora entera, no el circulito. */
+  .pista .opcion:active .icono {
+    scale: 1;
+    box-shadow: inset 0 0 0 1.5px var(--brand);
+  }
+
+  .pista .opcion:active {
+    translate: 0 1px;
+    box-shadow: var(--shadow-press);
+  }
+
+  /* La elegida, como todas las píldoras: filo `--gold-600`, peso, y el
+     icono con su anillo más grueso; sin crecer ni halo. */
+  .pista .opcion[data-activa] {
+    border-color: var(--gold-600);
+    box-shadow: inset 0 0 0 1px var(--gold-600), var(--shadow-card);
+  }
+
+  .pista .opcion[data-activa] .nombre {
+    font-weight: 700;
+  }
+
+  .pista .opcion[data-activa] .icono {
+    scale: 1;
+    box-shadow: inset 0 0 0 2px var(--gold-600);
+  }
+}
+
+@container contenido (max-width: 767px) {
+  @media (hover: hover) {
+    .pista .opcion:hover .icono {
+      scale: 1;
+      box-shadow: inset 0 0 0 1.5px var(--brand);
+    }
+
+    /* Sin filo dorado al apuntar: sube 1px con un escalón más de sombra. */
+    .pista .opcion:hover {
+      translate: 0 -1px;
+      box-shadow: var(--shadow-raised);
+    }
+
+    .pista .opcion[data-activa]:hover {
+      box-shadow: inset 0 0 0 1px var(--gold-600), var(--shadow-raised);
+    }
+  }
 }

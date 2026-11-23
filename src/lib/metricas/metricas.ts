@@ -115,7 +115,11 @@ export type ResumenUsoMiembro = {
   veces: number
 }
 
-/** Agrupa ventas por par miembro+comercio ("cuántas veces usó su membresía ahí"), top 20. */
+/**
+ * Agrupa ventas por par miembro+comercio ("cuántas veces usó su membresía ahí"),
+ * de más a menos veces. TODOS los pares: la página los muestra de a 10
+ * (11/11/2026; antes se cortaba en 20 y el resto no se podía ver).
+ */
 export function agruparVentasPorMiembroYComercio(
   ventas: VentaRegistro[],
   sucursales: SucursalInfo[],
@@ -145,11 +149,15 @@ export function agruparVentasPorMiembroYComercio(
       veces,
     }))
     .sort((a, b) => b.veces - a.veces)
-    .slice(0, 20)
 }
 
-/** Tope de ventas que se listan en el detalle de un comercio. */
-export const LIMITE_VENTAS_DETALLE = 100
+/**
+ * Filas por página en las tablas de Métricas y en el detalle de un comercio
+ * (11/11/2026: «agrupar de a 10 y tenerlo paginado para evitar fallas de
+ * rendimiento»). Las listas del panel siguen en 25 (`FILAS_POR_PAGINA`):
+ * aquí van varias tablas una debajo de otra, y de a 10 la página se lee.
+ */
+export const POR_PAGINA_METRICAS = 10
 
 export type VentaDetalleRegistro = {
   id: number

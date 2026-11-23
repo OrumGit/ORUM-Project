@@ -12,6 +12,7 @@ import type { HorarioSucursal } from '@/lib/comercios/horario'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import { formatearBeneficio, formatearBeneficioCorto } from '@/lib/comercios/beneficios-formato'
 import { TOPE_PUBLICIDAD, textoAlternativo } from '@/lib/publicidad/publicidad'
+import { leerEncuadrePrevia, type EncuadrePrevia } from '@/lib/videos/video'
 import { hoyISO } from '@/lib/shared/fecha'
 import { compararNombres, ordenarCategorias, type CategoriaDeComercio } from './directorio'
 import { catalogoPara, faltaColumnaVisibilidad, leerVisibilidad, type Visibilidad } from '@/lib/comercios/visibilidad'
@@ -219,6 +220,12 @@ export type ComercioVitrina = {
   portadaUrl: string | null
   /** Dónde se ve: el catálogo es UNO y cada portal se queda con lo suyo (`catalogoPara`). */
   visible: Visibilidad
+  /**
+   * Los TIPOS de sus promociones vigentes (`porcentaje`, `monto_fijo`,
+   * `dos_por_uno`, `regalo`): alimentan el filtro «Beneficio» del portal de
+   * miembros (12/11/2026).
+   */
+  tiposBeneficio: string[]
 }
 
 /** Una opción de filtro del directorio: una categoría o una ciudad. */
@@ -232,7 +239,11 @@ export type OpcionFiltro = { id: number; nombre: string }
 export type CategoriaFiltro = OpcionFiltro & { subcategorias: OpcionFiltro[] }
 
 /** Una fotografía de la fachada, con su texto alternativo ya resuelto. */
-export type FotoPublica = { url: string; alt: string }
+/**
+ * Una pieza del carrusel: la imagen (o la portada de su video) y, si es un
+ * video, su MP4 y el encuadre de su vista previa.
+ */
+export type FotoPublica = { url: string; alt: string; video?: string | null; encuadre?: EncuadrePrevia | null }
 
 export type DatosVitrina = {
   /** «Comercios destacados», hasta `TOPE_DESTACADOS`. */
@@ -365,9 +376,15 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
   }
 
   const beneficioPorComercio = new Map<number, string>()
+  const tiposPorComercio = new Map<number, Set<string>>()
   for (const p of promociones ?? []) {
     // Una promoción caducada no se anuncia: la caja del comercio la rechazaría.
     if (!esPromocionVigente(p.activo, p.fecha_inicio, p.fecha_fin, hoy)) continue
+    const codigo = codigoTipo.get(p.tipo_beneficio_id)
+    if (codigo) {
+      if (!tiposPorComercio.has(p.comercio_id)) tiposPorComercio.set(p.comercio_id, new Set())
+      tiposPorComercio.get(p.comercio_id)!.add(codigo)
+    }
     if (beneficioPorComercio.has(p.comercio_id)) continue
     const tipoCodigo = codigoTipo.get(p.tipo_beneficio_id)
     if (!tipoCodigo) continue
@@ -409,6 +426,7 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
       beneficioDestacado: beneficioPorComercio.get(c.id) ?? null,
       portadaUrl: (c.portada_url ?? '').trim() || null,
       visible: leerVisibilidad(c),
+      tiposBeneficio: Array.from(tiposPorComercio.get(c.id) ?? []).sort(),
     }
   })
 
@@ -425,8 +443,9 @@ async function leerCatalogoPublico(): Promise<CatalogoPublico> {
 
 const catalogoEnCache = unstable_cache(
   () => circuito.ejecutar('catalogo', leerCatalogoPublico),
-  // v2 (07/11/2026): cada comercio trae `visible`; una copia vieja no lo tenía.
-  ['publico-catalogo-v2'],
+  // v3 (12/11/2026): cada comercio trae `tiposBeneficio`; una copia vieja no
+  // lo tenía y el filtro «Beneficio» la dejaría vacía.
+  ['publico-catalogo-v3'],
   OPCIONES_CACHE,
 )
 const cargarCatalogoPublico = cache(() =>
@@ -468,7 +487,7 @@ export const obtenerVitrinaPublica = cache(async (): Promise<DatosVitrina> => {
 /* ==========================================================================
    LA PUBLICIDAD  ·  las imágenes del carrusel de la portada (13/10/2026)
    --------------------------------------------------------------------------
-   Las sube y ordena el administrador (`/admin/publicidad`); ya no salen de
+   Las sube y ordena el administrador (`/OrumAdminLogin/publicidad`); ya no salen de
    las portadas de los comercios.
 
    DEVUELVE `null` SI LA TABLA TODAVÍA NO EXISTE. El esquema se aplica a mano
@@ -486,7 +505,8 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
   const supabase = clienteFachada()
   const { data, error } = await supabase
     .from('publicidad')
-    .select('imagen_url, descripcion')
+    // `*`: trae `video_url` si la migración de los videos está aplicada.
+    .select('*')
     .eq('activo', true)
     .order('orden', { ascending: true })
     .order('id', { ascending: true })
@@ -499,7 +519,9 @@ async function leerPublicidadPublica(): Promise<FotoPublica[] | null> {
 
   return (data ?? []).flatMap((p) => {
     const url = (p.imagen_url ?? '').trim()
-    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? '') }] : []
+    const video = typeof p.video_url === 'string' && p.video_url.trim() ? p.video_url.trim() : null
+    const encuadre = video ? leerEncuadrePrevia(p.video_encuadre) : null
+    return url ? [{ url, alt: textoAlternativo(p.descripcion ?? ''), video, encuadre }] : []
   })
 }
 

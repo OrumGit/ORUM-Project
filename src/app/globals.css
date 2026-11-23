@@ -1738,6 +1738,33 @@ input[type='search']::-webkit-search-cancel-button:active {
 }
 
 /*
+  LAS FILAS QUE SE DESLIZAN DE LADO SE DESVANECEN HACIA DONDE SIGUEN
+  ·  `[data-desliza]` (12/11/2026: «se ve cortado el efecto de los filtros»)
+  Los filtros y las subcategorías del directorio, en el teléfono. El
+  componente dice hacia dónde queda fila (`data-antes` / `data-despues`,
+  `components/comercios/use-desborde.ts`) y la fila se funde hacia ese
+  canto con una MÁSCARA, como la tira de categorías: nada encima, se ve el
+  fondo real. El negro es el canal alfa, no un color de interfaz.
+*/
+[data-desliza][data-antes]:not([data-despues]) {
+  mask-image: linear-gradient(to right, transparent, black var(--space-7));
+}
+
+[data-desliza][data-despues]:not([data-antes]) {
+  mask-image: linear-gradient(to left, transparent, black var(--space-7));
+}
+
+[data-desliza][data-antes][data-despues] {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--space-7),
+    black calc(100% - var(--space-7)),
+    transparent
+  );
+}
+
+/*
   LO QUE DESPLAZA SE DESVANECE HACIA SUS BORDES  ·  `[data-desvanece]`
   ---------------------------------------------------------------------------
   Cuarta y última forma de resolver «al desplazar se ve cortado» (09/10/2026).

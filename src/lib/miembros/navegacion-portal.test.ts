@@ -31,7 +31,7 @@ describe('esDestinoActivo', () => {
     })
 
     it('NO activo en una ruta completamente ajena', () => {
-      expect(esDestinoActivo('/admin', '/miembros')).toBe(false)
+      expect(esDestinoActivo('/OrumAdminLogin', '/miembros')).toBe(false)
     })
 
     it('no confunde un segmento que empieza igual: /miembros/comerciosX no es /miembros/comercios', () => {

@@ -126,7 +126,7 @@ describe('agruparVentasPorMiembroYComercio', () => {
     ])
   })
 
-  it('limita a los primeros 20, ordenados desc por veces', () => {
+  it('devuelve TODOS los pares (la página los muestra de a 10), ordenados desc por veces', () => {
     const ventas = Array.from({ length: 25 }, (_, i) => ({
       sucursal_id: 10,
       miembro_id: i + 1,
@@ -143,7 +143,7 @@ describe('agruparVentasPorMiembroYComercio', () => {
     }))
 
     const resultado = agruparVentasPorMiembroYComercio(ventas, sucursales, comercios, miembrosAmpliados)
-    expect(resultado).toHaveLength(20)
+    expect(resultado).toHaveLength(25)
     expect(resultado[0]).toMatchObject({ miembroId: 1, veces: 2 })
   })
 

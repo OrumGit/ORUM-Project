@@ -622,6 +622,47 @@ marca con la casilla de «Registrar miembro» y de «Renovar membresía»
 (`salvoCortesia`) y el servidor ignora cualquier precio. Poner 0 sin casilla ya
 no es la forma de regalar una membresía: sigue siendo un descuento total.
 
+**Una cortesía dura lo que decida el administrador, en DÍAS** (12/11/2026:
+«por el tiempo que él decida […] o directamente en un calendario; y conserva
+las cortesías de los planes normales»; y el mismo día: «dejemos únicamente
+por días, descarta horas»). Con la casilla marcada aparece «¿Por cuánto
+tiempo?» (`DuracionCortesia`, en `miembros/_components/`): «Lo que dura el
+plan» (por defecto: la cortesía de siempre, la anual un año y la mensual un
+mes) · Días · Semanas · Meses · «Hasta una fecha» (calendario, ese día
+incluido), y una línea dice hasta cuándo vale. Lógica pura y probada en
+`lib/miembros/cortesia.ts` (`leerDuracionCortesia`, `calcularFinCortesia`,
+topes en `MAXIMOS`); días, semanas y meses cuentan como un plan (hasta la
+misma fecha). Todo es `fecha_fin`: la vigencia no cambia en ninguna parte.
+Al renovar con una vigente, empieza al día siguiente de su fin (la página le
+pasa `inicio` al formulario). Solo se aplica a las CORTESÍAS: una membresía
+pagada dura siempre lo del plan. La bitácora dice cuánto («cortesía por 2
+semanas», «hasta el 24 dic 2026»). ⚠️ **Sin horas**: se hicieron con una
+columna `vence_at` y el propietario las descartó antes de aplicar la
+migración; no las vuelvas a poner sin que las pida. Vista previa:
+`/dev/panel-movil?f=renovar`, `?f=renovar-vigente`, `?f=miembro-nuevo`.
+
+**«Añadir días de cortesía» DETRÁS de lo pagado** (13/11/2026: «pagaron la
+membresía mensual, pero el cliente quiere ampliarlo hasta el 31 de diciembre;
+mantener que pagaron el plan mensual para no afectar las métricas; y poder
+ponerlo cuando ya se creó el usuario»). Solo `super_admin`: botón «Añadir
+cortesía» en la ficha (secundario, junto a «Renovar») y en el menú «…» de
+la lista, que abren `miembros/[id]/cortesia` encima (+ su gemela de
+`@modal`). Lo pagado NO se toca: `anadirCortesia` crea OTRA membresía
+(`tipo 'renovada'`, `es_cortesia`, $0, el MISMO plan) que empieza el día
+siguiente al fin de la vigente —u hoy si no hay— y dura días, semanas,
+meses o hasta una fecha (`DuracionCortesia sinPlan`, que abre en «Hasta
+una fecha»). Métricas sigue contando la venta mensual; la cortesía no suma.
+Renovar y esto comparten `encadenarMembresia` (la anterior pasa a
+`'vencida'` porque la base admite UNA `'activa'` por miembro, y se revierte
+si la nueva no entra). ⚠️ Ese `'vencida'` quiere decir «ya tiene quien la
+siga», no «se acabó»: el historial de la ficha lo lee con
+`estadoEnHistorial` (pura y probada): mientras su `fecha_fin` no pase y su
+sucesora siga activa, el mes pagado se ve ACTIVO, y la cortesía que espera
+dice «Empieza el …». El estado de arriba dice «Vigente hasta el 31 dic,
+con días de cortesía desde el 13 dic». La bitácora: «Días de cortesía
+añadidos hasta el 31 dic 2026 — plan Mensual, desde …» (`cortesia_tras_plan`).
+Vista previa: `/dev/panel-movil?f=cortesia`.
+
 **Revocar** (29/10/2026: «que el administrador pueda revocar membresías»).
 Solo `super_admin`, desde la ficha del miembro («Revocar membresía», en
 secundario y antes de «Renovar», solo si hay una vigente), en una ventana
@@ -634,6 +675,26 @@ y el socio ve su pantalla de membresía cancelada. Renovar crea una nueva
 desde hoy. Cuándo y por qué quedan en la bitácora (`accion: 'revocacion'`,
 con su pestaña «Revocaciones»), y la ficha lo dice en el estado y en el
 historial («Revocada el … · motivo»). Vista previa: `/dev/revocar`.
+
+**La ficha del miembro enseña sus COMPRAS** (11/11/2026: «cuántas
+compras ha realizado, en qué comercio y toda la información importante de
+la venta; cuánto se ha ahorrado en el mes, semana, año y más filtros, y
+cuánto se ha gastado»). Sección «Compras en comercios»
+(`admin/miembros/[id]/_components/compras-miembro.tsx`), entre los datos y
+el historial de membresías: el periodo en `Pestanas` (Todo · Esta semana
+—desde el LUNES de Bogotá— · Este mes · Últimos 30 días · Este año) y
+«Ver entre fechas» (`?desde=&hasta=`); cuatro cifras —Compras (en N
+comercios) · Gastó (`valor_final`) · Se ahorró (`valor_descuento`, con su
+% de lo que habría pagado) · Sin ORUM habría pagado (`valor_compra`)—;
+«Dónde compra» (un renglón por comercio, enlaza a su ficha) y «Todas las
+compras» de a 25 (fecha y hora, comercio y sede con cómo lo encontró la
+caja, beneficio, ahorro, y lo pagado con el precio debajo). La tabla tiene
+CINCO columnas a propósito: con siete se cortaban a 1024 px con la barra
+lateral. Lógica pura y probada en `lib/miembros/compras-miembro.ts`
+(`leerPeriodoCompras`, `resumirCompras`, `comprasPorComercio`); lectura en
+`compras-miembro-datos.ts` (clave de servicio, por páginas de 1000, también
+las compras de comercios ya retirados). Las cifras, el ranking y la tabla
+salen de las MISMAS filas. Vista previa: `/dev/panel-movil?f=compras`.
 
 **Los planes ya no se crean ni se retiran** (29/10/2026: «quitar la
 funcionalidad de añadir o quitar planes de membresía»). `/admin/planes`
@@ -1050,7 +1111,19 @@ mientras quepan): abre la ventana con TODAS y un campo para buscar por
 nombre, sin tildes ni mayúsculas. La tira enseña hasta `LIMITE_TIRA` (24,
 `lib/comercios/tira-categorias.ts`, probado), más cualquier ELEGIDA que caiga
 después del corte. Favoritos, Ciudad y Ordenar siguen siendo píldoras, arriba.
-No vuelvas al botón que las escondía.
+No vuelvas al botón que las escondía. **En el TELÉFONO, una fila de
+píldoras** (12/11/2026: «se ven muy grandes; que ocupen el menor espacio
+posible, pero que se sepa de qué es la categoría»): bajo 768 px de
+contenedor, cada categoría es una píldora (icono de 32 px a la izquierda y
+el NOMBRE ENTERO en un renglón, sin partir), en UNA sola fila que se
+desliza; lo elegido, con filo `--gold-600` en la píldora y anillo de 2px en
+el icono. Solo la tira: la ventana «Ver todas» y el ordenador siguen con
+los círculos en dos filas. **«Hay más si deslizas»** (12/11/2026):
+además del desvanecido del canto, la primera vez que la tira entra en
+pantalla con fichas más allá del borde, las fichas se ASOMAN a la izquierda
+y vuelven (`data-insinua`, solo `translate`, ~1,3 s): una vez por SESIÓN
+(`sessionStorage`), se corta si la persona toca o desliza la tira y no
+ocurre con movimiento reducido.
 
 **Las SUBCATEGORÍAS afinan la categoría elegida** (20/10/2026: «se
 agregaron más, son categorías y subcategorías; ajusta el diseño»). No van en
@@ -1065,6 +1138,68 @@ subcategorías (`quitarSubcategoriasDe`). Solo salen las subcategorías con
 algún comercio activo (`CatalogoPublico.categorias[].subcategorias`), y el
 buscador de «Ver todas» encuentra la categoría por el nombre de una
 subcategoría.
+
+**«Comercios destacados» del Inicio del socio: un DESFILE DE LOGOS, no un
+top** (`TopComerciosSocio`, 12/11/2026: «no me gusta el diseño, ni que sea un
+top; como un carrusel, que vayan pasando los logos, para no tener
+preferencias; pero que sí sean los 5 más vendidos, y lo mismo con los más
+calificados; podría ser únicamente el logo»). Las listas se arman igual
+(`armarTopVentas`: las cinco con más ventas en 30 días; `armarTopCalificados`:
+las cinco mejores desde 3 reseñas), pero llegan MEZCLADAS del servidor
+(`mezclarTop`, en `leerTopComercios`) y la pantalla no enseña posición,
+número de ventas ni estrellas: SOLO EL LOGO, con el nombre en el enlace y en
+un rótulo que aparece al apuntar o enfocar. Una cinta por lista («Donde más
+se usa ORUM», «Los mejor calificados»; la segunda al revés), y una lista
+vacía no pinta su cinta. La cinta es la lista repetida hasta llenar media
+(`repeticionesDesfile`, `LOGOS_POR_MITAD`) y dos veces esa mitad: se mueve
+−50 % con `transform`, a `--dur-paso-logo` por logo; las repeticiones son
+`aria-hidden` + `inert` (el lector y el teclado ven cinco logos). Se para al
+apuntar y al enfocar; **sin botón de pausa** (el propietario no lo quiso,
+12/11/2026, a sabiendas de WCAG 2.2.2); con movimiento reducido o menos de
+3 logos (`MINIMO_DESFILE`) queda quieta. **No vuelvas a
+las pestañas, al podio numerado ni a enseñar ventas o promedios.**
+Vista previa: `/dev/top-comercios` (`?caso=logos` con los logotipos reales,
+`?caso=vacio-calificados`, `?caso=uno`).
+
+**El directorio del SOCIO filtra por BENEFICIO** (12/11/2026: «para el
+portal de miembros, un filtro para que puedan filtrar por beneficio»). Una
+píldora más, «Beneficio: Todos», entre Ciudad y Ordenar, SOLO con `socio`
+(la fachada pública no la enseña): Descuento en % · Descuento fijo · 2x1 ·
+Regalo (`BENEFICIOS_FILTRO`, los cuatro de `tipos_beneficio`), y solo los
+tipos que tiene algún comercio. Un comercio cuenta para un tipo si tiene una
+promoción VIGENTE de él (`ComercioVitrina.tiposBeneficio`, que calcula
+`leerCatalogoPublico`; clave de caché `publico-catalogo-v3`). En la URL va
+en `?beneficio=` y se combina con Y con los demás filtros
+(`lib/publico/directorio.ts`, probado). Vista previa con el catálogo real y
+sin sesión: `/dev/directorio-socio`.
+
+**La píldora del directorio es UNA** (12/11/2026: «que el apartado de
+filtros esté todo alineado, con el mismo estilo y efectos»). Los filtros
+(`.disparador`), las categorías del teléfono (`.pista .opcion`) y las
+subcategorías (`.pildora`) miden 44 px, llevan el mismo filo (tinta al
+15 %), fondo blanco y `--shadow-card`, texto `--t-footnote-size` en 600 e
+icono de 28 px con anillo de 1,5px y glifo de 15; al apuntar suben 1px con
+`--shadow-raised` (SIN filo dorado), al presionar bajan con
+`--shadow-press`, y la elegida —también un filtro con valor, «Tuluá»— lleva
+filo `--gold-600` y 700. Sus tres filas del teléfono comparten relleno y
+`scroll-padding-inline` (`--space-3`): empiezan Y TERMINAN en la misma
+línea (con 8 px la tira de categorías se corría 4; y la de filtros, con
+`width: 100%` y margen negativo, acababa 24 px antes: su ancho es
+`calc(100% + --space-3 * 2)`). Las tres se DESVANECEN hacia el canto por el
+que siguen: `useDesborde` (`components/comercios/use-desborde.ts`, la de la
+tira, ahora compartida) pone `data-antes`/`data-despues` y la máscara es
+`[data-desliza]` en `globals.css` (la tira conserva sus propias reglas). La regla está escrita en
+`subcategorias-directorio.module.css`: si cambias una, cambia las tres.
+
+**En el teléfono los filtros van en UNA fila** (12/11/2026: «ocupan
+demasiado espacio; solamente una fila si es posible»; antes cada uno iba en
+su fila y a todo el ancho). Favoritos · Ciudad · Beneficio · Ordenar en
+fila, con texto CORTO (`.textoCorto`: el nombre del filtro o lo elegido,
+«Ciudad» → «Tuluá»; el orden, «A-Z») y sin la flecha; si no caben, la fila
+se desliza de lado. El aire de la fila (16 px arriba y abajo, 12 a los
+lados, con margen negativo) es el de la sombra de una píldora: con menos,
+el `overflow` la cortaba en una franja gris de cantos rectos. En el
+ordenador, el texto entero de siempre (`.textoLargo`).
 
 **Un comercio tiene de 1 a 3 categorías, cada una con su subcategoría
 opcional** (21/10/2026; antes era una sola). La fuente de verdad es la tabla
@@ -1240,7 +1375,7 @@ promoción se escribe CORTO («Brunch»): lo pide la ayuda del formulario.
 Vista previa con datos falsos (Coraje, el caso que lo pidió) y el editor de
 franjas: `/dev/beneficios`.
 
-`Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `Textarea` `Switch` `Checkbox` `Radio`
+`Button` `Spinner` · `Field` `Input` `Select` `SelectMenu` `SelectorFecha` `Textarea` `Switch` `Checkbox` `Radio`
 `SegmentedControl` · `Card` `FormCard` `Stack` `Grid` `Section` `PageHeader` `Divider` ·
 `Badge` `StatusBadge` `VenceEn` `Avatar` `Cifra` `CifraAnimada` · `Alert` `Toast` · `Modal` `Sheet`
 `Overlay` `DropdownMenu` `MenuItem` · `Skeleton` `ProgressBar` `EmptyState` `ErrorState` ·
@@ -1269,6 +1404,22 @@ contrario). Sin `value` guarda su propio estado desde `defaultValue`, como un
 `<select>`, y al cambiar su campo oculto avisa con un `input` que burbujea:
 así lo oye `useValidacion`. `DropdownMenu` ganó para esto la prop
 `igualarAncho` (la lista mide lo que su campo).
+
+**`SelectorFecha`** (12/11/2026, «ponle diseño al calendario») es a
+`<input type="date">` lo que `SelectMenu` a `<select>`: el calendario del
+navegador (un recuadro gris con el día en azul) no se puede vestir. El campo
+es el de `SelectMenu` con un calendario dorado a la derecha, y lo que abre
+es la capa del menú (`DropdownMenu como="dialogo"`, que además se recoloca
+cuando su panel cambia de tamaño): el mes en el serif de la marca con sus
+flechas, la semana de LUNES a domingo, el elegido en relleno `--gold-500`
+con el número en tinta, hoy en peso y con un punto (nunca solo color),
+fuera de `min`/`max` apagado, y «Hoy» al pie. Sin tinte al apuntar: el día
+sube 1px. Teclado de la cuadrícula de fechas de ARIA (flechas, Inicio/Fin,
+RePág/AvPág, Intro), con tabindex itinerante. El valor viaja en un campo
+oculto 'YYYY-MM-DD' que avisa con un `input` que burbujea, y no valida
+solo. La lógica es pura y probada (`lib/shared/calendario.ts`). Hoy lo usa
+«Hasta una fecha» de la cortesía; **un campo de fecha nuevo del panel usa
+este, no `type="date"`**.
 
 **`Agitar`** envuelve un icono y lo agita **una vez** cuando su prop `activo`
 pasa de `false` a `true` — el acento de «seleccionado» en un filtro. Se le pasa
@@ -1363,6 +1514,14 @@ Es lo que da estructura a una pantalla ancha sin dibujar una línea. La franja `
 sus tokens de texto hacia dentro y es el único sitio del sistema donde el oro
 brillante (`--gold-400`, `--gold-300`) es legal.
 
+**`PageHeader` reparte título y acciones** (12/11/2026, reportado por el
+cliente: en la ficha de un miembro, con sus seis botones, el nombre quedaba
+aplastado a una letra por renglón y «Renovar» se salía de la pantalla). El
+título nunca baja de 20rem (`--titulo-min`); si las acciones no caben a su
+lado, BAJAN a la fila de abajo (alineadas a la izquierda) y parten en
+varias filas. Una pantalla con muchas acciones no necesita nada especial.
+Vista previa: `/dev/panel-movil?f=cabecera-miembro`.
+
 **`<PageHeader display>`** pone el `h1` en el peldaño `hero` a 44–72px (peso
 800). Ya no es una cuestión de familia: es una cuestión de que 72px de titular en
 una pantalla de caja es espacio robado a la tabla.
@@ -1407,6 +1566,31 @@ paleta:
   probaron y no gustaron). Al pasar, el texto se aclara y el icono se
   desliza. **El plateado es el acento del cromo negro** («juega mucho más
   con el plateado»); el oro queda para la acción principal.
+- ⚠️ **EL PANEL VIVE EN `/OrumAdminLogin`, NO EN `/admin`** (11/11/2026,
+  encargo del propietario: «cuando se inicie no sirva tampoco /admin sino
+  /OrumAdminLogin»). La carpeta es `src/app/OrumAdminLogin` (antes
+  `src/app/admin`) y los imports `@/app/OrumAdminLogin/...`; `/admin` da 404.
+  **Donde este documento diga `admin/...` o `/admin`, léase
+  `OrumAdminLogin/...`**: se renombró la carpeta y sus 392 referencias, no
+  cada mención histórica de aquí. Las direcciones distinguen mayúsculas:
+  `rutaPanelCanonica` (`lib/auth/ruta-panel.ts`) lleva `/orumadminlogin/...`
+  a la forma correcta con un 308. Sin sesión, `/OrumAdminLogin` da 404
+  igual que antes `/admin`; y `robots.txt` no la lista.
+- **La puerta del panel NO es `/login`** (11/11/2026: «la gente puede ver
+  cluborum.com/login; que la ruta del administrador sea más segura y
+  difícil de encontrar»). Vive en una dirección LARGA Y ALEATORIA
+  (`lib/auth/ruta-panel.ts`, `RUTA_PANEL_POR_DEFECTO`; se cambia sin tocar
+  código con la variable `ORUM_RUTA_PANEL` en Vercel) que el `proxy`
+  reescribe por dentro a la página real (`app/login`); `/login` escrita a
+  mano da 404. Para que nada la delate: `requireRol` da 404 (`notFound()`)
+  sin sesión o sin permiso —antes redirigía a `/login`, y escribir `/admin`
+  enseñaba la puerta—, las acciones del panel sin permiso mandan a `/`,
+  `robots.txt` no la lista, `activar-cuenta` no enlaza la del equipo y el
+  módulo NUNCA se importa desde un componente de cliente (comprobado: la
+  dirección no aparece en `.next/static`). Cerrar sesión vuelve a ella.
+  **No la escribas en un enlace, un correo, un documento ni este archivo.**
+  Esconde la puerta; lo que la cierra sigue siendo la cuenta del equipo,
+  Turnstile y el límite de intentos (`limitador`).
 - **«Volver» arriba de CADA pantalla del panel** salvo la portada
   (07/11/2026: «la funcionalidad para ir atrás, en todos los apartados»;
   `VolverPanel`, que monta `AppShell` encima del contenido). No es el atrás
@@ -1417,7 +1601,11 @@ paleta:
   (`lib/shared/volver-panel.ts`: `anotarVisita` corta al volver a un lugar
   ya visitado, así cerrar una ventana encima no la deja como «anterior»;
   `rutaPadre` sube al lugar que contiene un formulario, y lo de la ficha del
-  comercio vuelve a SU pestaña) y vive en `sessionStorage`. Sin pila (enlace
+  comercio vuelve a SU pestaña) y vive en `sessionStorage`. **Solo se anotan
+  LUGARES** (11/11/2026, visto en producción: el detalle de ventas de
+  Métricas, que abre encima, quedaba como «anterior» y «Volver» lo reabría a
+  pantalla completa): una ventana encima no entra en la pila, y desde un
+  formulario a pantalla completa «Volver» va al último lugar. Sin pila (enlace
   directo), sube al lugar de arriba; el servidor pinta ese enlace. **Una
   sección o ficha nueva del panel se añade a `LUGARES` y a `NOMBRES`.**
 - **La barra de arriba, blanca y pegada**: «Panel / sección», el
@@ -1491,6 +1679,32 @@ paleta:
   sueltan la caché `publico`. Nuevo/editar sucursal o promoción siguen
   abriéndose encima. WhatsApp e Instagram del boceto NO están: la tabla
   `comercios` no tiene esas columnas.
+- **La ficha del comercio tiene pestaña «Ventas»** (11/11/2026: «esos
+  datos para los comercios: cuánto han vendido, cuánto dinero ha entrado,
+  cuánto ha sido de descuento»), la otra cara de las compras del miembro:
+  el MISMO periodo (`lib/shared/periodo.ts`, que comparten las dos), cuatro
+  cifras —Ventas (a N socios) · Dinero que entró (`valor_final`, con la
+  venta promedio) · Descuento entregado (`valor_descuento`, con su %) ·
+  Valor sin descuento (`valor_compra`)—, «Por sede», «Por beneficio» y
+  todas las ventas de a 10 (`?pv=`), con el socio enlazado a su ficha.
+  Lógica pura y probada en `lib/comercios/ventas-comercio.ts`; lectura por
+  lotes en `ventas-comercio-datos.ts` (todas sus sedes, también las dadas de
+  baja). Las dos vistas comparten la hoja `src/styles/periodo-panel.module.css`.
+  Sin `.panel` alrededor: sus cifras ya son tarjetas.
+- **El PUNTAJE de las reseñas, solo en el panel** (11/11/2026: «una media
+  y una clasificación en estrellas, para darle perspectiva al
+  administrador»). `PuntajeResenas` (`components/resenas/`): el promedio en
+  el serif de la marca, sus estrellas, lo que significa —las palabras del
+  selector del socio: Malo · Regular · Bueno · Muy bueno · Excelente,
+  `clasificacionPromedio`— y cuántas hay de cada estrella, de 5 a 1, con
+  barras en `--gold-600` (una ESCALA, no un ancho). Sale en la pestaña
+  «Reseñas» de la ficha del comercio, arriba de `/admin/resenas` (todo el
+  club), en la cabecera de la ficha («★ 4,3 · Muy bueno · 12 reseñas»,
+  enlaza a la pestaña) y como columna «Calificación» en la lista de
+  comercios. Lógica pura y probada en `lib/resenas/puntaje.ts`; las
+  estrellas se leen con `leerEstrellas` (`datos-panel.ts`, por lotes, `null`
+  sin tabla). Los portales de socios y comercios NO lo llevan: siguen con
+  `ResumenResenas`.
 - **Los formularios del panel VALIDAN campo a campo** (15/10/2026: «sus
   formularios no tienen excepciones»). Las reglas son puras y probadas
   (`lib/validacion/reglas.ts`: obligatorio, largo, nombre de persona, cédula,
@@ -1527,6 +1741,9 @@ paleta:
   con «N reseñas por revisar», las tres más recientes (estrellas, comercio,
   el mensaje en una línea) y «Revisar» (a `?ver=por_revisar`). Solo sale
   si hay alguna; el icono se balancea una vez al entrar.
+- **Métricas pagina sus tablas de a 10** y lee el periodo entero por
+  lotes (11/11/2026): ver «Ninguna consulta pasa de 1000 filas» en
+  Arquitectura.
 - **Métricas tiene gráficas** (29/10/2026: «gráficas simples para ver
   gráficamente todos los datos»), sin librería y pintadas en el servidor
   (`components/ui/graficas.tsx`): las ventas por día —por semana si el
@@ -1752,7 +1969,7 @@ Handlers que salen de `lib/shared/manifiesto-app.ts`: nombres, colores,
 iconos, atajos) y su `id`, así que son aplicaciones distintas en el
 teléfono. Las enlaza el layout de cada portal y de su acceso
 (`miembros/layout.tsx` y `comercios/layout.tsx`, que no pintan nada;
-`admin/layout.tsx`; `login/page.tsx`), con su `apple-icon.png` en la misma
+`admin/layout.tsx`; `login/page.tsx`, servida en la dirección secreta), con su `apple-icon.png` en la misma
 carpeta (iOS). ⚠️ **Ya no existe `app/manifest.ts`**: lo enlazaba TODO el
 sitio, también la portada pública, que NO se instala; no lo vuelvas a
 crear. El socio conserva su `id` (`/miembros`): las instaladas siguen
@@ -1899,6 +2116,124 @@ borrar la imagen»). Tres piezas:
   la migración** (`faltanColumnasDeProgramacion`): lee sin fechas y guarda
   sin ellas si no se programó nada; si se programa, avisa de que falta
   aplicarla.
+
+**VIDEOS en las novedades y en el carrusel de la portada** (13/11/2026:
+«que el administrador pueda subir videos de máximo 5 minutos, con el visor
+para recortarlo y ajustar la duración, para que se vea correctamente en los
+portales»). Una novedad o una pieza del carrusel puede ser un video en vez
+de una imagen.
+
+- **VISTA PREVIA AJUSTADA, VISUALIZACIÓN COMPLETA** (13/11/2026: «la
+  visualización completa con el formato original, pero la previsualización
+  con un formato ajustado, que al editar se pueda ajustar»). El video se
+  sube ENTERO (sin recortar). Lo que se elige es qué parte enseña la VISTA
+  PREVIA —la pieza del carrusel, la tarjeta de la novedad—, y se GUARDA
+  aparte: `video_encuadre` (jsonb, `{x,y,w,h}` en fracciones del video;
+  `supabase/migrations/20261114120000_videos_encuadre.sql`, SE APLICA A
+  MANO; sin ella se guarda sin encuadre y sale centrada). Los portales lo
+  pintan con CSS (`CLASE_PREVIA` + `estiloPrevia`, `components/videos/previa.ts`:
+  `object-fit: cover` + `object-position` + `scale` con su origen; la cuenta
+  es pura y probada, `presentacionPrevia`), dentro de una caja con `overflow:
+  hidden`. Al agrandarlo (`VisorVideo`, la ventana encima que comparten el
+  carrusel y las novedades), el video COMPLETO en su formato original. En
+  `/novedades` la tarjeta enseña la vista previa con un botón de reproducir
+  (`VideoNovedad`) y no carga el video hasta tocarla. Volver a editar un
+  video abre con su encuadre (`encuadreInicial`, `encuadreDesdePrevia`). Los
+  videos subidos ANTES de esto ya venían recortados: se ven igual hasta que
+  se suban otra vez desde el original.
+- **El editor es `EditorVideo`** (`components/videos/`): «Vista previa» (el
+  marco del destino, 16:9 novedades o 4:3 carrusel: arrastrar, flechas y
+  «Acercar» eligen el encuadre) o «Video completo» (cómo se verá al
+  agrandarlo); la LÍNEA DE TIEMPO con miniaturas y dos tiradores (ratón,
+  dedo o flechas; Mayús salta 10 s), que reproduce solo el tramo; y «Usar
+  este video», que saca la portada, PREPARA y SUBE con una barra que dice qué
+  hace. Lo publicado dura como mucho 5 minutos (`DURACION_MAXIMA`): un video
+  más largo abre recortado a sus primeros 5 y el tirador que se pase
+  arrastra al otro. El sonido SE CONSERVA en los dos destinos (desde el
+  13/11/2026); «Quitar el sonido» es opcional.
+- **Se prepara EN EL NAVEGADOR con Mediabunny** (WebCodecs, cargado con
+  `import()` solo al abrir el editor; `exportar-video.ts`): recorta el TRAMO
+  (no el encuadre: el video va entero), baja a 720p como mucho, 30 cuadros, MP4 H.264 + AAC con
+  `fastStart`, y la tasa justa para no pasar de 48 MB (`tasaVideo`). Lo que se
+  sube es lo que se ve: los portales solo lo reproducen. Si el codificador del
+  equipo se queda QUIETO 10 s (algunas tarjetas de video, pestaña en segundo
+  plano), se cancela y se repite por software. La cuenta es pura y probada
+  (`lib/videos/video.ts`: tramo, recorte, medidas, tasa, rutas).
+- **CUÁNTO FALTA** (13/11/2026: «un contador para que el usuario sepa más o
+  menos cuánto falta»). Bajo la barra: «Paso 1 de 2 · Preparando el video» /
+  «Paso 2 de 2 · Subiendo el video», el porcentaje y «Faltan unos 35 s» /
+  «Faltan unos 2,5 min» / «Ya casi termina» («Calculando cuánto falta…» los
+  primeros segundos). Se estima con el RITMO de los últimos 6 s
+  (`estimarRestante`) y se SUAVIZA cada segundo de forma asimétrica
+  (`suavizarRestante`: baja deprisa si se acelera, sube con calma si se
+  frena); al cambiar de paso o al reintentar por software, empieza de cero.
+  ⚠️ La preparación avisa de su avance CIENTOS de veces por segundo: las
+  muestras se guardan espaciadas (`agregarMuestra`, una cada 0,25 s, las 120
+  últimas); guardarlas todas dejaba menos de medio segundo de historia y el
+  contador nunca salía de «Calculando». Puro y probado en
+  `lib/videos/estimacion.ts`. El lector oye solo el paso, no cada segundo.
+  `/dev/video?segundos=120` fabrica un video largo para verlo.
+- **Se sube DIRECTO a Storage** (un video no cabe en el cuerpo de una acción):
+  `pedirSubidaVideo` (`OrumAdminLogin/videos-actions.ts`, solo `super_admin`)
+  da una dirección firmada con una ruta que elige el servidor, el navegador
+  sube con `XMLHttpRequest` (para la barra) —la dirección se pide ANTES de
+  preparar (`pedirSubida`), así un permiso o una migración que falte se dice
+  al instante; sin el bucket, Supabase contesta «The related resource does not
+  exist» (404), no «Bucket not found»— y la acción que guarda comprueba
+  que la ruta sea de su destino (`esRutaVideo`) y que exista
+  (`lib/videos/servidor.ts`). Sustituir o quitar borra el video anterior.
+- **La PORTADA del video es la imagen de siempre** (`imagen_url`; el primer
+  fotograma del tramo, en JPEG): todo lo que enseñaba imágenes sigue igual y
+  el video carga solo cuando hace falta. La dirección del video va en
+  `video_url` (`anuncios` y `publicidad`).
+- **Base**: `supabase/migrations/20261113120000_videos.sql`, SE APLICA A MANO
+  (columnas `video_url`, bucket `videos-orum` público de 50 MB solo MP4 y sus
+  políticas; comprobación en `supabase/verificacion/videos_verificacion.sql`).
+  ⚠️ El código aguanta sin ella: las lecturas van con `select('*')` y solo
+  guardar un video avisa (`MENSAJE_FALTA_MIGRACION_VIDEOS`). El bucket y sus
+  carpetas (`novedades/`, `portada/`) no dicen «publicidad» ni «anuncio»: los
+  bloqueadores los ocultarían.
+- **En la portada** (`CarruselFotos`): se ve la portada hasta que le toca;
+  entonces se reproduce EN SILENCIO (un navegador no deja arrancar solo un
+  video con sonido), y el carrusel espera a que TERMINE para pasar (las
+  fotos siguen a 4,5 s). Solo el que está a la vista y con el carrusel en
+  pantalla (`IntersectionObserver`); la pausa también lo pausa; con
+  movimiento reducido no arranca solo y lleva sus controles.
+  **Arriba a la derecha, dos botones** (13/11/2026: «los usuarios pueden
+  activar el audio del video y agrandarlo para verlo completo»): ACTIVAR EL
+  SONIDO (`aria-pressed`; vale para los videos siguientes; si el navegador
+  no deja sonar, vuelve a silencio; no sale si se SABE que el video no tiene
+  audio —Firefox y Safari lo dicen—) y VER EN GRANDE. **En grande es una
+  VENTANA ENCIMA, como los formularios** (mismo día: «cuando le dan clic al
+  video para verlo más grande, que se ponga encima de todo con el efecto de
+  los formularios, y que se pueda cerrar»): `Modal desnudo` con su velo
+  difuminado y su entrada; se abre con el botón o TOCANDO el video (un
+  toque; arrastrar sigue pasando de pieza: `arrastro`), y se cierra con su
+  X, Escape o tocando fuera. Dentro, el video entero (`contain`) con sus
+  controles, CON SONIDO y desde donde iba (`alAbrirVisor`); la pantalla
+  completa queda en el botón del reproductor. Mientras está abierta, el
+  carrusel se queda quieto. **No uses la pantalla completa del navegador al
+  tocar**: se hizo primero y no era lo pedido.
+- **En `/novedades`** (y la de miembros): el video con sus controles y su
+  portada, que no carga hasta darle a reproducir, entero sobre negro (se
+  mira; no se recorta como una foto). El aviso compacto de la portada no
+  cambia: no lleva imagen ni video.
+- **En el panel**: el formulario de la novedad ofrece «Elegir imagen» o
+  «Elegir video» (y acepta uno soltado), y el video se ajusta como un PASO de
+  la misma ventana; el gestor del carrusel tiene «Añadir video» y marca sus
+  piezas con «Video». «Ajustar»/«Editar» uno publicado lo descarga y lo
+  vuelve a abrir.
+- Vista previa con un video FABRICADO en el navegador (12 s), solo en
+  desarrollo: `/dev/video` (`?destino=portada` para el 4:3), con «Solo
+  preparar» que enseña el MP4 resultante y el carrusel con él. Subir pide la
+  dirección a la acción real, que sin sesión contesta con un error.
+- ⚠️ **No se ha probado con sesión real** (subir y publicar de verdad, verlo
+  en la portada y en `/novedades` de producción, un video de iPhone). En esta
+  máquina el panel del navegador está oculto: el codificador del equipo no
+  responde (por eso existe el reintento) y `IntersectionObserver` no avisa,
+  así que el video del carrusel no arranca solo aquí; en un navegador normal
+  sí. Un `.mov` en HEVC del iPhone no lo abren todos los navegadores: el
+  editor lo dice y pide otro archivo.
 
 **Una contraseña NUEVA tiene que ser segura** (27/10/2026: «que el
 usuario no pueda poner una contraseña insegura»; con las fuentes oficiales:
@@ -2129,6 +2464,33 @@ piezas del panel con datos falsos (`?f=` para uno); se mira a 320, 360, 375,
 CONTENIDO del padre, no contra su borde— que nada pase de su caja ni de la
 pantalla. Las páginas de servidor del panel no se pueden montar sin sesión:
 lo nuevo que vaya en ellas se lleva a esta vista previa.
+
+### Ninguna consulta pasa de 1000 filas sin darse cuenta
+
+**PostgREST corta CADA respuesta en 1000 filas, en silencio** (revisión de
+rendimiento del 11/11/2026: «la página puede hacerse demasiado grande y
+Métricas puede ser muy larga»). Métricas sumaba las ventas y las membresías
+del periodo con UNA consulta cada una: con un club grande, sus cifras, la
+gráfica y los rankings habrían salido cortos sin avisar. Las reglas:
+
+- **Lo que se SUMA o se AGRUPA se lee entero, por lotes**, con
+  `leerEnPaginas` (`lib/shared/leer-en-paginas.ts`, probado): de 1000 en
+  1000, ordenado por `id` (sin orden, dos lotes repiten o saltan filas), y
+  LANZA si la base falla o si pasa de 50.000 filas (a esa escala la cuenta
+  la hace la base, con una función). Lo usan Métricas, el detalle de ventas
+  de un comercio y la lista de miembros.
+- **Lo que se MUESTRA se pide por páginas a la base** (`.range` +
+  `count: 'exact'`, `rangoDePagina`), no se trae todo para enseñar 25.
+  Así van la Bitácora (de a 25; antes, 200 de una vez y lo anterior no se
+  podía ver) y el detalle de ventas de un comercio (de a 10; antes, las 100
+  más recientes).
+- **Las tablas de Métricas van de a 10** (`POR_PAGINA_METRICAS`): «Membresías
+  por empleado», «Ventas por comercio» y «Uso de la membresía» (antes cortada
+  en 20). Cada una con su página en la URL (`?pe=`, `?pc=`, `?pu=`) que
+  conserva el periodo y las otras dos, y un ancla para que pasar de página
+  lleve a SU tabla. Las listas del panel siguen en 25.
+- **No se pide una tabla entera para poner nombres**: Métricas pedía TODOS
+  los miembros para nombrar 20 filas; ahora solo los de la página que se ve.
 
 ### Fechas
 

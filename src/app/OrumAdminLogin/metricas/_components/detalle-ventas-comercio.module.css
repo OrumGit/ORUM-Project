@@ -1,0 +1,19 @@
+.resumen {
+  margin-bottom: var(--space-5);
+}
+
+.periodo {
+  margin-bottom: var(--space-4);
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+/* Los montos se comparan hacia abajo: cifras tabulares. */
+.monto {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.sinPromocion {
+  color: var(--text-3);
+}

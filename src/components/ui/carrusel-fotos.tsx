@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { Pause, Play } from 'lucide-react'
+import { Maximize2, Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import { CLASE_PREVIA, estiloPrevia } from '@/components/videos/previa'
+import { VisorVideo } from '@/components/videos/visor-video'
+import { PROPORCION_DESTINO } from '@/lib/videos/video'
 import { useMediaQuery } from '@/components/use-media-query'
 import type { FotoPublica } from '@/lib/publico/datos-publicos'
 import estilos from './carrusel-fotos.module.css'
@@ -25,6 +28,30 @@ import estilos from './carrusel-fotos.module.css'
     · En táctil, un gesto VERTICAL sigue siendo de la página
       (`touch-action: pan-y`): solo el horizontal mueve las fotos, y se
       decide en los primeros píxeles.
+
+  VIDEOS (13/11/2026): una pieza puede ser un video (lo sube el
+  administrador en «Publicidad», ya recortado). Se ve su portada hasta que
+  le toca; entonces se reproduce EN SILENCIO —un navegador no deja arrancar
+  solo un video con sonido— y el carrusel espera a que termine para pasar a
+  la siguiente (no a los 4,5 s). Encima, dos botones («los usuarios pueden
+  activar el audio y agrandarlo para verlo completo»): ACTIVAR EL SONIDO
+  (vale para los videos que vengan después; no sale si se sabe que el video
+  no tiene audio) y VER EN GRANDE.
+
+  EN GRANDE ES UNA VENTANA ENCIMA, como los formularios (13/11/2026: «cuando
+  le dan clic al video para verlo más grande, que se ponga encima de todo con
+  el efecto de los formularios, y que se pueda cerrar»). Se abre con el
+  botón o TOCANDO el video (un toque, no un arrastre: arrastrar sigue
+  pasando de pieza). Es `Modal desnudo`: el mismo velo que se difumina y la
+  misma entrada; se cierra con su X, con Escape o tocando fuera. Dentro, el
+  video entero con sus controles, CON SONIDO y desde donde iba; quien quiera
+  la pantalla completa la tiene en el botón del reproductor. Mientras está
+  abierta, el carrusel se queda quieto. Ya no se usa la pantalla completa
+  del navegador al tocar (se probó primero y no era lo pedido).
+  Solo suena el que está a la vista y solo si el carrusel está en pantalla
+  (`IntersectionObserver`): fuera de ella no gasta batería ni datos. La
+  pausa del carrusel también lo pausa. Con movimiento reducido no arranca
+  solo: lleva sus controles para reproducirlo a mano.
 
   WCAG 2.2.2 (PAUSAR, DETENER, OCULTAR): botón de pausa visible; se detiene
   con el ratón encima, con el foco dentro y mientras se arrastra; con
@@ -71,24 +98,114 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
   const [desplazamiento, setDesplazamiento] = useState(0)
   const [arrastrando, setArrastrando] = useState(false)
   const gesto = useRef<Gesto | null>(null)
+  const raiz = useRef<HTMLDivElement>(null)
+  const videos = useRef<(HTMLVideoElement | null)[]>([])
+  const [enPantalla, setEnPantalla] = useState(false)
+  const [conSonido, setConSonido] = useState(false)
+  // El video en grande: cuál y desde qué segundo iba.
+  const [visor, setVisor] = useState<{ i: number; desde: number } | null>(null)
+  // ¿El último gesto fue un arrastre? Entonces el clic que lo sigue no abre el visor.
+  const arrastro = useRef(false)
+  // Los videos de los que se SABE que no tienen audio (no se les ofrece sonido).
+  const [sinAudio, setSinAudio] = useState<ReadonlySet<number>>(new Set())
 
   const total = fotos.length
   const rotando =
-    total > 1 && !pausadoPorUsuario && !enfocado && !arrastrando && !reducirMovimiento
+    total > 1 && !pausadoPorUsuario && !enfocado && !arrastrando && !reducirMovimiento && visor === null
+  const actualEsVideo = Boolean(fotos[actual]?.video)
 
+  // Un video marca su propio tiempo: el temporizador solo corre con fotos.
   useEffect(() => {
-    if (!rotando) return
-    const temporizador = window.setInterval(() => {
+    if (!rotando || actualEsVideo) return
+    const temporizador = window.setTimeout(() => {
       setActual((i) => (i + 1) % total)
     }, INTERVALO_MS)
-    return () => window.clearInterval(temporizador)
-  }, [rotando, total])
+    return () => window.clearTimeout(temporizador)
+  }, [rotando, actualEsVideo, actual, total])
+
+  // ¿Se ve el carrusel? Fuera de la pantalla, ningún video se reproduce.
+  useEffect(() => {
+    const el = raiz.current
+    if (!el || !fotos.some((f) => f.video)) return
+    const observador = new IntersectionObserver(([e]) => setEnPantalla(e.isIntersecting), { threshold: 0.25 })
+    observador.observe(el)
+    return () => observador.disconnect()
+  }, [fotos])
+
+  // Solo el video que está a la vista se reproduce, y desde el principio.
+  useEffect(() => {
+    videos.current.forEach((v, i) => {
+      if (!v) return
+      // El sonido es una propiedad del elemento: el atributo `muted` solo vale al montar.
+      v.muted = !conSonido
+      const toca = i === actual && enPantalla && !pausadoPorUsuario && !reducirMovimiento && visor === null
+      if (toca) {
+        if (v.paused) void v.play().catch(() => {})
+      } else if (!v.paused) {
+        v.pause()
+      }
+      if (i !== actual && v.currentTime > 0) v.currentTime = 0
+    })
+  }, [actual, enPantalla, pausadoPorUsuario, reducirMovimiento, conSonido, visor])
+
+  /** Activa o quita el sonido. Si el navegador no deja sonar, vuelve a silencio. */
+  function alternarSonido() {
+    const v = videos.current[actual]
+    const siguiente = !conSonido
+    setConSonido(siguiente)
+    if (!v) return
+    v.muted = !siguiente
+    if (siguiente && v.paused) {
+      void v.play().catch(() => {
+        v.muted = true
+        setConSonido(false)
+      })
+    }
+  }
+
+  /** El video que está a la vista, en grande en la ventana encima, desde donde iba. */
+  function verEnGrande() {
+    if (fotos[actual]?.video) setVisor({ i: actual, desde: videos.current[actual]?.currentTime ?? 0 })
+  }
+
+  /** Un toque en el video lo abre en grande; un arrastre no (pasa de pieza). */
+  function alTocarPieza() {
+    if (arrastro.current) {
+      arrastro.current = false
+      return
+    }
+    if (actualEsVideo) verEnGrande()
+  }
+
+  /** ¿Se sabe que este video no tiene audio? Solo Firefox y Safari lo dicen; si no, se ofrece. */
+  function revisarAudio(i: number, v: HTMLVideoElement) {
+    const conPistas = v as HTMLVideoElement & { mozHasAudio?: boolean; audioTracks?: { length: number } }
+    const sinPista =
+      conPistas.mozHasAudio === false || (conPistas.audioTracks !== undefined && conPistas.audioTracks.length === 0)
+    if (sinPista) setSinAudio((previo) => new Set(previo).add(i))
+  }
+
+  /** Al terminar un video: pasa a la siguiente pieza, o lo repite si el carrusel está parado. */
+  function alTerminarVideo(i: number) {
+    if (i !== actual) return
+    if (rotando) {
+      setActual((i + 1) % total)
+      return
+    }
+    const v = videos.current[i]
+    if (v && !pausadoPorUsuario && !reducirMovimiento) {
+      v.currentTime = 0
+      void v.play().catch(() => {})
+    }
+  }
 
   if (total === 0) return null
 
   /* --- Arrastrar ---------------------------------------------------------- */
 
   function alApretar(e: PointerEvent<HTMLDivElement>) {
+    // Cada gesto empieza siendo un toque; si arrastra, `alMover` lo marca.
+    arrastro.current = false
     if (total < 2 || (e.pointerType === 'mouse' && e.button !== 0)) return
     gesto.current = {
       id: e.pointerId,
@@ -116,6 +233,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         return
       }
       e.currentTarget.setPointerCapture(e.pointerId)
+      arrastro.current = true
       setArrastrando(true)
     }
 
@@ -166,6 +284,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
 
   return (
     <div
+      ref={raiz}
       className={[estilos.carrusel, className].filter(Boolean).join(' ')}
       role="group"
       aria-roledescription="carrusel"
@@ -186,6 +305,8 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
         onPointerDown={alApretar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
+        onClick={alTocarPieza}
+        data-video-actual={actualEsVideo || undefined}
         onPointerCancel={alCancelar}
       >
         {/* El carril: `--indice` y `--desplazamiento` son lo único dinámico
@@ -200,21 +321,82 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
             } as CSSProperties
           }
         >
-          {fotos.map((foto, i) => (
-            // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
-            <img
-              key={foto.url}
-              src={foto.url}
-              alt={foto.alt}
-              className={estilos.foto}
-              aria-hidden={i !== actual}
-              draggable={false}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-            />
-          ))}
+          {fotos.map((foto, i) =>
+            foto.video ? (
+              // La caja recorta: la vista previa acerca el video con `scale`.
+              <div key={foto.url} className={estilos.pieza} aria-hidden={i !== actual}>
+              <video
+                ref={(v) => {
+                  videos.current[i] = v
+                }}
+                src={foto.video}
+                poster={foto.url}
+                className={[estilos.foto, CLASE_PREVIA].join(' ')}
+                style={estiloPrevia(foto.encuadre, PROPORCION_DESTINO.portada)}
+                data-controles={reducirMovimiento || undefined}
+                aria-label={foto.alt}
+                muted
+                playsInline
+                // Carga cuando le toca: hasta entonces se ve su portada.
+                preload={i === actual ? 'auto' : 'none'}
+                loop={total === 1}
+                controls={reducirMovimiento}
+                onLoadedMetadata={(e) => revisarAudio(i, e.currentTarget)}
+                onEnded={() => alTerminarVideo(i)}
+              />
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- URL externa arbitraria, no un asset local
+              <img
+                key={foto.url}
+                src={foto.url}
+                alt={foto.alt}
+                className={estilos.foto}
+                aria-hidden={i !== actual}
+                draggable={false}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            ),
+          )}
         </div>
       </div>
+
+      {/* Sonido y ver en grande, sobre el video que está a la vista. */}
+      {actualEsVideo && (
+        <div className={estilos.videoAcciones}>
+          {!sinAudio.has(actual) && (
+            <button
+              type="button"
+              className={estilos.videoBoton}
+              onClick={alternarSonido}
+              aria-pressed={conSonido}
+              aria-label={conSonido ? 'Silenciar el video' : 'Activar el sonido del video'}
+              title={conSonido ? 'Silenciar' : 'Activar el sonido'}
+            >
+              {conSonido ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
+            </button>
+          )}
+          <button
+            type="button"
+            className={estilos.videoBoton}
+            onClick={verEnGrande}
+            aria-label="Ver el video en grande"
+            title="Ver en grande"
+          >
+            <Maximize2 size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* EN GRANDE: el video completo, en su formato original, en una ventana encima. */}
+      <VisorVideo
+        video={visor ? (fotos[visor.i]?.video ?? null) : null}
+        portada={visor ? fotos[visor.i]?.url : null}
+        descripcion={visor ? (fotos[visor.i]?.alt ?? 'Video') : 'Video'}
+        desde={visor?.desde ?? 0}
+        onCerrar={() => setVisor(null)}
+      />
 
       {total > 1 && (
         <div className={estilos.controles}>
@@ -238,7 +420,7 @@ export function CarruselFotos({ fotos, etiqueta, className }: Props) {
                 type="button"
                 className={estilos.punto}
                 onClick={() => setActual(i)}
-                aria-label={`Foto ${i + 1} de ${total}`}
+                aria-label={`${foto.video ? 'Video' : 'Foto'} ${i + 1} de ${total}`}
                 aria-current={i === actual ? 'true' : undefined}
               />
             ))}

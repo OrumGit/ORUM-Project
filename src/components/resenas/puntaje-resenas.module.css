@@ -1,0 +1,110 @@
+/* ==========================================================================
+   EL PUNTAJE DE LAS RESEÑAS  ·  promedio a la izquierda, barras a la derecha
+   ========================================================================== */
+
+.puntaje {
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.media {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* El promedio en el serif de la marca, como el de las fichas. */
+.numero {
+  font-family: var(--font-display);
+  font-size: var(--t-display-2-size);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: auto;
+}
+
+.clasificacion {
+  margin-top: var(--space-1);
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.total {
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--t-footnote-size);
+}
+
+.etiqueta {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* El carril es relleno-información (como la barra de progreso): `--surface-hueco`. */
+.pista {
+  display: block;
+  overflow: hidden;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--surface-hueco);
+}
+
+/* La barra es una ESCALA desde la izquierda, nunca un ancho que recalcule
+   la caja. Un oro, el de las gráficas. */
+.relleno {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--gold-600);
+  transform: scaleX(var(--proporcion, 0));
+  transform-origin: left center;
+}
+
+.cifra {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.porcentaje {
+  min-width: 2.75rem;
+  text-align: right;
+  color: var(--text-2);
+}
+
+/* Estrecho: el promedio arriba y las barras debajo. */
+@container contenido (max-width: 560px) {
+  .puntaje {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}

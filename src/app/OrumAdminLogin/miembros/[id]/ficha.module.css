@@ -1,0 +1,247 @@
+/* --- Estado actual --------------------------------------------------------- */
+
+.estadoActual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.estadoTextos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.estadoBadges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.estadoNota {
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+/* --- Datos ----------------------------------------------------------------- */
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-5);
+}
+
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.datoEtiqueta {
+  font-size: var(--t-overline-size);
+  letter-spacing: var(--t-overline-tracking);
+  font-weight: var(--t-overline-weight);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.datoValor {
+  font-size: var(--t-body-size);
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.datoVacio {
+  color: var(--text-3);
+}
+
+/* --- Línea temporal --------------------------------------------------------
+   El historial es una secuencia en el tiempo, no una tabla de datos sueltos:
+   una línea temporal deja ver de un vistazo la continuidad entre membresías y
+   los huecos sin cobertura.                                                  */
+
+.linea {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hito {
+  position: relative;
+  display: flex;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+}
+
+.hito:last-child {
+  padding-bottom: 0;
+}
+
+/* El hilo que une los hitos. No se dibuja tras el último. */
+.hito:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 18px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.punto {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+
+  width: 11px;
+  height: 11px;
+  margin-top: 5px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+/* El hito vigente se marca en verde: es el único que importa ahora mismo. */
+.puntoVigente {
+  background: var(--success);
+}
+
+.hitoCuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.hitoCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.hitoPlan {
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+}
+
+.hitoFechas {
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.hitoMeta {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--t-caption-size);
+  color: var(--text-3);
+}
+
+.precio {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* --- Formulario de renovación ---------------------------------------------- */
+
+.renovar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.renovarCampos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* El botón no debe estirarse al ancho del formulario en escritorio. */
+.renovarBoton {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .renovarBoton {
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .renovarCampos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Actividad ------------------------------------------------------------ */
+
+/* Marca de tiempo: cifras tabulares para que la columna baje en línea recta. */
+.selloTiempo {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+}
+
+.actor {
+  font-size: var(--t-footnote-size);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Revocar (29/10/2026) -----------------------------------------------------
+   Qué va a pasar, antes del motivo: el plan con lo que le queda y tres
+   consecuencias en palabras. Con el filo rojo de 1px a la izquierda, como una
+   cita: dice «cuidado» sin una caja de alarma. */
+.revocarAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--danger);
+}
+
+.revocarPlan {
+  margin: 0;
+  font-size: var(--t-callout-size);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.revocarLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-4);
+  font-size: var(--t-callout-size);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* «Añadir días de cortesía»: el mismo aviso, con el filo de marca. */
+.cortesiaAviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--brand-edge);
+}
+
+/* La línea de la revocación, en la ficha y en el historial. */
+.revocada {
+  margin: 0;
+  font-size: var(--t-footnote-size);
+  color: var(--danger);
+}

@@ -9,7 +9,7 @@ import type { MetadataRoute } from 'next'
 
     · la del SOCIO    — abre en `/miembros`;  la «O» dorada sobre BLANCO;
     · la del COMERCIO — abre en `/comercios`; la «O» dorada sobre NEGRO;
-    · la del PANEL    — abre en `/admin`;     la «O» plateada sobre NEGRO.
+    · la del PANEL    — abre en `/OrumAdminLogin`;     la «O» plateada sobre NEGRO.
 
   Cada una tiene su manifiesto (un Route Handler: Next solo admite el
   `manifest.ts` especial en la raíz, y ese lo enlazaría también la portada
@@ -122,18 +122,18 @@ export const MANIFIESTOS: Record<AppInstalable, MetadataRoute.Manifest> = {
   */
   admin: {
     ...COMUN,
-    id: '/admin',
+    id: '/OrumAdminLogin',
     name: 'ORUM Administración',
     short_name: 'ORUM Admin',
     description: 'El panel de administración del club ORUM: miembros, comercios, ventas y métricas.',
-    start_url: '/admin',
-    scope: '/admin',
+    start_url: '/OrumAdminLogin',
+    scope: '/OrumAdminLogin',
     orientation: 'any',
     background_color: NEGRO,
     icons: iconos('admin'),
     shortcuts: [
-      { name: 'Registrar miembro', short_name: 'Registrar', url: '/admin/miembros/nuevo' },
-      { name: 'Miembros', short_name: 'Miembros', url: '/admin/miembros' },
+      { name: 'Registrar miembro', short_name: 'Registrar', url: '/OrumAdminLogin/miembros/nuevo' },
+      { name: 'Miembros', short_name: 'Miembros', url: '/OrumAdminLogin/miembros' },
     ],
   },
 }

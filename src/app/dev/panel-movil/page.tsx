@@ -1,28 +1,33 @@
 import { notFound } from 'next/navigation'
 import { FormCard } from '@/components/ui/form-card'
 import { PageHeader } from '@/components/ui/layout'
-import { AnuncioForm } from '@/app/admin/anuncios/_components/anuncio-form'
-import { ResenasAdmin } from '@/app/admin/comercios/[id]/_components/resenas-admin'
-import { VisibilidadComercio } from '@/app/admin/comercios/[id]/_components/visibilidad-comercio'
-import { EditarComercioForm } from '@/app/admin/comercios/[id]/editar/_components/editar-comercio-form'
-import { GestorImagenes } from '@/app/admin/comercios/[id]/imagenes/_components/gestor-imagenes'
-import { PromocionForm } from '@/app/admin/comercios/[id]/promociones/_components/promocion-form'
-import { SucursalForm } from '@/app/admin/comercios/[id]/sucursales/_components/sucursal-form'
-import { ComercioForm } from '@/app/admin/comercios/_components/comercio-form'
-import { PasswordForm } from '@/app/admin/cuenta/password/_components/password-form'
-import { RenovarForm } from '@/app/admin/miembros/[id]/_components/renovar-form'
-import { EditarMiembroForm } from '@/app/admin/miembros/[id]/editar/_components/editar-miembro-form'
-import { RevocarForm } from '@/app/admin/miembros/[id]/revocar/_components/revocar-form'
-import { MiembroForm } from '@/app/admin/miembros/_components/miembro-form'
-import { CargarRangoForm } from '@/app/admin/miembros/numeros/_components/cargar-rango-form'
-import { PlanForm } from '@/app/admin/planes/_components/plan-form'
-import { GestorPublicidad } from '@/app/admin/publicidad/_components/gestor-portada'
-import { EditarForm } from '@/app/admin/usuarios/[id]/editar/_components/editar-usuario-form'
-import { UsuarioForm } from '@/app/admin/usuarios/nuevo/_components/usuario-form'
+import { AnuncioForm } from '@/app/OrumAdminLogin/anuncios/_components/anuncio-form'
+import { ResenasAdmin } from '@/app/OrumAdminLogin/comercios/[id]/_components/resenas-admin'
+import { VisibilidadComercio } from '@/app/OrumAdminLogin/comercios/[id]/_components/visibilidad-comercio'
+import { EditarComercioForm } from '@/app/OrumAdminLogin/comercios/[id]/editar/_components/editar-comercio-form'
+import { GestorImagenes } from '@/app/OrumAdminLogin/comercios/[id]/imagenes/_components/gestor-imagenes'
+import { PromocionForm } from '@/app/OrumAdminLogin/comercios/[id]/promociones/_components/promocion-form'
+import { SucursalForm } from '@/app/OrumAdminLogin/comercios/[id]/sucursales/_components/sucursal-form'
+import { ComercioForm } from '@/app/OrumAdminLogin/comercios/_components/comercio-form'
+import { PasswordForm } from '@/app/OrumAdminLogin/cuenta/password/_components/password-form'
+import { RenovarForm } from '@/app/OrumAdminLogin/miembros/[id]/_components/renovar-form'
+import { CortesiaForm } from '@/app/OrumAdminLogin/miembros/[id]/cortesia/_components/cortesia-form'
+import { EditarMiembroForm } from '@/app/OrumAdminLogin/miembros/[id]/editar/_components/editar-miembro-form'
+import { RevocarForm } from '@/app/OrumAdminLogin/miembros/[id]/revocar/_components/revocar-form'
+import { ComprasMiembro } from '@/app/OrumAdminLogin/miembros/[id]/_components/compras-miembro'
+import type { CompraPanel } from '@/lib/miembros/compras-miembro-datos'
+import { MiembroForm } from '@/app/OrumAdminLogin/miembros/_components/miembro-form'
+import { CargarRangoForm } from '@/app/OrumAdminLogin/miembros/numeros/_components/cargar-rango-form'
+import { PlanForm } from '@/app/OrumAdminLogin/planes/_components/plan-form'
+import { GestorPublicidad } from '@/app/OrumAdminLogin/publicidad/_components/gestor-portada'
+import { EditarForm } from '@/app/OrumAdminLogin/usuarios/[id]/editar/_components/editar-usuario-form'
+import { UsuarioForm } from '@/app/OrumAdminLogin/usuarios/nuevo/_components/usuario-form'
 import { ToastProvider } from '@/components/ui/toast'
+import { Button } from '@/components/ui/button'
+import { Ban, Camera, CreditCard, MailCheck, Pencil, Trash2 } from 'lucide-react'
 import cromo from '@/app/miembros/(portal)/portal.module.css'
 import shell from '@/components/shell/app-shell.module.css'
-import ficha from '@/app/admin/comercios/[id]/ficha.module.css'
+import ficha from '@/app/OrumAdminLogin/comercios/[id]/ficha.module.css'
 
 export const metadata = { title: 'Vista previa del panel en el celular · ORUM' }
 
@@ -56,6 +61,30 @@ const TIPOS = [
 ]
 const FOTO = '/icons/socio-512.png'
 
+/* Compras inventadas para «Compras en comercios» de la ficha del miembro. */
+const COMPRAS: CompraPanel[] = Array.from({ length: 31 }, (_, i) => {
+  const comercio = [
+    { id: 1, nombre: 'Artesana 43', sede: 'Centro', promo: '10% en toda la carta' },
+    { id: 2, nombre: 'Absurdo Sport Bar', sede: 'Norte', promo: '2x1 en cervezas' },
+    { id: 3, nombre: 'Anthali Spa - Wellness Therapy', sede: 'Principal', promo: '15% en masajes' },
+  ][i % 3]
+  const valorCompra = 40000 + ((i * 17000) % 120000)
+  const ahorro = Math.round(valorCompra * (i % 3 === 2 ? 0.15 : 0.1))
+  return {
+    id: 100 - i,
+    fechaHora: new Date(Date.UTC(2026, 10, 11, 20) - i * 3 * 86400000).toISOString(),
+    comercioId: comercio.id,
+    comercio: comercio.nombre,
+    logoUrl: null,
+    sucursal: comercio.sede,
+    promocion: i % 7 === 6 ? null : comercio.promo,
+    valorCompra,
+    ahorro,
+    valorFinal: valorCompra - ahorro,
+    metodo: i % 4 === 0 ? 'qr' : 'numero',
+  }
+})
+
 const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPanel?: boolean }> = {
   'comercio-datos': {
     titulo: 'Ficha del comercio · Datos',
@@ -76,6 +105,66 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
           correo: 'contacto@absurdo.co',
         }}
         categorias={CATEGORIAS}
+      />
+    ),
+  },
+  /* La cabecera de la ficha del miembro con TODOS sus botones (12/11/2026:
+     el nombre quedaba aplastado a una letra por renglón). */
+  'cabecera-miembro': {
+    titulo: 'Ficha del miembro · Cabecera',
+    enPanel: true,
+    contenido: (
+      <PageHeader
+        title="Katherin Recio Marin"
+        description="Cédula 1116017106"
+        actions={
+          <>
+            <Button href="#" variant="secondary" icon={<Pencil size={16} />}>
+              Editar datos
+            </Button>
+            <Button href="#" variant="secondary" icon={<Camera size={16} />}>
+              Cambiar foto
+            </Button>
+            <Button href="#" variant="secondary" icon={<Trash2 size={16} />}>
+              Retirar foto
+            </Button>
+            <Button href="#" variant="secondary" icon={<MailCheck size={16} />}>
+              Reenviar correo de activación
+            </Button>
+            <Button href="#" variant="secondary" icon={<Ban size={16} />}>
+              Revocar membresía
+            </Button>
+            <Button href="#" icon={<CreditCard size={16} />}>
+              Renovar membresía
+            </Button>
+          </>
+        }
+      />
+    ),
+  },
+  compras: {
+    titulo: 'Ficha del miembro · Compras',
+    enPanel: true,
+    contenido: (
+      <ComprasMiembro
+        miembroId={1}
+        nombre="María"
+        rango={{ periodo: 'todo', desde: null, hasta: null }}
+        compras={COMPRAS}
+        pagina={1}
+      />
+    ),
+  },
+  'compras-vacio': {
+    titulo: 'Ficha del miembro · Sin compras',
+    enPanel: true,
+    contenido: (
+      <ComprasMiembro
+        miembroId={1}
+        nombre="María"
+        rango={{ periodo: 'semana', desde: '2026-11-09', hasta: '2026-11-11' }}
+        compras={[]}
+        pagina={1}
       />
     ),
   },
@@ -182,7 +271,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
   },
   'miembro-nuevo': {
     titulo: 'Registrar miembro',
-    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={['00090003', '00090004']} />,
+    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={['00090003', '00090004']} puedeCortesia />,
   },
   'miembro-editar': {
     titulo: 'Editar miembro',
@@ -203,7 +292,28 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
       />
     ),
   },
-  renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} /> },
+  renovar: { titulo: 'Renovar membresía', contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia /> },
+  // «Añadir días de cortesía» tras un mensual pagado que vence el 12 dic.
+  cortesia: {
+    titulo: 'Añadir días de cortesía',
+    contenido: (
+      <CortesiaForm
+        datos={{
+          miembroId: 1,
+          nombre: 'Catalina García Ramírez',
+          plan: 'Mensual',
+          finVigente: '2026-12-12',
+          vigenteEsCortesia: false,
+          inicio: '2026-12-13',
+        }}
+      />
+    ),
+  },
+  // Con una membresía vigente hasta el 20 dic 2026: la cortesía cuenta desde el 21.
+  'renovar-vigente': {
+    titulo: 'Renovar membresía (con una vigente)',
+    contenido: <RenovarForm miembroId={1} planes={PLANES} puedeCortesia inicio="2026-12-21" />,
+  },
   revocar: {
     titulo: 'Revocar membresía',
     contenido: (
@@ -246,7 +356,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
   publicidad: {
     titulo: 'Publicidad',
     enPanel: true,
-    contenido: <GestorPublicidad piezas={[1, 2, 3].map((i) => ({ id: i, url: FOTO, descripcion: `Pieza ${i}`, activa: i !== 2 }))} />,
+    contenido: <GestorPublicidad piezas={[1, 2, 3].map((i) => ({ id: i, url: FOTO, video: i === 3 ? 'video.mp4' : null, descripcion: `Pieza ${i}`, activa: i !== 2 }))} />,
   },
   'usuario-nuevo': { titulo: 'Nuevo usuario', contenido: <UsuarioForm /> },
   'usuario-editar': {

@@ -1,0 +1,61 @@
+/* El video de una novedad en su tarjeta: la vista previa y el botón (ver `video-novedad.tsx`). */
+
+.previa {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--negro-900);
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.imagen {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* El botón de reproducir, al centro: dice que esto es un video y se toca. */
+.reproducir {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  translate: -50% -50%;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--negro-900) 62%, transparent);
+  color: var(--blanco);
+  box-shadow: var(--shadow-flotante);
+  transition:
+    scale var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* El triángulo, un poco a la derecha: se ve centrado. */
+.reproducir svg {
+  translate: 2px 0;
+  fill: currentColor;
+}
+
+@media (hover: hover) {
+  .previa:hover .reproducir {
+    scale: 1.08;
+  }
+}
+
+.previa:active .reproducir {
+  scale: 0.96;
+}
+
+.previa:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}

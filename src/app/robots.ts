@@ -13,10 +13,12 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/admin',
+        // El panel (`/OrumAdminLogin`) tampoco se lista: da 404 a quien no es
+        // del equipo, y `robots.txt` es público.
         '/miembros',
         '/comercios',
-        '/login',
+        // Ni `/login` (ya no existe: da 404) ni la puerta secreta del panel:
+        // `robots.txt` es público, y listarla aquí sería anunciarla.
         '/activar-cuenta',
         '/dev',
         '/offline',

@@ -9,7 +9,7 @@ import { hoyISO } from '@/lib/shared/fecha'
 
 /*
   Búsqueda de miembros compartida por la paleta de comandos y la lista de
-  `/admin/miembros`. Vive aquí para que exista UNA sola definición de qué
+  `/OrumAdminLogin/miembros`. Vive aquí para que exista UNA sola definición de qué
   significa buscar un miembro y de cómo se calcula su estado.
 */
 
@@ -75,6 +75,7 @@ export async function buscarMiembros(
     .select('id, miembro_id, estado, fecha_fin, plan_id, planes_membresia(nombre)')
     .in('miembro_id', ids)
     .order('fecha_fin', { ascending: false })
+    .order('id', { ascending: false })
 
   type FilaMembresia = {
     id: number

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { FormCard } from '@/components/ui/form-card'
 import { PageHeader } from '@/components/ui/layout'
-import { RevocarForm } from '@/app/admin/miembros/[id]/revocar/_components/revocar-form'
+import { RevocarForm } from '@/app/OrumAdminLogin/miembros/[id]/revocar/_components/revocar-form'
 import portal from '@/app/miembros/(portal)/portal.module.css'
 
 export const metadata = { title: 'Vista previa de revocar · ORUM' }

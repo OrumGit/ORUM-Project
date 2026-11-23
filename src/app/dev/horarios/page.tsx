@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { FichaComercio, type SedeFicha } from '@/components/comercios/ficha-comercio'
-import { EditorHorario } from '@/app/admin/comercios/[id]/sucursales/_components/editor-horario'
+import { EditorHorario } from '@/app/OrumAdminLogin/comercios/[id]/sucursales/_components/editor-horario'
 import type { DiaHorario } from '@/lib/comercios/horario'
 import portal from '@/app/miembros/(portal)/portal.module.css'
 import estilos from './horarios.module.css'

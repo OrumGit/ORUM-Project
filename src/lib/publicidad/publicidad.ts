@@ -9,6 +9,8 @@
   la descripción y cómo queda el orden al mover una pieza.
 */
 
+import type { EncuadrePrevia } from '../videos/video'
+
 /** Cuántas imágenes puede tener el carrusel, contando las ocultas. */
 export const TOPE_PUBLICIDAD = 10
 
@@ -21,7 +23,12 @@ export const DESCRIPCION_POR_DEFECTO = 'Publicidad de ORUM'
 /** Una pieza de publicidad, tal como la necesita el panel. */
 export type PiezaPublicidad = {
   id: number
+  /** La imagen, o la portada del video. */
   url: string
+  /** El MP4, si la pieza es un video (13/11/2026). */
+  video: string | null
+  /** El encuadre de su vista previa (13/11/2026), si lo tiene. */
+  encuadre?: EncuadrePrevia | null
   descripcion: string
   activa: boolean
 }

@@ -46,6 +46,13 @@ export type Database = {
           publicar_desde: Timestamp | null
           /** Hasta cuándo se ve; `null` = hasta que se retire. */
           publicar_hasta: Timestamp | null
+          /**
+           * MP4 de la novedad; su portada es `imagen_url`. Opcional porque llega
+           * con `20261113120000_videos.sql`, que se aplica a mano.
+           */
+          video_url?: string | null
+          /** Encuadre de la vista previa del video, {x,y,w,h} (20261114120000_videos_encuadre.sql, a mano). */
+          video_encuadre?: Record<string, unknown> | null
         }
         Insert: {
           updated_by?: string | null
@@ -61,6 +68,8 @@ export type Database = {
           deleted_at?: Timestamp | null
           publicar_desde?: Timestamp | null
           publicar_hasta?: Timestamp | null
+          video_url?: string | null
+          video_encuadre?: Record<string, unknown> | null
         }
         Update: Partial<Database['public']['Tables']['anuncios']['Insert']>
         Relationships: []
@@ -78,10 +87,16 @@ export type Database = {
           activo: boolean
           creado_por: string | null
           created_at: Timestamp
+          /** MP4 de la pieza; su portada es `imagen_url` (20261113120000_videos.sql, a mano). */
+          video_url?: string | null
+          /** Encuadre de la vista previa del video (20261114120000_videos_encuadre.sql, a mano). */
+          video_encuadre?: Record<string, unknown> | null
         }
         Insert: {
           id?: number
           imagen_url: string
+          video_url?: string | null
+          video_encuadre?: Record<string, unknown> | null
           descripcion?: string
           orden?: number
           activo?: boolean

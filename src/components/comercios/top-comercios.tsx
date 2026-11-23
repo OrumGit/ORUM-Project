@@ -1,90 +1,141 @@
 'use client'
 
 import Link from 'next/link'
-import { useId, useState } from 'react'
-import { Star, TrendingUp } from 'lucide-react'
+import { useId, type CSSProperties } from 'react'
+import { Star, Store } from 'lucide-react'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
-import { SegmentedControl } from '@/components/ui/segmented'
+import { TituloSeccion } from '@/components/ui/titulo-seccion'
 import {
-  MENSAJE_VACIO_CALIFICADOS,
-  MENSAJE_VACIO_VENTAS,
+  MINIMO_DESFILE,
+  repeticionesDesfile,
   type ItemTop,
   type TopComercios,
 } from '@/lib/comercios/top-comercios'
 import styles from './top-comercios.module.css'
 
 /*
-  EL TOP DE COMERCIOS  ·  Inicio del socio (29/10/2026)
+  COMERCIOS DESTACADOS  ·  Inicio del socio
   ---------------------------------------------------------------------------
-  Dos listas de cinco con pestañas: los mejor calificados y los que más
-  ventas hicieron en el último mes. Es el único estado del bloque (qué
-  pestaña se ve) y vive aquí; los datos llegan ya listos del servidor
-  (`leerTopComercios`).
+  29/10/2026 nació como un «Top» con pestañas y posiciones; el 12/11/2026 el
+  propietario lo cambió: «no me gusta el diseño, ni que sea un top; como un
+  carrusel, que vayan pasando los logos, para no tener preferencias; pero
+  que sí sean los 5 más vendidos, y lo mismo con los más calificados;
+  podría ser únicamente el logo».
 
-  Cada fila es un enlace a la ficha del socio. El dato de la derecha se dice
-  con texto (estrella + número, «128 ventas»), nunca solo con color, y el
-  lector de pantalla oye la versión larga (`datoAccesible`).
+  Lo que hay:
+    · UNA CINTA DE LOGOS POR LISTA que pasa sola, despacio: «Donde más se usa
+      ORUM» (los cinco con más ventas del mes) y «Los mejor calificados» (los
+      cinco con mejor promedio, desde 3 reseñas). Una lista vacía no pinta su
+      cinta; hoy nadie llega a 3 reseñas y solo se ve la primera.
+    · SIN ORDEN NI NÚMEROS: las listas llegan mezcladas del servidor
+      (`mezclarTop`) y no se pinta posición, ventas ni estrellas.
+    · SOLO EL LOGO. El nombre lo dice el enlace (lector de pantalla) y un
+      rótulo que aparece al apuntar o enfocar; tocarlo abre la ficha.
 
-  La lista no anima al cambiar de pestaña más que con un fundido corto: es
-  algo que el socio hace a menudo (regla cero de movimiento).
+  El movimiento:
+    · Solo `transform`, una capa por cinta: la cinta es la lista repetida
+      hasta llenar media cinta (`repeticionesDesfile`) y DOS veces esa
+      mitad, así que desplazarla −50 % vuelve exactamente al principio.
+    · Se detiene al apuntarla (para poder tocar un logo que se mueve) o al
+      enfocar un logo con el teclado. SIN botón de pausa: el propietario no
+      lo quiso (12/11/2026, «solo si le da clic a un comercio»), a sabiendas
+      de que WCAG 2.2.2 pide poder parar lo que se mueve solo.
+    · La segunda cinta va al revés, para que las dos no se lean como una.
+    · Con movimiento reducido NO se mueve: queda una fila con un logo por
+      comercio que se desliza con el dedo.
+    · Con menos de 3 logos tampoco se mueve (un logo dando vueltas solo).
+
+  Accesibilidad: el primer juego de logos es el real (enlaces con nombre);
+  las repeticiones son `aria-hidden` e `inert`, así el lector y el
+  tabulador recorren cinco logos, no cuarenta.
 */
 
-type Vista = 'calificados' | 'ventas'
-
-const OPCIONES = [
-  { value: 'calificados', label: 'Mejor calificados', icon: <Star size={16} aria-hidden="true" /> },
-  { value: 'ventas', label: 'Más ventas', icon: <TrendingUp size={16} aria-hidden="true" /> },
-] as const
+type Cinta = {
+  clave: 'ventas' | 'calificados'
+  titulo: string
+  Icono: typeof Store
+  items: ItemTop[]
+}
 
 export function TopComerciosSocio({ top }: { top: TopComercios }) {
-  const [vista, setVista] = useState<Vista>('calificados')
   const titulo = useId()
-  const items: ItemTop[] = vista === 'calificados' ? top.calificados : top.ventas
+
+  const cintas: Cinta[] = [
+    { clave: 'ventas' as const, titulo: 'Donde más se usa ORUM', Icono: Store, items: top.ventas },
+    { clave: 'calificados' as const, titulo: 'Los mejor calificados', Icono: Star, items: top.calificados },
+  ].filter((c) => c.items.length > 0)
 
   return (
-    <section className={styles.top} aria-labelledby={titulo}>
+    <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
-        <h2 id={titulo} className={styles.titulo}>
-          Top de comercios
-        </h2>
-        <SegmentedControl
-          options={OPCIONES}
-          value={vista}
-          onChange={setVista}
-          ariaLabel="Ver el top por"
-          size="sm"
-        />
+        <div className={styles.textosCabecera}>
+          <TituloSeccion id={titulo} como="h2" tamano="bloque" texto="Comercios destacados" />
+          <p className={styles.bajada}>Los que más disfrutan los socios este mes.</p>
+        </div>
       </div>
 
-      {items.length === 0 ? (
-        <p className={styles.vacio}>
-          {vista === 'calificados' ? MENSAJE_VACIO_CALIFICADOS : MENSAJE_VACIO_VENTAS}
-        </p>
-      ) : (
-        <ol className={styles.lista} key={vista}>
-          {items.map((item) => (
-            <li key={item.comercioId}>
-              <Link
-                href={`/miembros/comercios/${item.comercioId}`}
-                className={styles.fila}
-                aria-label={`${item.posicion}. ${item.nombre}. ${item.datoAccesible}`}
-              >
-                <span className={styles.posicion} aria-hidden="true">
-                  {item.posicion}
-                </span>
-                <ComercioLogo logoUrl={item.logoUrl} nombre={item.nombre} />
-                <span className={styles.textos}>
-                  <span className={styles.nombre}>{item.nombre}</span>
-                  {item.detalle && <span className={styles.detalle}>{item.detalle}</span>}
-                </span>
-                <span className={styles.dato} aria-hidden="true">
-                  {item.dato}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
+      {cintas.map((cinta, i) => (
+        <CintaLogos
+          key={cinta.clave}
+          cinta={cinta}
+          inversa={i % 2 === 1}
+        />
+      ))}
     </section>
+  )
+}
+
+function CintaLogos({ cinta, inversa }: { cinta: Cinta; inversa: boolean }) {
+  const rotulo = useId()
+  const { items, Icono } = cinta
+  const mueve = items.length >= MINIMO_DESFILE
+  // Las dos mitades idénticas de la cinta; la primera repetición de la
+  // primera mitad es la única que se lee y se tabula.
+  const repeticiones = mueve ? repeticionesDesfile(items.length) * 2 : 1
+  const juegos = Array.from({ length: repeticiones }, (_, j) => j)
+
+  return (
+    <div className={styles.bloqueCinta}>
+      <p id={rotulo} className={styles.rotuloCinta}>
+        <Icono size={14} aria-hidden="true" />
+        {cinta.titulo}
+      </p>
+      <div className={styles.ventana} data-mueve={mueve || undefined}>
+        <ul
+          className={styles.pista}
+          aria-labelledby={rotulo}
+          data-inversa={inversa || undefined}
+          // Una vuelta recorre MEDIA cinta: su duración es la de los logos de
+          // esa mitad, así todas avanzan igual de rápido, tengan 3 o 5.
+          style={{ '--logos-cinta': (repeticiones * items.length) / 2 } as CSSProperties}
+        >
+          {juegos.flatMap((juego) =>
+            items.map((item) => {
+              const copia = juego > 0
+              return (
+                <li
+                  key={`${juego}-${item.comercioId}`}
+                  className={styles.logo}
+                  data-copia={copia || undefined}
+                  aria-hidden={copia || undefined}
+                  inert={copia || undefined}
+                >
+                  <Link
+                    href={`/miembros/comercios/${item.comercioId}`}
+                    className={styles.enlace}
+                    aria-label={item.nombre}
+                  >
+                    <ComercioLogo logoUrl={item.logoUrl} nombre={item.nombre} />
+                    <span className={styles.nombre} aria-hidden="true">
+                      {item.nombre}
+                    </span>
+                  </Link>
+                </li>
+              )
+            }),
+          )}
+        </ul>
+      </div>
+    </div>
   )
 }

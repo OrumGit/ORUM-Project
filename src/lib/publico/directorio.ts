@@ -31,6 +31,25 @@ const MAX_BUSQUEDA = 80
 /** Tope de categorías a la vez: una URL manipulada no puede pedir mil. */
 const MAX_CATEGORIAS = 30
 
+/**
+ * EL FILTRO POR BENEFICIO (12/11/2026, encargo del propietario: «para el
+ * portal de miembros, un filtro para que puedan filtrar por beneficio»). Los
+ * cuatro tipos de `tipos_beneficio`, con el nombre corto que ve el socio.
+ * Un comercio cuenta para un tipo si tiene alguna promoción VIGENTE de él.
+ */
+export type BeneficioFiltro = 'porcentaje' | 'monto_fijo' | 'dos_por_uno' | 'regalo'
+
+export const BENEFICIOS_FILTRO: readonly { clave: BeneficioFiltro; etiqueta: string }[] = [
+  { clave: 'porcentaje', etiqueta: 'Descuento en %' },
+  { clave: 'monto_fijo', etiqueta: 'Descuento fijo' },
+  { clave: 'dos_por_uno', etiqueta: '2x1' },
+  { clave: 'regalo', etiqueta: 'Regalo' },
+]
+
+function esBeneficioFiltro(valor: string): valor is BeneficioFiltro {
+  return BENEFICIOS_FILTRO.some((b) => b.clave === valor)
+}
+
 export type FiltrosDirectorio = {
   /** Texto libre, ya recortado. Cadena vacía = sin búsqueda. */
   q: string
@@ -55,6 +74,11 @@ export type FiltrosDirectorio = {
    * no hay favoritos y el parámetro no tiene efecto.
    */
   soloFavoritos: boolean
+  /**
+   * Un tipo de beneficio (`?beneficio=regalo`), o `null` = todos. Solo lo
+   * ofrece el portal de miembros; en el público el parámetro se lee igual.
+   */
+  beneficio: BeneficioFiltro | null
 }
 
 /**
@@ -93,6 +117,8 @@ export type ComercioFiltrable = {
   categorias: CategoriaDeComercio[]
   ciudadIds: number[]
   ciudades: string[]
+  /** Los tipos de sus promociones vigentes (`porcentaje`, `regalo`…). */
+  tiposBeneficio?: readonly string[]
 }
 
 type ParametrosCrudos = Record<string, string | string[] | undefined>
@@ -165,6 +191,7 @@ export function leerFiltrosDirectorio(params: ParametrosCrudos): FiltrosDirector
     ciudadId: idOnulo(primero(params.ciudad_id)),
     orden: orden === 'za' ? 'za' : ORDEN_POR_DEFECTO,
     soloFavoritos: primero(params.favoritos) === '1',
+    beneficio: esBeneficioFiltro(primero(params.beneficio)) ? (primero(params.beneficio) as BeneficioFiltro) : null,
   }
 }
 
@@ -182,6 +209,7 @@ export function parametrosDirectorio(filtros: FiltrosDirectorio): Record<string,
   if (filtros.ciudadId !== null) params.ciudad_id = String(filtros.ciudadId)
   if (filtros.orden !== ORDEN_POR_DEFECTO) params.orden = filtros.orden
   if (filtros.soloFavoritos) params.favoritos = '1'
+  if (filtros.beneficio) params.beneficio = filtros.beneficio
   return params
 }
 
@@ -279,6 +307,7 @@ export function filtrarDirectorio<T extends ComercioFiltrable>(
     (c) =>
       casaCategoria(c) &&
       (filtros.ciudadId === null || c.ciudadIds.includes(filtros.ciudadId)) &&
+      (filtros.beneficio === null || (c.tiposBeneficio ?? []).includes(filtros.beneficio)) &&
       casaBusqueda(c, busqueda),
   )
 
@@ -293,7 +322,8 @@ export function hayFiltros(filtros: FiltrosDirectorio): boolean {
     filtros.categoriaIds.length > 0 ||
     filtros.subcategoriaIds.length > 0 ||
     filtros.ciudadId !== null ||
-    filtros.soloFavoritos
+    filtros.soloFavoritos ||
+    filtros.beneficio !== null
   )
 }
 

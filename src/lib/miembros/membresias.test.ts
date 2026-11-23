@@ -3,6 +3,7 @@ import {
   calcularFechaFin,
   calcularFechaInicioRenovacion,
   derivarEstadoMembresia,
+  estadoEnHistorial,
   venceProximamente,
 } from './membresias'
 
@@ -125,3 +126,43 @@ describe('venceProximamente', () => {
   })
 })
 
+describe('estadoEnHistorial', () => {
+  const HOY = '2026-11-13'
+
+  it('el mes pagado que ya tiene cortesía detrás sigue activo hasta su fin', () => {
+    const pagado = { estado: 'vencida' as const, fecha_inicio: '2026-11-12', fecha_fin: '2026-12-12' }
+    expect(estadoEnHistorial(pagado, HOY, true)).toEqual({
+      futura: false,
+      estado: { activa: true, diasRestantes: 29 },
+    })
+  })
+
+  it('sin una sucesora activa (se revocó), la anterior no revive', () => {
+    const pagado = { estado: 'vencida' as const, fecha_inicio: '2026-11-12', fecha_fin: '2026-12-12' }
+    expect(estadoEnHistorial(pagado, HOY, false)).toEqual({
+      futura: false,
+      estado: { activa: false, motivo: 'vencida' },
+    })
+  })
+
+  it('una vencida de verdad sigue vencida aunque tenga sucesora', () => {
+    const vieja = { estado: 'vencida' as const, fecha_inicio: '2026-09-01', fecha_fin: '2026-10-01' }
+    expect(estadoEnHistorial(vieja, HOY, true)).toEqual({
+      futura: false,
+      estado: { activa: false, motivo: 'vencida' },
+    })
+  })
+
+  it('la cortesía que empieza tras el plan se ve como futura', () => {
+    const cortesia = { estado: 'activa' as const, fecha_inicio: '2026-12-13', fecha_fin: '2026-12-31' }
+    expect(estadoEnHistorial(cortesia, HOY, false)).toEqual({ futura: true, desde: '2026-12-13' })
+  })
+
+  it('una cancelada sigue cancelada', () => {
+    const revocada = { estado: 'cancelada' as const, fecha_inicio: '2026-11-01', fecha_fin: '2026-12-01' }
+    expect(estadoEnHistorial(revocada, HOY, false)).toEqual({
+      futura: false,
+      estado: { activa: false, motivo: 'cancelada' },
+    })
+  })
+})

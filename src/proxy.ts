@@ -1,7 +1,39 @@
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import {
+  RUTA_INTERNA_ACCESO,
+  esAccesoInternoDirecto,
+  rutaAccesoPanel,
+  rutaPanelCanonica,
+} from '@/lib/auth/ruta-panel'
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  /*
+    LA PUERTA DEL PANEL (11/11/2026, `lib/auth/ruta-panel.ts`). Su dirección
+    secreta se reescribe por dentro a la página real; `/login` escrita a
+    mano da «página no encontrada», como cualquier dirección inventada.
+  */
+  if (pathname === rutaAccesoPanel()) {
+    const destino = request.nextUrl.clone()
+    destino.pathname = RUTA_INTERNA_ACCESO
+    return await updateSession(request, destino)
+  }
+  // `/orumadminlogin/...` escrita a mano: a la forma correcta, `/OrumAdminLogin/...`.
+  const canonica = rutaPanelCanonica(pathname)
+  if (canonica) {
+    const destino = request.nextUrl.clone()
+    destino.pathname = canonica
+    return NextResponse.redirect(destino, 308)
+  }
+  if (esAccesoInternoDirecto(pathname)) {
+    const noExiste = request.nextUrl.clone()
+    noExiste.pathname = '/pagina-no-encontrada'
+    noExiste.search = ''
+    return NextResponse.rewrite(noExiste, { status: 404 })
+  }
+
   return await updateSession(request)
 }
 

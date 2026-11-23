@@ -929,6 +929,10 @@
   --dur-slow: 320ms; /* hojas, modales — banda de overlay (200–500) */
   --dur-page: 420ms; /* transición de ruta */
   --dur-theme: 180ms; /* conmutación de tema */
+  /* El desfile de logos de «Comercios destacados» (12/11/2026): lo que tarda
+     en pasar UN logo. No es una transición sino un ritmo continuo y lento;
+     la duración de la cinta es esto por la cantidad de logos que lleva. */
+  --dur-paso-logo: 3200ms;
 
   /* ==========================================================================
      9. CAPAS Y MATERIALES

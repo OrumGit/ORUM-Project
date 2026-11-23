@@ -33,7 +33,7 @@ export default async function LoginPage({
     perfil.activo &&
     (perfil.rolCodigo === 'super_admin' || perfil.rolCodigo === 'empleado')
   ) {
-    redirect('/admin')
+    redirect('/OrumAdminLogin')
   }
 
   const { error } = await searchParams

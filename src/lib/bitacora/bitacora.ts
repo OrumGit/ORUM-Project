@@ -21,7 +21,7 @@ function formatearValor(valor: unknown): string {
 
 /**
  * Arma el texto legible de un evento de bitácora, reutilizado tanto en la
- * ficha del miembro como en el listado global (`/admin/bitacora`).
+ * ficha del miembro como en el listado global (`/OrumAdminLogin/bitacora`).
  */
 export function resumirEventoBitacora(
   accion: string,
@@ -30,13 +30,21 @@ export function resumirEventoBitacora(
 ): string {
   if (accion === 'alta') {
     const n = datosNuevos ?? {}
-    const cobro = n.es_cortesia === true ? 'cortesía' : `$${formatearValor(n.precio_pagado)}`
+    // `cortesia_duracion` («por 2 semanas»): solo si la cortesía no dura lo del plan.
+    const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+    const cobro = n.es_cortesia === true ? `cortesía${por}` : `$${formatearValor(n.precio_pagado)}`
     return `Miembro registrado — plan ${formatearValor(n.plan_nombre)}, ${cobro}`
   }
 
   if (accion === 'renovacion') {
     const n = datosNuevos ?? {}
-    const cortesia = n.es_cortesia === true ? ' (cortesía)' : ''
+    // «Añadir días de cortesía»: no es una renovación, son días detrás del plan.
+    if (n.cortesia_tras_plan === true) {
+      const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+      return `Días de cortesía añadidos${por} — plan ${formatearValor(n.plan_nombre)}, desde ${formatearValor(n.fecha_inicio)}`
+    }
+    const por = typeof n.cortesia_duracion === 'string' ? ` ${n.cortesia_duracion}` : ''
+    const cortesia = n.es_cortesia === true ? ` (cortesía${por})` : ''
     return `Membresía renovada${cortesia} — plan ${formatearValor(n.plan_nombre)}, vence ${formatearValor(n.fecha_fin)}`
   }
 

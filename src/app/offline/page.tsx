@@ -8,7 +8,7 @@ export const metadata = { title: 'Sin conexión · ORUM' }
 /**
  * Pantalla que sirve el service worker cuando falla la red.
  *
- * Vive fuera de `/admin` a propósito: no puede depender de la sesión ni de
+ * Vive fuera de `/OrumAdminLogin` a propósito: no puede depender de la sesión ni de
  * ninguna consulta, porque justo entonces no hay conexión con Supabase. Se
  * precarga en la instalación del SW.
  */
@@ -23,7 +23,7 @@ export default function OfflinePage() {
           title="Sin conexión"
           description="No pudimos conectarnos. Revisa tu red e inténtalo de nuevo; los datos de los miembros necesitan conexión para consultarse."
           actions={
-            <Button href="/admin" variant="secondary">
+            <Button href="/OrumAdminLogin" variant="secondary">
               Reintentar
             </Button>
           }

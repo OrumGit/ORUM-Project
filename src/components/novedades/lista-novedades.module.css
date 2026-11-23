@@ -25,6 +25,11 @@
   object-fit: cover;
 }
 
+/* Con video: su vista previa ocupa la caja (ver `video-novedad`), sobre negro. */
+.imagen[data-video] {
+  background: var(--negro-900);
+}
+
 /* Sin imagen: una lámina de la marca, no un hueco. */
 .lamina {
   display: grid;
@@ -66,7 +71,7 @@
   padding-top: 56.25%;
 }
 
-.destacada .imagen img,
+.destacada .imagen > img,
 .destacada .lamina {
   position: absolute;
   inset: 0;

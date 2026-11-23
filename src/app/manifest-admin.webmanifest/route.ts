@@ -1,7 +1,7 @@
 import { respuestaManifiesto } from '@/lib/shared/manifiesto-app'
 
 /*
-  El manifiesto de la aplicación instalable de `/admin`. Lo que dice y por
+  El manifiesto de la aplicación instalable de `/OrumAdminLogin`. Lo que dice y por
   qué hay tres está en `lib/shared/manifiesto-app.ts`. Estático: no lee la
   sesión.
 */

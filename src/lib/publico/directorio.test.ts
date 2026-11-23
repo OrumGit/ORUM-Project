@@ -23,6 +23,7 @@ const SIN_FILTROS: FiltrosDirectorio = {
   ciudadId: null,
   orden: 'az',
   soloFavoritos: false,
+  beneficio: null,
 }
 
 function comercio(
@@ -62,6 +63,7 @@ describe('leerFiltrosDirectorio', () => {
       ciudadId: 7,
       orden: 'za',
       soloFavoritos: false,
+      beneficio: null,
     })
   })
 
@@ -365,5 +367,34 @@ describe('varias categorías', () => {
     expect(detalleComercio([], ['Bogotá'])).toBe('Bogotá')
     expect(detalleComercio([cat(1, 'Gastronomía')], [])).toBe('Gastronomía')
     expect(detalleComercio([], [])).toBe('')
+  })
+})
+
+describe('filtro por beneficio (portal de miembros)', () => {
+  it('lee el tipo de la URL y descarta lo que no es un tipo', () => {
+    expect(leerFiltrosDirectorio({ beneficio: 'regalo' }).beneficio).toBe('regalo')
+    expect(leerFiltrosDirectorio({ beneficio: 'dos_por_uno' }).beneficio).toBe('dos_por_uno')
+    expect(leerFiltrosDirectorio({ beneficio: 'gratis' }).beneficio).toBeNull()
+  })
+
+  it('va a la URL y cuenta como filtro', () => {
+    expect(hrefDirectorio(SIN_FILTROS, { beneficio: 'porcentaje' }, '/miembros')).toBe(
+      '/miembros?beneficio=porcentaje',
+    )
+    expect(hayFiltros({ ...SIN_FILTROS, beneficio: 'regalo' })).toBe(true)
+  })
+
+  it('deja solo los comercios con una promoción vigente de ese tipo', () => {
+    const lista = [
+      comercio('Café', { tiposBeneficio: ['porcentaje', 'regalo'] }),
+      comercio('Bar', { tiposBeneficio: ['dos_por_uno'] }),
+      comercio('Spa'),
+    ]
+    const nombres = (beneficio: FiltrosDirectorio['beneficio']) =>
+      filtrarDirectorio(lista, { ...SIN_FILTROS, beneficio }).map((c) => c.nombre)
+    expect(nombres('regalo')).toEqual(['Café'])
+    expect(nombres('dos_por_uno')).toEqual(['Bar'])
+    expect(nombres('monto_fijo')).toEqual([])
+    expect(nombres(null)).toEqual(['Bar', 'Café', 'Spa'])
   })
 })

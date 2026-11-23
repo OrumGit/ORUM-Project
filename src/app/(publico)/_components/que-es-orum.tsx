@@ -12,7 +12,7 @@ import estilos from './que-es-orum.module.css'
   Dos columnas: el texto —qué es ORUM— y a su lado un carrusel.
 
   EL CARRUSEL ES PUBLICIDAD (13/10/2026). Sus imágenes las sube, ordena,
-  oculta y quita el administrador desde `/admin/publicidad`; antes eran las
+  oculta y quita el administrador desde `/OrumAdminLogin/publicidad`; antes eran las
   portadas de los comercios y nadie podía cambiarlas. Va SIEMPRE en 4:3
   (`que-es-orum.module.css`), la misma proporción con la que el
   administrador encuadra cada imagen: lo que ajusta allí es lo que sale aquí.

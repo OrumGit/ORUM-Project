@@ -4,8 +4,10 @@ import {
   armarTopCalificados,
   armarTopVentas,
   type ComercioDelTop,
+  mezclarTop,
   type TopComercios,
 } from '@/lib/comercios/top-comercios'
+import { obtenerDirectorioMiembros } from '@/lib/publico/datos-publicos'
 import portal from '@/app/miembros/(portal)/portal.module.css'
 import estilos from './vista-previa.module.css'
 
@@ -19,7 +21,9 @@ export const metadata = {
  * migración `20261029140000_top_comercios.sql`.
  *
  * `?caso=vacio-calificados` (hoy es lo real: nadie llega a 3 reseñas),
- * `?caso=uno` (una sola fila por lista) o, por defecto, cinco por lista.
+ * `?caso=uno` (un comercio por lista), `?caso=logos` (los logotipos REALES
+ * del catálogo, solo lectura, con listas inventadas) o, por defecto, cinco
+ * por lista.
  */
 
 const NOMBRES = [
@@ -85,6 +89,23 @@ function datos(caso: string | undefined): TopComercios {
   }
 }
 
+/** Los diez primeros comercios del catálogo real, repartidos en dos listas. */
+async function conLogosReales(): Promise<TopComercios> {
+  const { comercios } = await obtenerDirectorioMiembros()
+  const porId = new Map<number, ComercioDelTop>(comercios.map((c) => [c.id, c]))
+  const ids = comercios.slice(0, 10).map((c) => c.id)
+  return {
+    ventas: armarTopVentas(
+      ids.slice(0, 5).map((id, i) => ({ comercio_id: id, ventas: 50 - i })),
+      porId,
+    ),
+    calificados: armarTopCalificados(
+      ids.slice(5, 10).map((id, i) => ({ comercio_id: id, promedio: 5 - i / 10, total: 3 })),
+      porId,
+    ),
+  }
+}
+
 export default async function VistaPreviaTopComercios({
   searchParams,
 }: {
@@ -92,11 +113,12 @@ export default async function VistaPreviaTopComercios({
 }) {
   if (process.env.NODE_ENV === 'production') notFound()
   const { caso } = await searchParams
+  const top = caso === 'logos' ? await conLogosReales() : datos(caso)
 
   return (
     <div className={portal.portal} data-theme="light">
       <main className={estilos.contenido}>
-        <TopComerciosSocio top={datos(caso)} />
+        <TopComerciosSocio top={mezclarTop(top)} />
       </main>
     </div>
   )
