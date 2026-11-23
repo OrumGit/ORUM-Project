@@ -2297,6 +2297,25 @@ backend es el de los planes `docs/superpowers/plans/2026-11-09-mercado-pago-*.md
 - **El ojo de la contraseña parpadea** (`OjoAnimado`, `components/auth/`): el
   párpado se cierra y la raya se dibuja; solo al tocarlo. Lo usan
   `CampoContrasenaNueva` (también al activar la cuenta) y el login.
+- **Las salvaguardas** (23/11/2026, «ponle excepciones a todo»):
+  - El servidor exige el celular y que «Repítela» coincida
+    (`validarEntradaRegistro`, probado); los errores del servidor marcan SU
+    campo (`ciudadId` → `ciudad_id`) y el foco va al primero.
+  - **Volver a registrarse no atasca**: un intento anterior con la misma
+    cédula o el mismo correo que NO llegó a nada (correo sin confirmar, sin
+    ficha, sin pago) se reemplaza (`registrosReemplazables`, puro y probado;
+    dos consultas `.eq`, nunca un `or` armado con texto). Uno con el correo
+    confirmado es una cuenta: entra y paga desde «Completa tu membresía».
+  - «Continuar» espera a la verificación anti-robots y la nota dice qué pasa
+    (cargando, o que no cargó); los campos tienen su `maxLength`.
+  - Pedir otro código: cuenta atrás de 45 s que se reinicia en cada
+    registro, aviso de que salió y límite (`cupoDeRegistro`).
+  - Tras un código incorrecto las casillas se vacían y el foco vuelve a la
+    primera.
+  - Abrir el pago tiene tope por persona (`LIMITES.pagoPorCuenta`, 10 por
+    hora): cada intento crea una suscripción en Mercado Pago.
+  - Copiar el número solo dice «Copiado» si se copió; si el navegador no
+    deja, lo dice y pide copiarlo a mano.
 - Vista previa con datos falsos, solo en desarrollo: `/dev/pago`
   (`?caso=` datos · codigo · pagar · pagina · completar · confirmando ·
   tardando · rechazado · pendiente · bienvenida). **No pulses los botones de

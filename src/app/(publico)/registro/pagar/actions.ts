@@ -2,6 +2,8 @@
 
 import { redirect } from 'next/navigation'
 import { urlBaseSitio } from '@/lib/auth/activacion'
+import { claveCupo, huella, LIMITES } from '@/lib/auth/limite-uso'
+import { hayCupo } from '@/lib/auth/limitador'
 import { puedeAbrirPago, type MotivoNoPagar } from '@/lib/auth/registro-pago'
 import { cancelarSuscripcion, crearSuscripcion, ErrorMercadoPago } from '@/lib/mercadopago/cliente'
 import { construirCuerpoSuscripcion, correoPagador } from '@/lib/mercadopago/suscripcion-pendiente'
@@ -36,6 +38,12 @@ export async function iniciarPagoRegistro(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Entra con tu correo y tu contraseña para continuar.' }
+
+  // Cada intento crea una suscripción en Mercado Pago: con tope por persona.
+  // Si el contador falla, se deja pasar (lo importante es poder pagar).
+  if (!(await hayCupo(claveCupo('pago', 'cuenta', huella(user.id)), LIMITES.pagoPorCuenta, 'permitir'))) {
+    return { error: 'Hiciste muchos intentos de pago seguidos. Espera un rato e inténtalo de nuevo.' }
+  }
 
   const admin = createAdminClient()
   const { data: registro, error: errRegistro } = await admin

@@ -18,6 +18,7 @@ import { cupoDeRegistro, ERROR_LIMITE_REGISTRO } from '@/lib/auth/limitador'
 import { ERROR_TURNSTILE, verificarTurnstileDeFormulario } from '@/lib/auth/turnstile-request'
 import { enviarCorreoConResultado } from '@/lib/correo/correo'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { registrosReemplazables } from '@/lib/auth/registro-reintento'
 
 export type RegistroState = {
   ok: boolean
@@ -56,6 +57,8 @@ function leerEntrada(formData: FormData): EntradaRegistro {
     ciudadId: leer('ciudad_id'),
     direccion: leer('direccion'),
     contrasena: leer('contrasena'),
+    // «Repítela» solo cuenta si el formulario la trae.
+    confirmar: formData.has('confirmar') ? leer('confirmar') : undefined,
     planId: leer('plan_id'),
     terminosAceptados: leer('terminos') === 'on',
   }
@@ -116,6 +119,13 @@ export async function iniciarRegistro(
     .maybeSingle()
   if (errPlan) return { ok: false, mensaje: ERROR_GENERICO }
   if (!plan) return { ok: false, mensaje: 'Revisa los campos marcados.', errores: { planId: 'Ese plan ya no está disponible.' } }
+
+  // Un intento anterior que no llegó a nada (correo sin confirmar, sin ficha
+  // ni pago) con esta cédula o este correo se REEMPLAZA: sin esto, quien
+  // volvía a «Tus datos» a corregir el correo quedaba atascado.
+  if (!(await reemplazarIntentosAnteriores(admin, datos.correo, datos.cedula))) {
+    return { ok: false, mensaje: ERROR_GENERICO }
+  }
 
   // Correo ya usado: se responde igual, sin crear nada.
   const correoOcupado = await correoYaRegistrado(admin, datos.correo)
@@ -217,4 +227,47 @@ async function avisarCuentaExistente(correo: string): Promise<void> {
     html: cuerpo.html,
     texto: cuerpo.texto,
   })
+}
+
+/**
+ * Borra los registros pendientes de esta cédula o este correo que no llegaron
+ * a nada (`registrosReemplazables`). Devuelve `false` si no se pudo comprobar.
+ */
+async function reemplazarIntentosAnteriores(
+  admin: ReturnType<typeof createAdminClient>,
+  correo: string,
+  cedula: string,
+): Promise<boolean> {
+  // Dos consultas con `.eq` (no un filtro `or` armado con texto del usuario).
+  const leer = (campo: 'correo' | 'cedula', valor: string) =>
+    admin
+      .from('registros_pendientes')
+      .select('auth_user_id, miembro_id, mp_preapproval_id')
+      .eq('estado', 'pendiente')
+      .eq(campo, valor)
+  const [porCorreo, porCedula] = await Promise.all([leer('correo', correo), leer('cedula', cedula)])
+  if (porCorreo.error || porCedula.error) return false
+  const previos = [...(porCorreo.data ?? []), ...(porCedula.data ?? [])].filter(
+    (r, i, todos) => todos.findIndex((o) => o.auth_user_id === r.auth_user_id) === i,
+  )
+  if (previos.length === 0) return true
+
+  const revisados = await Promise.all(
+    previos.map(async (r) => {
+      const { data } = await admin.auth.admin.getUserById(r.auth_user_id)
+      return {
+        authUserId: r.auth_user_id,
+        // Sin poder leer la cuenta, se trata como confirmada: no se borra.
+        correoConfirmado: !data?.user || Boolean(data.user.email_confirmed_at),
+        conFicha: r.miembro_id !== null,
+        conPago: r.mp_preapproval_id !== null,
+      }
+    }),
+  )
+  for (const id of registrosReemplazables(revisados)) {
+    // El registro pendiente se va en cascada con el usuario.
+    const { error: errBorrar } = await admin.auth.admin.deleteUser(id)
+    if (errBorrar) return false
+  }
+  return true
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { LARGO_CODIGO, llenarCasillas } from '@/lib/auth/codigo-verificacion'
 import estilos from './codigo-verificacion.module.css'
 
@@ -35,6 +35,11 @@ export function CodigoVerificacion({ name, reinicio, error, disabled, onCompleto
     setReinicioVisto(reinicio)
     setCasillas(Array(LARGO_CODIGO).fill(''))
   }
+
+  // Tras un código incorrecto, las casillas se vacían y el foco vuelve a la primera.
+  useEffect(() => {
+    if (error) refs.current[0]?.focus()
+  }, [error, reinicio])
 
   const aplicar = (desde: number, texto: string) => {
     const { casillas: nuevas, foco } = llenarCasillas(casillas, desde, texto)

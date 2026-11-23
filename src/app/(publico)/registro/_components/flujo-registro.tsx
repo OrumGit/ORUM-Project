@@ -94,6 +94,23 @@ const REGLAS: ReglasFormulario = {
 
 const SEGUNDOS_REENVIO = 45
 
+/** El servidor nombra algunos campos distinto que el formulario. */
+const CAMPO_DEL_SERVIDOR: Record<string, string> = { ciudadId: 'ciudad_id' }
+
+/** El orden de los campos, para llevar el foco al primero que el servidor rechazó. */
+const ORDEN_CAMPOS = [
+  'nombres',
+  'apellidos',
+  'cedula',
+  'telefono',
+  'correo',
+  'ciudad_id',
+  'direccion',
+  'contrasena',
+  'confirmar',
+  'terminos',
+]
+
 export function FlujoRegistro({
   planes,
   planInicial,
@@ -113,12 +130,17 @@ export function FlujoRegistro({
   const plan = planes.find((p) => p.id === planId) ?? planes[0]
   const [nombre, setNombre] = useState(vistaPrevia?.nombre ?? '')
 
+  const [espera, setEspera] = useState(SEGUNDOS_REENVIO)
+
   // --- Paso 1: tus datos -------------------------------------------------------
   const [registro, enviarRegistro, registrando] = useActionState(
     async (previo: RegistroState, datos: FormData) => {
       setNombre(String(datos.get('nombres') ?? '').trim().split(/\s+/)[0] ?? '')
       const r = await iniciarRegistro(previo, datos)
-      if (r.ok) setPaso(2)
+      if (r.ok) {
+        setEspera(SEGUNDOS_REENVIO)
+        setPaso(2)
+      }
       return r
     },
     { ok: false } as RegistroState,
@@ -130,11 +152,26 @@ export function FlujoRegistro({
   const [verClave, setVerClave] = useState(false)
   const [verConfirmar, setVerConfirmar] = useState(false)
   const [eligiendoPlan, setEligiendoPlan] = useState(false)
-  const errorDe = (campo: string) =>
-    validacion.error(campo) ?? registro.errores?.[campo as keyof NonNullable<RegistroState['errores']>] ?? null
+  // Los errores del servidor, con los nombres del formulario.
+  const erroresServidor: Record<string, string> = {}
+  for (const [campo, mensaje] of Object.entries(registro.errores ?? {})) {
+    if (mensaje) erroresServidor[CAMPO_DEL_SERVIDOR[campo] ?? campo] = mensaje
+  }
+  const errorDe = (campo: string) => validacion.error(campo) ?? erroresServidor[campo] ?? null
+
+  // Si el servidor rechaza algo, el foco va al primer campo marcado (solo al
+  // llegar una respuesta nueva).
+  useEffect(() => {
+    const errores = registro.errores ?? {}
+    const nombres = Object.keys(errores).map((c) => CAMPO_DEL_SERVIDOR[c] ?? c)
+    const primero = ORDEN_CAMPOS.find((c) => nombres.includes(c))
+    if (!primero) return
+    document
+      .querySelector<HTMLElement>(`#form-registro [name="${primero}"]:not([type="hidden"])`)
+      ?.focus()
+  }, [registro])
 
   // --- Paso 2: el código ---------------------------------------------------------
-  const [espera, setEspera] = useState(SEGUNDOS_REENVIO)
   const [codigo, enviarCodigo, confirmando] = useActionState(
     async (previo: ConfirmarCodigoState, datos: FormData) => {
       const r = await confirmarCodigoRegistro(previo, datos)
@@ -188,27 +225,34 @@ export function FlujoRegistro({
 
         {registro.mensaje && !registro.ok && (
           <Alert tone="danger" title="No pudimos continuar">
-            {registro.mensaje}
+            {erroresServidor.planId ?? registro.mensaje}
           </Alert>
         )}
 
         <form id="form-registro" {...validacion.propsFormulario} action={enviarRegistro} className={estilos.rejilla}>
           <input type="hidden" name="plan_id" value={plan.id} />
           <Field label="Nombres" error={errorDe('nombres')}>
-            <Input name="nombres" autoComplete="given-name" />
+            <Input name="nombres" autoComplete="given-name" maxLength={80} />
           </Field>
           <Field label="Apellidos" error={errorDe('apellidos')}>
-            <Input name="apellidos" autoComplete="family-name" />
+            <Input name="apellidos" autoComplete="family-name" maxLength={80} />
           </Field>
           <Field label="Cédula" error={errorDe('cedula')}>
-            <Input name="cedula" inputMode="numeric" autoComplete="off" />
+            <Input name="cedula" inputMode="numeric" autoComplete="off" maxLength={15} />
           </Field>
           <Field label="Celular" error={errorDe('telefono')}>
-            <Input name="telefono" type="tel" inputMode="tel" autoComplete="tel" />
+            <Input name="telefono" type="tel" inputMode="tel" autoComplete="tel" maxLength={16} />
           </Field>
           <div className={estilos.ancho}>
             <Field label="Correo" error={errorDe('correo')}>
-              <Input name="correo" type="email" autoComplete="email" spellCheck={false} />
+              <Input
+                name="correo"
+                type="email"
+                autoComplete="email"
+                spellCheck={false}
+                autoCapitalize="none"
+                maxLength={254}
+              />
             </Field>
           </div>
           <Field label="Ciudad" error={errorDe('ciudad_id')}>
@@ -223,7 +267,7 @@ export function FlujoRegistro({
             />
           </Field>
           <Field label="Dirección" error={errorDe('direccion')}>
-            <Input name="direccion" autoComplete="street-address" />
+            <Input name="direccion" autoComplete="street-address" maxLength={120} />
           </Field>
           <div className={estilos.ancho}>
             <CampoContrasenaNueva
@@ -242,6 +286,7 @@ export function FlujoRegistro({
                 name="confirmar"
                 type={verConfirmar ? 'text' : 'password'}
                 autoComplete="new-password"
+                maxLength={128}
                 value={confirmar}
                 onChange={(e) => setConfirmar(e.target.value)}
                 spellCheck={false}
@@ -336,14 +381,24 @@ export function FlujoRegistro({
               </button>
             )}
           </form>
-          {reenvio.error && <p className={estilos.errorCampo}>{reenvio.error}</p>}
+          <p role="status" className={estilos.lineaAyuda}>
+            {reenvio.enviado && !reenvio.error ? 'Te enviamos un código nuevo. Usa el último que te llegue.' : ''}
+          </p>
+          {reenvio.error && (
+            <p role="alert" className={estilos.errorCampo}>
+              {reenvio.error}
+            </p>
+          )}
           <p className={estilos.lineaAyuda}>
             ¿Escribiste mal tu correo?{' '}
             <button type="button" className={estilos.enlace} onClick={() => setPaso(1)}>
               Corrígelo
             </button>
           </p>
-          <p className={estilos.nota}>El correo también trae un botón: si lo tocas, sigues desde ahí.</p>
+          <p className={estilos.nota}>
+            El correo también trae un botón: si lo tocas, sigues desde ahí. Si ese correo ya tenía cuenta en
+            ORUM, te llega un aviso para entrar en vez del código.
+          </p>
         </div>
       </section>
 
@@ -373,13 +428,24 @@ export function FlujoRegistro({
       <PieBoton
         form="form-registro"
         cargando={registrando}
+        deshabilitado={!turnstile.listo}
         icono={<ArrowRight size={18} aria-hidden="true" />}
-        nota="Aún no te cobramos nada. Tu número de socio llega cuando el pago se confirme."
+        nota={
+          turnstile.listo
+            ? 'Aún no te cobramos nada. Tu número de socio llega cuando el pago se confirme.'
+            : turnstile.estado === 'error'
+              ? 'No cargó la verificación anti-robots. Recarga la página o desactiva el bloqueador de anuncios.'
+              : 'Comprobando que no eres un robot… un momento.'
+        }
       >
         Continuar
       </PieBoton>
     ) : paso === 2 ? (
-      <PieBoton form="form-codigo" cargando={confirmando} nota="Al escribir la sexta cifra, seguimos solos.">
+      <PieBoton
+        form="form-codigo"
+        cargando={confirmando}
+        nota="Al escribir la sexta cifra, seguimos solos. Si cierras, tu cuenta queda creada: entra con tu correo para terminar."
+      >
         Confirmar mi correo
       </PieBoton>
     ) : (
@@ -388,7 +454,7 @@ export function FlujoRegistro({
         cargando={abriendoPago}
         icono={<Lock size={18} aria-hidden="true" />}
         iconoAntes
-        nota="Te llevamos a Mercado Pago y, al terminar, vuelves aquí solo."
+        nota="Te llevamos a Mercado Pago y, al terminar, vuelves aquí solo. Si cierras, entra con tu correo para terminar después."
       >
         Pagar {plan.precioTexto} con Mercado Pago
       </PieBoton>
@@ -407,6 +473,7 @@ export function FlujoRegistro({
 function PieBoton({
   form,
   cargando,
+  deshabilitado = false,
   icono,
   iconoAntes = false,
   nota,
@@ -414,6 +481,7 @@ function PieBoton({
 }: {
   form: string
   cargando: boolean
+  deshabilitado?: boolean
   icono?: ReactNode
   iconoAntes?: boolean
   nota: string
@@ -429,12 +497,15 @@ function PieBoton({
         pildora
         fullWidth
         loading={cargando}
+        disabled={deshabilitado}
         icon={iconoAntes ? icono : undefined}
       >
         {children}
         {!iconoAntes && icono}
       </Button>
-      <p className={estilos.nota}>{nota}</p>
+      <p className={estilos.nota} aria-live="polite">
+        {nota}
+      </p>
     </div>
   )
 }

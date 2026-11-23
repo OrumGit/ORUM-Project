@@ -32,10 +32,30 @@ describe('validarEntradaRegistro', () => {
     })
   })
 
-  it('el teléfono es opcional', () => {
+  it('el celular es obligatorio', () => {
     const r = validarEntradaRegistro({ ...valida, telefono: '' })
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.datos.telefono).toBeNull()
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errores.telefono).toBe('Escribe tu celular.')
+  })
+
+  it('las dos contraseñas tienen que coincidir', () => {
+    const r = validarEntradaRegistro({ ...valida, confirmar: 'Montaña-Rio-Verde-43' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errores.confirmar).toBe('Las dos contraseñas no coinciden.')
+  })
+
+  it('«Repítela» vacía se pide', () => {
+    const r = validarEntradaRegistro({ ...valida, confirmar: '' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errores.confirmar).toBe('Repite la contraseña.')
+  })
+
+  it('con la contraseña repetida igual, pasa', () => {
+    expect(validarEntradaRegistro({ ...valida, confirmar: valida.contrasena }).ok).toBe(true)
+  })
+
+  it('sin «Repítela» (no se pidió), no se exige', () => {
+    expect(validarEntradaRegistro({ ...valida }).ok).toBe(true)
   })
 
   it('exige aceptar los términos', () => {

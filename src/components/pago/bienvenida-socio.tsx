@@ -41,16 +41,22 @@ const CHISPAS = [
 
 export function BienvenidaSocio({ socio }: { socio: DatosSocioNuevo }) {
   const [copiado, setCopiado] = useState(false)
+  const [sinCopiar, setSinCopiar] = useState(false)
   const bloques = [socio.numero.slice(0, 4), socio.numero.slice(4)].filter(Boolean)
 
+  // Solo dice «Copiado» si de verdad se copió: sin permiso del navegador (o en
+  // una página sin HTTPS) lo dice y deja el número a la vista para copiarlo a mano.
   const copiar = async () => {
     try {
+      if (!navigator.clipboard) throw new Error('sin portapapeles')
       await navigator.clipboard.writeText(socio.numero)
+      setSinCopiar(false)
+      setCopiado(true)
+      window.setTimeout(() => setCopiado(false), 1800)
     } catch {
-      // Sin permiso del navegador: el número sigue a la vista.
+      setCopiado(false)
+      setSinCopiar(true)
     }
-    setCopiado(true)
-    window.setTimeout(() => setCopiado(false), 1800)
   }
 
   return (
@@ -109,8 +115,12 @@ export function BienvenidaSocio({ socio }: { socio: DatosSocioNuevo }) {
               )}
             </button>
           </div>
-          <p role="status" className={estilos.oculto}>
-            {copiado ? 'Número de socio copiado' : ''}
+          <p role="status" className={sinCopiar ? estilos.avisoCopia : estilos.oculto}>
+            {copiado
+              ? 'Número de socio copiado'
+              : sinCopiar
+                ? 'No pudimos copiarlo: mantén pulsado el número para copiarlo a mano.'
+                : ''}
           </p>
         </div>
 

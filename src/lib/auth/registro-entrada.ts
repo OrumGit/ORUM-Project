@@ -17,6 +17,11 @@ export type EntradaRegistro = {
   ciudadId: string
   direccion: string
   contrasena: string
+  /**
+   * «Repítela». Si viene, tiene que ser igual a `contrasena` (el navegador ya
+   * lo comprueba; el servidor no se fía). Ausente = no se pidió.
+   */
+  confirmar?: string
   planId: string
   terminosAceptados: boolean
 }
@@ -30,6 +35,7 @@ export type CampoRegistro =
   | 'ciudadId'
   | 'direccion'
   | 'contrasena'
+  | 'confirmar'
   | 'planId'
   | 'terminos'
 
@@ -78,9 +84,10 @@ export function validarEntradaRegistro(entrada: EntradaRegistro): ResultadoEntra
   const correo = correoParaRegistro(entrada.correo)
   if (!correo.ok) errores.correo = correo.error
 
-  if (telefonoLimpio !== '') {
-    errores.telefono = telefono(telefonoLimpio, sinOtros) ?? undefined
-  }
+  // El celular es obligatorio desde el diseño aprobado del 23/11/2026: es
+  // por donde el club contacta al socio (y lo pide la ficha del panel).
+  if (telefonoLimpio === '') errores.telefono = 'Escribe tu celular.'
+  else errores.telefono = telefono(telefonoLimpio, sinOtros) ?? undefined
 
   // La contraseña no puede contener los datos de la persona: se pasan como
   // palabras sueltas, no como frases, para que «Gómez» dé con «gomez».
@@ -92,6 +99,11 @@ export function validarEntradaRegistro(entrada: EntradaRegistro): ResultadoEntra
   ])
   const revision = revisarContrasena(entrada.contrasena, contexto)
   if (!revision.ok) errores.contrasena = revision.mensaje
+
+  if (entrada.confirmar !== undefined && entrada.confirmar !== entrada.contrasena) {
+    errores.confirmar =
+      entrada.confirmar === '' ? 'Repite la contraseña.' : 'Las dos contraseñas no coinciden.'
+  }
 
   if (!CIUDAD_ID.test(entrada.ciudadId)) errores.ciudadId = 'Elige tu ciudad.'
 

@@ -45,6 +45,9 @@ export const LIMITES = {
   // Código de confirmación del correo: 6 dígitos son un millón de opciones, así
   // que pocos intentos por correo bastan para que adivinarlo sea imposible.
   codigoPorCorreo: { tope: 5, ventanaSegundos: 15 * 60 },
+  // Abrir el pago crea una suscripción en Mercado Pago cada vez: diez por hora
+  // y persona sobran para reintentos honestos.
+  pagoPorCuenta: { tope: 10, ventanaSegundos: HORA },
   codigoPorIp: { tope: 20, ventanaSegundos: 15 * 60 },
 } as const satisfies Record<string, Limite>
 

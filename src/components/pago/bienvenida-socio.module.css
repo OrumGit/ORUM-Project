@@ -167,6 +167,12 @@
   -webkit-font-smoothing: auto;
 }
 
+.avisoCopia {
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-caption-size);
+  color: var(--warning);
+}
+
 .grupoNumero {
   display: flex;
   align-items: center;
