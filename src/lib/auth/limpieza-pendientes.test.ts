@@ -3,6 +3,7 @@ import {
   cuentasParaBorrar,
   DIAS_PLAZO_SIN_PAGO,
   esCuentaVencida,
+  sePuedeBorrar,
   type CuentaParaRevisar,
 } from './limpieza-pendientes'
 
@@ -13,8 +14,11 @@ const hace = (dias: number) =>
 const base = (extra: Partial<CuentaParaRevisar>): CuentaParaRevisar => ({
   id: 'x',
   creadaAt: hace(30),
+  estadoRegistro: 'pendiente',
+  registroConFicha: false,
+  tienePerfil: false,
   tieneFicha: false,
-  tienePagoCompletado: false,
+  pagoAbierto: false,
   ...extra,
 })
 
@@ -36,28 +40,48 @@ describe('esCuentaVencida', () => {
   })
 })
 
+describe('sePuedeBorrar', () => {
+  it('borra un registro pendiente, vencido y sin rastro de cuenta real', () => {
+    expect(sePuedeBorrar(base({}), ahora)).toBe(true)
+  })
+
+  it('también un registro cancelado', () => {
+    expect(sePuedeBorrar(base({ estadoRegistro: 'cancelado' }), ahora)).toBe(true)
+  })
+
+  it('NUNCA una cuenta con perfil: personal del panel, comercio o socio', () => {
+    expect(sePuedeBorrar(base({ tienePerfil: true }), ahora)).toBe(false)
+  })
+
+  it('nunca una cuenta con ficha de socio', () => {
+    expect(sePuedeBorrar(base({ tieneFicha: true }), ahora)).toBe(false)
+  })
+
+  it('nunca un registro completado', () => {
+    expect(sePuedeBorrar(base({ estadoRegistro: 'completado' }), ahora)).toBe(false)
+  })
+
+  it('nunca un registro que ya apunta a una ficha', () => {
+    expect(sePuedeBorrar(base({ registroConFicha: true }), ahora)).toBe(false)
+  })
+
+  it('no si su enlace de pago sigue abierto en Mercado Pago', () => {
+    expect(sePuedeBorrar(base({ pagoAbierto: true }), ahora)).toBe(false)
+  })
+
+  it('no si el registro es reciente', () => {
+    expect(sePuedeBorrar(base({ creadaAt: hace(3) }), ahora)).toBe(false)
+  })
+})
+
 describe('cuentasParaBorrar', () => {
-  it('borra una cuenta vencida, sin ficha y sin pago', () => {
-    expect(cuentasParaBorrar([base({ id: 'a' })], ahora)).toEqual(['a'])
-  })
-
-  it('nunca borra una cuenta con ficha de socio', () => {
-    expect(cuentasParaBorrar([base({ id: 'a', tieneFicha: true })], ahora)).toEqual([])
-  })
-
-  it('nunca borra una cuenta que completó un pago', () => {
-    expect(cuentasParaBorrar([base({ id: 'a', tienePagoCompletado: true })], ahora)).toEqual([])
-  })
-
-  it('no borra una cuenta reciente aunque no tenga pago', () => {
-    expect(cuentasParaBorrar([base({ id: 'a', creadaAt: hace(3) })], ahora)).toEqual([])
-  })
-
   it('solo devuelve las que cumplen todo, de una lista mixta', () => {
     const cuentas = [
       base({ id: 'borrar' }),
+      base({ id: 'admin', tienePerfil: true }),
       base({ id: 'socio', tieneFicha: true }),
-      base({ id: 'pago', tienePagoCompletado: true }),
+      base({ id: 'pago', estadoRegistro: 'completado' }),
+      base({ id: 'abierto', pagoAbierto: true }),
       base({ id: 'reciente', creadaAt: hace(2) }),
     ]
     expect(cuentasParaBorrar(cuentas, ahora)).toEqual(['borrar'])
