@@ -164,16 +164,39 @@
   align-items: start;
 }
 
+/*
+  En el ordenador (24/11/2026: «actividad reciente debajo de vencen esta
+  semana, para aprovechar mejor el espacio»): a la izquierda «Vencen esta
+  semana» y JUSTO DEBAJO la actividad; a la derecha los botones de crear,
+  ocupando las dos filas. La primera fila mide lo que «Vencen» (`auto`) y la
+  segunda el resto (`1fr`): como «Crear» abarca las dos, no estira la
+  primera, y la actividad no deja hueco debajo de una lista vacía.
+
+  En el teléfono es una sola columna en el orden del HTML: vencen, crear y
+  actividad (los botones de crear no quedan debajo de una lista larga). Las
+  `grid-area` solo se declaran aquí dentro: fuera de la plantilla, un nombre
+  de zona sin declarar crearía filas y columnas implícitas.
+*/
 @container contenido (min-width: 900px) {
   .dosColumnas {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'vencen crear'
+      'actividad crear';
   }
-}
 
-.lateral {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+  .zonaVencen {
+    grid-area: vencen;
+  }
+
+  .zonaCrear {
+    grid-area: crear;
+  }
+
+  .zonaActividad {
+    grid-area: actividad;
+  }
 }
 
 .tarjeta {

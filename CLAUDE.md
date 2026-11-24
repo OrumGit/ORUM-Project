@@ -1646,6 +1646,12 @@ paleta:
   urgencia** (rojo hoy, naranja mañana, ámbar ≤3 días, azul el resto;
   siempre con texto), los botones de «Crear» sueltos (sin panel ni título)
   cada uno con su icono y color, y la actividad reciente de la bitácora.
+  En el ordenador (contenedor ≥900 px) la actividad va JUSTO DEBAJO de
+  «Vencen esta semana» y los botones de crear a la derecha, ocupando las dos
+  filas (24/11/2026: «para aprovechar mejor el espacio»; antes la actividad
+  iba bajo los botones y dejaba un hueco bajo «Vencen»). En el teléfono, una
+  columna: vencen, crear y actividad. Vista previa: `/dev/shell` («Nadie
+  vence» simula la semana sin vencimientos).
 - **Las listas del panel** llevan `Pestanas` (`components/ui/pestanas.tsx`:
   franja gris suave, la elegida en píldora blanca con sombra, punto de color
   y recuento; son enlaces; la píldora SE DESLIZA a la pulsada en el acto

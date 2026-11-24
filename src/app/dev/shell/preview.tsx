@@ -93,6 +93,8 @@ const FILAS_FALSAS: FilaMiembro[] = Array.from({ length: 63 }, (_, i) => {
 export function ShellPreview() {
   const [rol, setRol] = useState<RolCodigo>('super_admin')
   const [ruta, setRuta] = useState('/OrumAdminLogin')
+  // La portada con y sin vencimientos (la actividad va justo debajo de ellos).
+  const [conVencen, setConVencen] = useState('si')
 
   return (
     <AppShell
@@ -134,6 +136,18 @@ export function ShellPreview() {
             ariaLabel="Sección simulada"
             size="sm"
           />
+          {ruta === '/OrumAdminLogin' && (
+            <SegmentedControl
+              options={[
+                { value: 'si', label: 'Con vencimientos' },
+                { value: 'no', label: 'Nadie vence' },
+              ]}
+              value={conVencen}
+              onChange={setConVencen}
+              ariaLabel="Vencimientos simulados"
+              size="sm"
+            />
+          )}
         </Stack>
 
       {ruta === '/OrumAdminLogin/miembros' ? (
@@ -153,7 +167,7 @@ export function ShellPreview() {
           nombre={rol === 'super_admin' ? 'Daniel' : 'Ana'}
           fecha="miércoles 15 de octubre"
           cifras={{ miembros: 1284, vigentes: 1032, porVencer: 87, comercios: 46 }}
-          vencen={[
+          vencen={conVencen === 'no' ? [] : [
             { miembroId: 1, nombre: 'Laura Martínez Rojas', numero: '00184472', fotoUrl: null, dias: 0 },
             { miembroId: 2, nombre: 'Carlos Gómez', numero: '00190038', fotoUrl: null, dias: 1 },
             { miembroId: 3, nombre: 'Andrea Patiño Vélez', numero: '00201155', fotoUrl: null, dias: 3 },
