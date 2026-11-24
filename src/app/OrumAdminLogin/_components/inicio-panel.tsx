@@ -208,7 +208,7 @@ export function InicioPanel({
 
       <div className={styles.dosColumnas}>
         {/* ── Vencen esta semana ───────────────────────────────────────── */}
-        <section className={styles.tarjeta} aria-labelledby="titulo-vencen">
+        <section className={`${styles.tarjeta} ${styles.zonaVencen}`} aria-labelledby="titulo-vencen">
           <div className={styles.tarjetaCabeza}>
             <h2 id="titulo-vencen" className={styles.tarjetaTitulo}>
               Vencen esta semana
@@ -253,63 +253,61 @@ export function InicioPanel({
           )}
         </section>
 
-        <div className={styles.lateral}>
-          {/* ── Crear ──────────────────────────────────────────────────── */}
-          <section aria-label="Crear" className={styles.crear}>
-            {esSuperAdmin ? (
-              CREAR.map((c) => (
-                <Link key={c.nombre} href={c.href} className={styles.crearBoton}>
-                  <span className={styles.crearIcono} data-tono={c.tono} aria-hidden="true">
-                    <c.icono size={19} />
-                  </span>
-                  <span className={styles.crearNombre}>{c.nombre}</span>
-                  <span className={styles.crearNota}>{c.nota}</span>
-                </Link>
-              ))
-            ) : (
-              <Link href="/OrumAdminLogin/miembros/nuevo" className={styles.crearBoton}>
-                <span className={styles.crearIcono} data-tono="azul" aria-hidden="true">
-                  <UserPlus size={19} />
+        {/* ── Crear ──────────────────────────────────────────────────── */}
+        <section aria-label="Crear" className={`${styles.crear} ${styles.zonaCrear}`}>
+          {esSuperAdmin ? (
+            CREAR.map((c) => (
+              <Link key={c.nombre} href={c.href} className={styles.crearBoton}>
+                <span className={styles.crearIcono} data-tono={c.tono} aria-hidden="true">
+                  <c.icono size={19} />
                 </span>
-                <span className={styles.crearNombre}>Miembro</span>
-                <span className={styles.crearNota}>Registrar y vender</span>
+                <span className={styles.crearNombre}>{c.nombre}</span>
+                <span className={styles.crearNota}>{c.nota}</span>
               </Link>
+            ))
+          ) : (
+            <Link href="/OrumAdminLogin/miembros/nuevo" className={styles.crearBoton}>
+              <span className={styles.crearIcono} data-tono="azul" aria-hidden="true">
+                <UserPlus size={19} />
+              </span>
+              <span className={styles.crearNombre}>Miembro</span>
+              <span className={styles.crearNota}>Registrar y vender</span>
+            </Link>
+          )}
+        </section>
+
+        {/* ── Actividad reciente ─────────────────────────────────────── */}
+        {esSuperAdmin && (
+          <section className={`${styles.tarjeta} ${styles.zonaActividad}`} aria-labelledby="titulo-actividad">
+            <div className={styles.tarjetaCabeza}>
+              <h2 id="titulo-actividad" className={styles.tarjetaTitulo}>
+                Actividad reciente
+              </h2>
+              <Link href="/OrumAdminLogin/bitacora" className={styles.enlace}>
+                Ver la bitácora
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
+            {actividad.length === 0 ? (
+              <p className={styles.vacio}>Todavía no hay actividad.</p>
+            ) : (
+              <ol className={styles.actividad}>
+                {actividad.map((a) => (
+                  <li key={a.id} className={styles.evento}>
+                    <span className={styles.eventoPunto} aria-hidden="true" />
+                    <span className={styles.eventoTextos}>
+                      <span>
+                        <strong className={styles.eventoQuien}>{a.quien}</strong> · {a.que}
+                        {a.miembro && <> · {a.miembro}</>}
+                      </span>
+                      <span className={styles.eventoCuando}>{a.cuando}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
             )}
           </section>
-
-          {/* ── Actividad reciente ─────────────────────────────────────── */}
-          {esSuperAdmin && (
-            <section className={styles.tarjeta} aria-labelledby="titulo-actividad">
-              <div className={styles.tarjetaCabeza}>
-                <h2 id="titulo-actividad" className={styles.tarjetaTitulo}>
-                  Actividad reciente
-                </h2>
-                <Link href="/OrumAdminLogin/bitacora" className={styles.enlace}>
-                  Ver la bitácora
-                  <ArrowRight size={14} aria-hidden="true" />
-                </Link>
-              </div>
-              {actividad.length === 0 ? (
-                <p className={styles.vacio}>Todavía no hay actividad.</p>
-              ) : (
-                <ol className={styles.actividad}>
-                  {actividad.map((a) => (
-                    <li key={a.id} className={styles.evento}>
-                      <span className={styles.eventoPunto} aria-hidden="true" />
-                      <span className={styles.eventoTextos}>
-                        <span>
-                          <strong className={styles.eventoQuien}>{a.quien}</strong> · {a.que}
-                          {a.miembro && <> · {a.miembro}</>}
-                        </span>
-                        <span className={styles.eventoCuando}>{a.cuando}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </section>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )
