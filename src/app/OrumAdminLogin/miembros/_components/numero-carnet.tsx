@@ -1,11 +1,16 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type SyntheticEvent } from 'react'
 import { Check, CreditCard, Search } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { buscarNumeros, numerosCoinciden, soloCifras } from '@/lib/miembros/numeros-registro'
+import {
+  buscarNumeros,
+  numerosCoinciden,
+  pareceTextoPegado,
+  soloCifras,
+} from '@/lib/miembros/numeros-registro'
 import estilos from './numero-carnet.module.css'
 
 /*
@@ -20,10 +25,22 @@ import estilos from './numero-carnet.module.css'
        al teclear (los que empiezan así primero; «12345» encuentra
        «00012345»). Nada sale elegido de antemano. Si se escribe el número
        completo y está libre, queda elegido; si no está libre, lo dice.
-    3. Debajo, se escribe OTRA VEZ mirando la tarjeta. Aquí no se puede pegar
-       (se copiaría lo elegido y la segunda verificación no serviría). Los
-       dos tienen que coincidir; el formulario no se envía si no, y el
-       servidor lo vuelve a comprobar.
+    3. Debajo, se escribe OTRA VEZ mirando la tarjeta. Los dos tienen que
+       coincidir; el formulario no se envía si no, y el servidor lo vuelve a
+       comprobar.
+
+  NI COPIAR NI PEGAR en este apartado (24/11/2026: «no quiero que el
+  usuario pueda copiar y pegar»): copiar el elegido y pegarlo abajo dejaría
+  la segunda verificación sin sentido. Se cierra por cuatro lados, porque
+  cada uno deja pasar algo que los otros no:
+    · `copy`/`cut`/`paste`/`drop` en todo el bloque (ratón, teclado y el
+      menú del botón derecho);
+    · `beforeinput` con `insertFromPaste`/`insertFromDrop` en cada campo
+      (lo que algunos navegadores insertan sin disparar `paste`);
+    · y si aun así entran DOS cifras o más de golpe —el portapapeles del
+      teclado del teléfono las mete como si se tecleasen— se rechazan
+      (`pareceTextoPegado`): tecleando, llegan de una en una.
+  Al intentarlo, la ayuda de los dos campos lo dice (y se anuncia).
 
   El combobox sigue el patrón de ARIA (`role="combobox"` + `listbox`, con
   `aria-activedescendant`): flechas para moverse, Intro para elegir, Escape
@@ -47,10 +64,31 @@ export function NumeroCarnet({ numeros, error }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [activo, setActivo] = useState(0)
   const [repetido, setRepetido] = useState('')
-  const [intentoPegar, setIntentoPegar] = useState(false)
+  const [sinCopiar, setSinCopiar] = useState(false)
   const idLista = useId()
   const oculto = useRef<HTMLInputElement>(null)
   const montado = useRef(false)
+  const bloque = useRef<HTMLDivElement>(null)
+
+  /** Cualquier intento de copiar, cortar, pegar o soltar: no, y se dice. */
+  function bloquear(e: SyntheticEvent | Event) {
+    e.preventDefault()
+    setSinCopiar(true)
+  }
+
+  // Lo que el navegador inserta «pegando» sin disparar `paste`. `beforeinput`
+  // burbujea: basta con escucharlo en el bloque, para los dos campos.
+  useEffect(() => {
+    const alInsertar = (e: InputEvent) => {
+      if (e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop' || e.inputType === 'insertFromYank') {
+        e.preventDefault()
+        setSinCopiar(true)
+      }
+    }
+    const el = bloque.current
+    el?.addEventListener('beforeinput', alInsertar)
+    return () => el?.removeEventListener('beforeinput', alInsertar)
+  }, [])
 
   // El campo oculto avisa al formulario cuando cambia (no al montar).
   useEffect(() => {
@@ -73,6 +111,11 @@ export function NumeroCarnet({ numeros, error }: Props) {
   }
 
   function escribir(texto: string) {
+    // Dos cifras o más de golpe: vienen del portapapeles, no del teclado.
+    if (pareceTextoPegado(consulta, texto)) {
+      setSinCopiar(true)
+      return
+    }
     const cifras = soloCifras(texto)
     setConsulta(cifras)
     setActivo(0)
@@ -115,7 +158,15 @@ export function NumeroCarnet({ numeros, error }: Props) {
   }, [idActivo])
 
   return (
-    <div className={estilos.bloque}>
+    <div
+      ref={bloque}
+      className={estilos.bloque}
+      onCopy={bloquear}
+      onCut={bloquear}
+      onPaste={bloquear}
+      onDrop={bloquear}
+      onDragStart={bloquear}
+    >
       <Alert tone="warning" title="Revisa la tarjeta antes de registrar">
         Ten en la mano el carné que vas a entregar. El número que elijas aquí tiene que ser
         exactamente el que está impreso en esa tarjeta.
@@ -123,7 +174,11 @@ export function NumeroCarnet({ numeros, error }: Props) {
 
       <Field
         label="Número de registro"
-        help="Escribe el número del carné y elígelo en la lista de números libres."
+        help={
+          sinCopiar
+            ? AVISO_SIN_COPIAR
+            : 'Escribe el número del carné y elígelo en la lista de números libres.'
+        }
         error={error('numero_registro')}
       >
         <div className={estilos.combo} data-campo="">
@@ -187,8 +242,8 @@ export function NumeroCarnet({ numeros, error }: Props) {
       <Field
         label="Escribe otra vez el número"
         help={
-          intentoPegar
-            ? 'Aquí no se puede pegar: escríbelo mirando la tarjeta.'
+          sinCopiar
+            ? AVISO_SIN_COPIAR
             : 'Míralo en la tarjeta y escríbelo a mano. Los dos números tienen que coincidir.'
         }
         error={
@@ -206,14 +261,19 @@ export function NumeroCarnet({ numeros, error }: Props) {
           placeholder="8 cifras"
           startIcon={<CreditCard size={16} />}
           value={repetido}
-          onChange={(e) => setRepetido(soloCifras(e.target.value))}
-          onPaste={(e) => {
-            e.preventDefault()
-            setIntentoPegar(true)
+          onChange={(e) => {
+            if (pareceTextoPegado(repetido, e.target.value)) {
+              setSinCopiar(true)
+              return
+            }
+            setRepetido(soloCifras(e.target.value))
           }}
-          onDrop={(e) => e.preventDefault()}
         />
       </Field>
+
+      <p role="status" className={estilos.oculto}>
+        {sinCopiar ? AVISO_SIN_COPIAR : ''}
+      </p>
 
       <p role="status" className={coinciden ? estilos.coinciden : estilos.oculto}>
         {coinciden && (
@@ -226,6 +286,8 @@ export function NumeroCarnet({ numeros, error }: Props) {
     </div>
   )
 }
+
+const AVISO_SIN_COPIAR = 'Aquí no se puede copiar ni pegar: escribe el número mirando la tarjeta.'
 
 /** El número con la parte buscada en negrita. */
 function Resaltado({ numero, consulta }: { numero: string; consulta: string }) {

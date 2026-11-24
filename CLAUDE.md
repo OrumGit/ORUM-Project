@@ -703,7 +703,12 @@ pide tener en la mano la tarjeta que se va a entregar; el número se BUSCA
 escribiéndolo (la lista de libres se filtra al teclear, sin nada elegido de
 antemano —antes salía marcado el primero—; el número completo y libre queda
 elegido, y uno que no está libre lo dice); y debajo se escribe OTRA VEZ,
-mirando la tarjeta, sin poder pegar. Si no coinciden, no se envía
+mirando la tarjeta. En todo el apartado NO SE PUEDE COPIAR NI PEGAR
+(24/11/2026): `copy`/`cut`/`paste`/`drop` bloqueados en el bloque,
+`beforeinput` de pegado rechazado, y dos cifras o más de golpe —el
+portapapeles del teclado del teléfono, que no dispara `paste`— se rechazan
+(`pareceTextoPegado`); la ayuda lo dice. Ojo al probarlo: la automatización
+escribe el texto de golpe y también se rechaza; se prueba tecla a tecla. Si no coinciden, no se envía
 (`igualA`), y el servidor lo vuelve a comprobar (`numero_confirmacion` en
 `registrarMiembro`). Lógica pura y probada en `lib/miembros/numeros-registro.ts`
 (`buscarNumeros`, `numerosCoinciden`, `soloCifras`). «Reasignar número» de la

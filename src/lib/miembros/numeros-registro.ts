@@ -100,3 +100,13 @@ export function buscarNumeros(
 export function numerosCoinciden(elegido: string, repetido: string): boolean {
   return esNumeroRegistroValido(elegido) && elegido === repetido
 }
+
+/**
+ * ¿Lo escrito llegó de golpe, como llega lo pegado? Tecleando, las cifras
+ * entran de una en una; el portapapeles del teclado de un teléfono mete
+ * varias a la vez sin disparar el evento `paste`. Dos cifras o más de más en
+ * un solo cambio = pegado. Borrar o reemplazar por una sola cifra, no.
+ */
+export function pareceTextoPegado(antes: string, despues: string): boolean {
+  return soloCifras(despues).length - soloCifras(antes).length > 1
+}

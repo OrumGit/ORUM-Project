@@ -5,6 +5,7 @@ import {
   MAX_NUMEROS_POR_CARGA,
   buscarNumeros,
   numerosCoinciden,
+  pareceTextoPegado,
   soloCifras,
 } from './numeros-registro'
 
@@ -119,5 +120,28 @@ describe('numerosCoinciden', () => {
   it('sin número elegido nunca coincide', () => {
     expect(numerosCoinciden('', '')).toBe(false)
     expect(numerosCoinciden('123', '123')).toBe(false)
+  })
+})
+
+describe('pareceTextoPegado', () => {
+  it('una cifra más es teclear', () => {
+    expect(pareceTextoPegado('0009', '00090')).toBe(false)
+    expect(pareceTextoPegado('', '0')).toBe(false)
+  })
+
+  it('varias cifras de golpe es pegar', () => {
+    expect(pareceTextoPegado('', '00090160')).toBe(true)
+    expect(pareceTextoPegado('0009', '00090160')).toBe(true)
+    expect(pareceTextoPegado('', '12')).toBe(true)
+  })
+
+  it('borrar o reemplazar por una cifra no es pegar', () => {
+    expect(pareceTextoPegado('00090160', '0009016')).toBe(false)
+    expect(pareceTextoPegado('00090160', '5')).toBe(false)
+    expect(pareceTextoPegado('00090160', '')).toBe(false)
+  })
+
+  it('lo que no son cifras no cuenta', () => {
+    expect(pareceTextoPegado('0009', '0009 ')).toBe(false)
   })
 })
