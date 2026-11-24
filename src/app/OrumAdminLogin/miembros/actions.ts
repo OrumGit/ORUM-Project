@@ -116,6 +116,11 @@ export async function registrarMiembro(
   if (!cedula) return { error: 'La cédula es obligatoria.' }
   if (!correo || !correo.includes('@')) return { error: 'Ingresa un correo electrónico válido.' }
   if (!esNumeroRegistroValido(numero_registro)) return { error: 'Selecciona un número de registro.' }
+  // Doble verificación del carné: el número escrito otra vez tiene que ser el elegido.
+  const numero_confirmacion = String(formData.get('numero_confirmacion') ?? '').trim()
+  if (numero_confirmacion !== numero_registro) {
+    return { error: 'El número escrito otra vez no coincide con el elegido. Revisa la tarjeta del carné.' }
+  }
   if (!Number.isInteger(plan_id)) return { error: 'Selecciona un plan de membresía.' }
   if (!Number.isFinite(precio_pagado) || precio_pagado < 0) {
     return { error: 'El precio pagado debe ser un número mayor o igual a 0.' }

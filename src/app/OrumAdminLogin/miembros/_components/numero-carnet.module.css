@@ -1,0 +1,103 @@
+/* El número del carné con doble verificación (ver `numero-carnet.tsx`). */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.combo {
+  display: block;
+}
+
+/*
+  La lista de números libres. Va EN EL FLUJO, justo debajo del campo: dentro
+  de la ventana del formulario nada la recorta. Es una superficie que se
+  levanta sobre el formulario, así que la define su sombra (la del menú),
+  no un trazo.
+*/
+.panel {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-superficie);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-flotante), var(--edge);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 15rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-control-size);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* La señalada (flechas o puntero): filo dorado, sin relleno. */
+.opcion[data-activo] {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--brand-edge);
+}
+
+.opcion:active {
+  opacity: 0.7;
+}
+
+@media (pointer: coarse) {
+  .opcion {
+    min-height: var(--tap-min);
+  }
+}
+
+/* La parte que casa con lo escrito. */
+.coincidencia {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.vacio,
+.mas {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--t-footnote-size);
+  color: var(--text-2);
+}
+
+/* Los dos números coinciden: check y texto (nunca el color solo). */
+.coinciden {
+  margin: calc(var(--space-2) * -1) 0 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--t-footnote-size);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

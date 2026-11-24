@@ -696,6 +696,19 @@ lateral. Lógica pura y probada en `lib/miembros/compras-miembro.ts`
 las compras de comercios ya retirados). Las cifras, el ranking y la tabla
 salen de las MISMAS filas. Vista previa: `/dev/panel-movil?f=compras`.
 
+**El número del carné se elige con DOBLE VERIFICACIÓN** (24/11/2026: «se
+está equivocando sobre el número a veces»). En «Registrar miembro»
+(`NumeroCarnet`, `miembros/_components/numero-carnet.tsx`): una advertencia
+pide tener en la mano la tarjeta que se va a entregar; el número se BUSCA
+escribiéndolo (la lista de libres se filtra al teclear, sin nada elegido de
+antemano —antes salía marcado el primero—; el número completo y libre queda
+elegido, y uno que no está libre lo dice); y debajo se escribe OTRA VEZ,
+mirando la tarjeta, sin poder pegar. Si no coinciden, no se envía
+(`igualA`), y el servidor lo vuelve a comprobar (`numero_confirmacion` en
+`registrarMiembro`). Lógica pura y probada en `lib/miembros/numeros-registro.ts`
+(`buscarNumeros`, `numerosCoinciden`, `soloCifras`). «Reasignar número» de la
+ficha sigue con su lista: no se tocó. Vista previa: `/dev/panel-movil?f=miembro-nuevo`.
+
 **Los planes ya no se crean ni se retiran** (29/10/2026: «quitar la
 funcionalidad de añadir o quitar planes de membresía»). `/admin/planes`
 solo los lista y edita su DESCRIPCIÓN (07/11/2026: «al administrador

@@ -49,6 +49,9 @@ const CIUDADES = [
   { id: 1, nombre: 'Bogotá' },
   { id: 2, nombre: 'Tuluá' },
 ]
+/** Números libres falsos para probar el buscador del carné. */
+const NUMEROS_LIBRES = Array.from({ length: 200 }, (_, i) => String(90003 + i).padStart(8, '0'))
+
 const PLANES = [
   { id: 1, nombre: 'Membresía anual', precio: 120000 },
   { id: 2, nombre: 'Membresía semestral', precio: 70000 },
@@ -271,7 +274,7 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
   },
   'miembro-nuevo': {
     titulo: 'Registrar miembro',
-    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={['00090003', '00090004']} puedeCortesia />,
+    contenido: <MiembroForm ciudades={CIUDADES} planes={PLANES} numerosDisponibles={NUMEROS_LIBRES} puedeCortesia />,
   },
   'miembro-editar': {
     titulo: 'Editar miembro',

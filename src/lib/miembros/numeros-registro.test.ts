@@ -3,6 +3,9 @@ import {
   expandirRango,
   esNumeroRegistroValido,
   MAX_NUMEROS_POR_CARGA,
+  buscarNumeros,
+  numerosCoinciden,
+  soloCifras,
 } from './numeros-registro'
 
 describe('esNumeroRegistroValido', () => {
@@ -64,5 +67,57 @@ describe('expandirRango', () => {
     const r = expandirRango('00000001', String(MAX_NUMEROS_POR_CARGA).padStart(8, '0'))
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.numeros).toHaveLength(MAX_NUMEROS_POR_CARGA)
+  })
+})
+
+describe('soloCifras', () => {
+  it('quita lo que no es cifra y corta en 8', () => {
+    expect(soloCifras(' 0001-2345 ')).toBe('00012345')
+    expect(soloCifras('1234567890')).toBe('12345678')
+    expect(soloCifras('abc')).toBe('')
+  })
+})
+
+describe('buscarNumeros', () => {
+  const libres = ['00010000', '00012345', '00020001', '00112345', '01200000']
+
+  it('sin nada escrito, los primeros de la lista', () => {
+    expect(buscarNumeros(libres, '', 2)).toEqual({ numeros: ['00010000', '00012345'], total: 5 })
+  })
+
+  it('primero los que empiezan así, después los que lo contienen', () => {
+    expect(buscarNumeros(libres, '0001').numeros).toEqual(['00010000', '00012345', '00020001'])
+    expect(buscarNumeros(libres, '12345').numeros).toEqual(['00012345', '00112345'])
+  })
+
+  it('el número completo da solo ese', () => {
+    expect(buscarNumeros(libres, '00012345')).toEqual({ numeros: ['00012345'], total: 1 })
+  })
+
+  it('ignora espacios y guiones al buscar', () => {
+    expect(buscarNumeros(libres, '0001 2345').numeros).toEqual(['00012345'])
+  })
+
+  it('nada casa: lista vacía', () => {
+    expect(buscarNumeros(libres, '999')).toEqual({ numeros: [], total: 0 })
+  })
+
+  it('corta en el tope pero cuenta todos', () => {
+    expect(buscarNumeros(libres, '0', 2)).toEqual({ numeros: ['00010000', '00012345'], total: 5 })
+  })
+})
+
+describe('numerosCoinciden', () => {
+  it('iguales y válidos', () => {
+    expect(numerosCoinciden('00012345', '00012345')).toBe(true)
+  })
+
+  it('una cifra distinta no coincide', () => {
+    expect(numerosCoinciden('00012345', '00012346')).toBe(false)
+  })
+
+  it('sin número elegido nunca coincide', () => {
+    expect(numerosCoinciden('', '')).toBe(false)
+    expect(numerosCoinciden('123', '123')).toBe(false)
   })
 })

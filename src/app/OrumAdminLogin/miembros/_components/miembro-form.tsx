@@ -13,6 +13,7 @@ import { ResumenErrores, useValidacion } from '@/components/ui/validacion'
 import {
   cedula,
   correo,
+  igualA,
   largo,
   nombrePersona,
   obligatorio,
@@ -24,6 +25,8 @@ import { Divider, Section, Stack } from '@/components/ui/layout'
 import { useCerrarOverlay } from '@/components/shell/overlay-ruta'
 import { registrarMiembro, type RegistrarMiembroState } from '../actions'
 import { DuracionCortesia, ETIQUETAS_CORTESIA, REGLAS_CORTESIA } from './duracion-cortesia'
+import { NumeroCarnet } from './numero-carnet'
+import { esNumeroRegistroValido } from '@/lib/miembros/numeros-registro'
 import styles from '@/styles/formulario.module.css'
 
 type Opcion = { id: number; nombre: string }
@@ -40,7 +43,16 @@ const REGLAS = {
   telefono: [telefono],
   correo: [obligatorio('Escribe el correo: será su usuario de acceso.'), correo],
   direccion: [largo(5, 120, 'La dirección')],
-  numero_registro: [obligatorio('Elige el número de registro del carné.')],
+  // Doble verificación del carné (24/11/2026): se elige buscándolo y se
+  // escribe otra vez mirando la tarjeta. El servidor también lo comprueba.
+  numero_registro: [
+    obligatorio('Busca y elige el número del carné en la lista.'),
+    (v: string) => (esNumeroRegistroValido(v) ? null : 'Elige un número de la lista.'),
+  ],
+  numero_confirmacion: [
+    obligatorio('Escribe otra vez el número, mirando la tarjeta.'),
+    igualA('numero_registro', 'No coincide con el número elegido. Revisa la tarjeta.'),
+  ],
   plan_id: [obligatorio('Elige un plan.')],
   // Una cortesía no se cobra: el campo ni se pinta y su regla no corre.
   precio_pagado: [salvoCortesia(obligatorio('Escribe el precio pagado.')), salvoCortesia(reglaPrecio())],
@@ -55,6 +67,7 @@ const ETIQUETAS: Record<string, string> = {
   correo: 'Correo electrónico',
   direccion: 'Dirección',
   numero_registro: 'Número de registro',
+  numero_confirmacion: 'Número escrito otra vez',
   plan_id: 'Plan',
   precio_pagado: 'Precio pagado',
   ...ETIQUETAS_CORTESIA,
@@ -197,18 +210,7 @@ function FormularioMiembro({
 
         <Section title="Primera membresía">
           <Stack gap={5}>
-            <Field
-              label="Número de registro"
-              help="El número impreso en el carné que vas a entregar."
-              error={v.error('numero_registro')}
-            >
-              <SelectMenu
-                name="numero_registro"
-                etiqueta="Número de registro"
-                defaultValue={numerosDisponibles[0] ?? ''}
-                opciones={numerosDisponibles.map((n) => ({ value: n, label: n }))}
-              />
-            </Field>
+            <NumeroCarnet numeros={numerosDisponibles} error={v.error} />
 
             <div className={styles.pareja}>
               <Field label="Plan" error={v.error('plan_id')}>

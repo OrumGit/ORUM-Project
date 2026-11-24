@@ -59,3 +59,44 @@ export function expandirRango(desde: string, hasta: string): RangoExpandido {
   }
   return { ok: true, numeros }
 }
+
+/* --- Elegir el número del carné con doble verificación (24/11/2026) ---------
+   Encargo del propietario: al registrar un miembro, el número se elegía de una
+   lista larga con el primero ya marcado y a veces se entregaba un carné con
+   otro número. Ahora se BUSCA escribiendo (la lista se filtra) y después se
+   escribe OTRA VEZ, mirando la tarjeta: los dos tienen que coincidir. */
+
+/** Cuántos números enseña la lista de búsqueda como mucho. */
+export const MAX_SUGERENCIAS = 50
+
+/** Deja solo las cifras de lo escrito, hasta 8 (el largo de un número). */
+export function soloCifras(texto: string): string {
+  return texto.replace(/\D/g, '').slice(0, 8)
+}
+
+/**
+ * Los números libres que casan con lo escrito: primero los que EMPIEZAN así y
+ * después los que lo contienen en otro sitio («12345» encuentra «00012345»).
+ * Conserva el orden de la lista y corta en `tope`; `total` dice cuántos casan.
+ */
+export function buscarNumeros(
+  disponibles: readonly string[],
+  consulta: string,
+  tope = MAX_SUGERENCIAS,
+): { numeros: string[]; total: number } {
+  const cifras = soloCifras(consulta)
+  if (cifras === '') return { numeros: disponibles.slice(0, tope), total: disponibles.length }
+  const empiezan: string[] = []
+  const contienen: string[] = []
+  for (const n of disponibles) {
+    if (n.startsWith(cifras)) empiezan.push(n)
+    else if (n.includes(cifras)) contienen.push(n)
+  }
+  const todos = [...empiezan, ...contienen]
+  return { numeros: todos.slice(0, tope), total: todos.length }
+}
+
+/** ¿El número escrito otra vez es exactamente el elegido (y es un número válido)? */
+export function numerosCoinciden(elegido: string, repetido: string): boolean {
+  return esNumeroRegistroValido(elegido) && elegido === repetido
+}
