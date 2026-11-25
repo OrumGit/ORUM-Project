@@ -1765,6 +1765,26 @@ paleta:
   con «N reseñas por revisar», las tres más recientes (estrellas, comercio,
   el mensaje en una línea) y «Revisar» (a `?ver=por_revisar`). Solo sale
   si hay alguna; el icono se balancea una vez al entrar.
+- **Las VENTAS DE CADA EMPLEADO, una por una** (25/11/2026: «si realizó
+  13 ventas, que sepa exactamente cuándo fueron: hora, día, membresía,
+  persona; con filtros para la última semana, días, meses»). Métricas decía
+  CUÁNTAS; `/admin/usuarios/[id]` (el uuid de su perfil; solo
+  `super_admin`) dice CUÁLES: las membresías con `vendido_por` = su
+  empleado, por `created_at` (el instante de la venta, no `fecha_inicio`).
+  Periodo con las pestañas de siempre MÁS «Hoy» (`PERIODOS_CON_HOY`) y
+  «Ver entre fechas» con `SelectorFecha`; cuatro cifras —Membresías
+  vendidas (nuevas · renovaciones) · Dinero de sus ventas · Cortesías (no
+  suman) · Días con ventas—; «Cada membresía que registró» de a 25 (`?p=`:
+  cuándo con día y hora, miembro con su número, plan y si fue nuevo o
+  renovación, valor o «Cortesía», vigencia), «Por día» de a 10 (`?pd=`) y
+  «Por plan». Lógica pura y probada en `lib/metricas/ventas-empleado.ts`;
+  lectura por lotes en `ventas-empleado-datos.ts`. Se llega desde la lista
+  de Usuarios (el nombre, o «Ver sus ventas» en el menú) y desde Métricas
+  (el nombre en «Membresías vendidas por empleado», con el mismo periodo).
+  Es un LUGAR de «Volver» («Volver al usuario»). ⚠️ Métricas cuenta las
+  membresías por `fecha_inicio`: una renovación adelantada puede caer en
+  otro periodo allí que aquí. Vista previa: `/dev/panel-movil?f=ventas-empleado`
+  (y `-vacio`), que ganó `pagina: true` para piezas a lo ancho.
 - **Métricas pagina sus tablas de a 10** y lee el periodo entero por
   lotes (11/11/2026): ver «Ninguna consulta pasa de 1000 filas» en
   Arquitectura.

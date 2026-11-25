@@ -149,7 +149,7 @@ export default async function MetricasPage({
         .order('id', { ascending: true })
         .range(inicio, fin),
     ),
-    admin.from('empleados').select('id, nombres, apellidos').is('deleted_at', null),
+    admin.from('empleados').select('id, nombres, apellidos, perfil_id').is('deleted_at', null),
     leerEnPaginas((inicio, fin) =>
       admin
         .from('ventas')
@@ -164,6 +164,12 @@ export default async function MetricasPage({
   ])
 
   const porEmpleado = agruparMembresiasPorEmpleado(membresiasVendidas, empleados ?? [])
+  // Cada empleado lleva a su página con sus ventas una por una, en este periodo.
+  const perfilDeEmpleado = new Map((empleados ?? []).map((e) => [e.id, e.perfil_id]))
+  const hrefEmpleado = (r: ResumenEmpleado) => {
+    const perfil = r.empleadoId !== null ? perfilDeEmpleado.get(r.empleadoId) : null
+    return perfil ? `/OrumAdminLogin/usuarios/${perfil}?desde=${desde}&hasta=${hasta}` : undefined
+  }
   const porComercio = agruparVentasPorComercio(ventas, sucursales ?? [], comercios ?? [])
 
   /* Las tres tablas, de a 10 y cada una con su página en la URL. */
@@ -370,6 +376,7 @@ export default async function MetricasPage({
             items={paginaEmpleados.filas}
             columns={COL_EMPLEADO}
             getKey={(r) => r.empleadoId ?? 'super_admin'}
+            rowHref={hrefEmpleado}
             empty={
               <EmptyState
                 icon={<BarChart3 size={24} />}

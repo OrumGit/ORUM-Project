@@ -1,4 +1,4 @@
-import { Camera, MoreHorizontal, Pencil, UserPlus } from 'lucide-react'
+import { Camera, MoreHorizontal, Pencil, Receipt, UserPlus } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AccionEstado } from '@/components/ui/accion-estado'
@@ -150,6 +150,8 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
             items={filas.filter(filtro.cumple)}
             columns={COLUMNAS}
             getKey={(f) => f.perfilId}
+            // El nombre lleva a su página: cada membresía que vendió (25/11/2026).
+            rowHref={(f) => `/OrumAdminLogin/usuarios/${f.perfilId}`}
             alwaysShowActions
             empty={
               <EmptyState
@@ -184,6 +186,12 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                     </Button>
                   }
                 >
+                  <MenuItem
+                    href={`/OrumAdminLogin/usuarios/${f.perfilId}`}
+                    icon={<Receipt size={16} />}
+                  >
+                    Ver sus ventas
+                  </MenuItem>
                   <MenuItem
                     href={`/OrumAdminLogin/usuarios/${f.perfilId}/editar`}
                     icon={<Pencil size={16} />}

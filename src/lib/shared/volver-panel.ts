@@ -54,6 +54,8 @@ const LUGARES: readonly RegExp[] = [
   /^\/OrumAdminLogin\/comercios\/\d+$/,
   /^\/OrumAdminLogin\/miembros\/\d+$/,
   /^\/OrumAdminLogin\/miembros\/numeros$/,
+  // La página de un usuario (sus ventas, 25/11/2026): `[id]` es su uuid.
+  /^\/OrumAdminLogin\/usuarios\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
 ]
 
 const esLugar = (ruta: string) => LUGARES.some((r) => r.test(ruta))
@@ -111,6 +113,7 @@ export function textoVolver(destino: string): string {
   if (NOMBRES[ruta]) return NOMBRES[ruta]
   if (/^\/OrumAdminLogin\/comercios\/\d+$/.test(ruta)) return 'Volver al comercio'
   if (/^\/OrumAdminLogin\/miembros\/\d+$/.test(ruta)) return 'Volver al miembro'
+  if (/^\/OrumAdminLogin\/usuarios\/[0-9a-f-]{36}$/i.test(ruta)) return 'Volver al usuario'
   return 'Volver'
 }
 

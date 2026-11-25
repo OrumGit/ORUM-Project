@@ -9,7 +9,7 @@
   semana» empieza el lunes de Bogotá, no el del servidor.
 */
 
-export type Periodo = 'todo' | 'semana' | 'mes' | 'anio' | '30dias' | 'rango'
+export type Periodo = 'todo' | 'hoy' | 'semana' | 'mes' | 'anio' | '30dias' | 'rango'
 
 /** Las pestañas, en su orden. «Entre fechas» se elige con el formulario. */
 export const PERIODOS: readonly { clave: Exclude<Periodo, 'rango'>; etiqueta: string }[] = [
@@ -18,6 +18,17 @@ export const PERIODOS: readonly { clave: Exclude<Periodo, 'rango'>; etiqueta: st
   { clave: 'mes', etiqueta: 'Este mes' },
   { clave: '30dias', etiqueta: 'Últimos 30 días' },
   { clave: 'anio', etiqueta: 'Este año' },
+]
+
+/**
+ * Las mismas, con «Hoy» detrás de «Todo» (25/11/2026): las ventas de un
+ * empleado se revisan también día a día. `?periodo=hoy` lo entiende
+ * cualquier pantalla; solo la de un empleado enseña la pestaña.
+ */
+export const PERIODOS_CON_HOY: readonly { clave: Exclude<Periodo, 'rango'>; etiqueta: string }[] = [
+  PERIODOS[0],
+  { clave: 'hoy', etiqueta: 'Hoy' },
+  ...PERIODOS.slice(1),
 ]
 
 export type RangoPeriodo = {
@@ -67,6 +78,8 @@ export function leerPeriodo(
   }
 
   switch (params.periodo) {
+    case 'hoy':
+      return { periodo: 'hoy', desde: hoy, hasta: hoy }
     case 'semana':
       return { periodo: 'semana', desde: lunesDe(hoy), hasta: hoy }
     case 'mes':

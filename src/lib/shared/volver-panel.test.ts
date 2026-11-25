@@ -134,3 +134,26 @@ describe('textoVolver y hayVolver', () => {
     expect(hayVolver('/miembros')).toBe(false)
   })
 })
+
+describe('la página de un usuario (sus ventas)', () => {
+  const USUARIO = '/OrumAdminLogin/usuarios/0b6f1c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b'
+
+  it('es un lugar: desde ella «Volver» va a Usuarios', () => {
+    expect(destinoVolver([], USUARIO)).toBe('/OrumAdminLogin/usuarios')
+    expect(textoVolver('/OrumAdminLogin/usuarios')).toBe('Volver a Usuarios')
+  })
+
+  it('se anota en la pila, con su periodo, y vuelve a ella desde una ficha', () => {
+    const pila = anotarVisita(anotarVisita([], `${USUARIO}?periodo=semana`), '/OrumAdminLogin/miembros/12')
+    expect(destinoVolver(pila, '/OrumAdminLogin/miembros/12')).toBe(`${USUARIO}?periodo=semana`)
+    expect(textoVolver(`${USUARIO}?periodo=semana`)).toBe('Volver al usuario')
+  })
+
+  it('editar un usuario vuelve a su página', () => {
+    expect(rutaPadre(`${USUARIO}/editar`)).toBe(USUARIO)
+  })
+
+  it('«nuevo» no es un usuario', () => {
+    expect(rutaPadre('/OrumAdminLogin/usuarios/nuevo')).toBe('/OrumAdminLogin/usuarios')
+  })
+})

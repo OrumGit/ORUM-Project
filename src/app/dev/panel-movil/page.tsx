@@ -15,6 +15,8 @@ import { CortesiaForm } from '@/app/OrumAdminLogin/miembros/[id]/cortesia/_compo
 import { EditarMiembroForm } from '@/app/OrumAdminLogin/miembros/[id]/editar/_components/editar-miembro-form'
 import { RevocarForm } from '@/app/OrumAdminLogin/miembros/[id]/revocar/_components/revocar-form'
 import { ComprasMiembro } from '@/app/OrumAdminLogin/miembros/[id]/_components/compras-miembro'
+import { VentasEmpleado } from '@/app/OrumAdminLogin/usuarios/[id]/_components/ventas-empleado'
+import type { VentaEmpleado } from '@/lib/metricas/ventas-empleado'
 import type { CompraPanel } from '@/lib/miembros/compras-miembro-datos'
 import { MiembroForm } from '@/app/OrumAdminLogin/miembros/_components/miembro-form'
 import { CargarRangoForm } from '@/app/OrumAdminLogin/miembros/numeros/_components/cargar-rango-form'
@@ -65,6 +67,28 @@ const TIPOS = [
 const FOTO = '/icons/socio-512.png'
 
 /* Compras inventadas para «Compras en comercios» de la ficha del miembro. */
+/** Las ventas falsas de una empleada: 34 membresías en unas semanas, con renovaciones y cortesías. */
+const NOMBRES_SOCIOS = ['Luz Adriana Cubillos Hoyos', 'Pedro Cano', 'Laura Gil', 'Andrés Felipe Ruiz', 'María José Patiño']
+const VENTAS_EMPLEADO: VentaEmpleado[] = Array.from({ length: 34 }, (_, i) => {
+  const dia = 24 - Math.floor(i / 2)
+  const hora = 9 + ((i * 5) % 10)
+  const cortesia = i % 9 === 4
+  const anual = i % 3 !== 1
+  return {
+    id: 500 - i,
+    fechaHora: `2026-11-${String(dia).padStart(2, '0')}T${String(hora + 5).padStart(2, '0')}:${String((i * 13) % 60).padStart(2, '0')}:00Z`,
+    miembroId: 100 + i,
+    miembro: NOMBRES_SOCIOS[i % NOMBRES_SOCIOS.length],
+    numero: String(90011 + i).padStart(8, '0'),
+    plan: anual ? 'Anual' : 'Mensual',
+    tipo: i % 4 === 3 ? 'renovada' : 'nueva',
+    precio: cortesia ? 0 : anual ? 250000 : 30000,
+    esCortesia: cortesia,
+    inicio: `2026-11-${String(dia).padStart(2, '0')}`,
+    fin: anual ? `2027-11-${String(dia).padStart(2, '0')}` : `2026-12-${String(dia).padStart(2, '0')}`,
+  }
+})
+
 const COMPRAS: CompraPanel[] = Array.from({ length: 31 }, (_, i) => {
   const comercio = [
     { id: 1, nombre: 'Artesana 43', sede: 'Centro', promo: '10% en toda la carta' },
@@ -88,7 +112,16 @@ const COMPRAS: CompraPanel[] = Array.from({ length: 31 }, (_, i) => {
   }
 })
 
-const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPanel?: boolean }> = {
+const PIEZAS: Record<
+  string,
+  {
+    titulo: string
+    contenido: React.ReactNode
+    enPanel?: boolean
+    /** Una página entera (no una parte de una ficha): va a lo ancho, sin marco. */
+    pagina?: boolean
+  }
+> = {
   'comercio-datos': {
     titulo: 'Ficha del comercio · Datos',
     enPanel: true,
@@ -155,6 +188,34 @@ const PIEZAS: Record<string, { titulo: string; contenido: React.ReactNode; enPan
         rango={{ periodo: 'todo', desde: null, hasta: null }}
         compras={COMPRAS}
         pagina={1}
+      />
+    ),
+  },
+  'ventas-empleado': {
+    titulo: 'Usuario · Sus ventas',
+    pagina: true,
+    contenido: (
+      <VentasEmpleado
+        perfilId="0b6f1c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b"
+        nombre="Ana"
+        rango={{ periodo: 'mes', desde: '2026-11-01', hasta: '2026-11-25' }}
+        ventas={VENTAS_EMPLEADO}
+        pagina={1}
+        paginaDias={1}
+      />
+    ),
+  },
+  'ventas-empleado-vacio': {
+    titulo: 'Usuario · Sin ventas',
+    pagina: true,
+    contenido: (
+      <VentasEmpleado
+        perfilId="0b6f1c2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b"
+        nombre="Ana"
+        rango={{ periodo: 'hoy', desde: '2026-11-25', hasta: '2026-11-25' }}
+        ventas={[]}
+        pagina={1}
+        paginaDias={1}
       />
     ),
   },
@@ -393,7 +454,9 @@ export default async function VistaPreviaPanelMovil({
             return (
               <section key={clave} data-pieza={clave} style={{ marginBottom: 48 }}>
                 <PageHeader title={p.titulo} />
-                {p.enPanel ? (
+                {p.pagina ? (
+                  p.contenido
+                ) : p.enPanel ? (
                   <div className={ficha.datos}>
                     <section className={ficha.panel}>{p.contenido}</section>
                   </div>
