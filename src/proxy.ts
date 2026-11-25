@@ -6,6 +6,14 @@ import {
   rutaAccesoPanel,
   rutaPanelCanonica,
 } from '@/lib/auth/ruta-panel'
+import {
+  COOKIE_EQUIPO,
+  OPCIONES_COOKIE_EQUIPO,
+  entrarEnElSitio,
+  esMarcaValida,
+  esRutaDelPanel,
+  marcaDeEquipo,
+} from '@/lib/auth/marca-equipo'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -18,7 +26,31 @@ export async function proxy(request: NextRequest) {
   if (pathname === rutaAccesoPanel()) {
     const destino = request.nextUrl.clone()
     destino.pathname = RUTA_INTERNA_ACCESO
-    return await updateSession(request, destino)
+    const respuesta = await updateSession(request, destino)
+    // Quien llega a la puerta es del equipo: este dispositivo la recuerda.
+    const marca = await marcaDeEquipo()
+    if (request.cookies.get(COOKIE_EQUIPO)?.value !== marca) {
+      respuesta.cookies.set(COOKIE_EQUIPO, marca, OPCIONES_COOKIE_EQUIPO)
+    }
+    return respuesta
+  }
+
+  /*
+    LA APP INSTALADA DEL PANEL SIEMPRE ABRE (25/11/2026, `lib/auth/marca-equipo.ts`).
+    En el panel, sin sesión y en un dispositivo del equipo, el formulario de
+    entrada se enseña EN ESA MISMA DIRECCIÓN (reescrita por dentro): la app
+    no tiene barra de direcciones y la puerta secreta queda fuera de su
+    ámbito. Sin la marca, 404 como siempre.
+  */
+  if (esRutaDelPanel(pathname)) {
+    const marcaValida = await esMarcaValida(request.cookies.get(COOKIE_EQUIPO)?.value)
+    if (marcaValida) {
+      const entrada = request.nextUrl.clone()
+      entrada.pathname = RUTA_INTERNA_ACCESO
+      return await updateSession(request, (conSesion) =>
+        entrarEnElSitio({ pathname, conSesion, marcaValida }) ? entrada : undefined,
+      )
+    }
   }
   // `/orumadminlogin/...` escrita a mano: a la forma correcta, `/OrumAdminLogin/...`.
   const canonica = rutaPanelCanonica(pathname)

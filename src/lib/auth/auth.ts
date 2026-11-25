@@ -1,5 +1,8 @@
 import { cache } from 'react'
-import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { notFound, redirect } from 'next/navigation'
+import { rutaAccesoPanel } from '@/lib/auth/ruta-panel'
+import { COOKIE_EQUIPO, esMarcaValida } from '@/lib/auth/marca-equipo'
 import { createClient } from '@/lib/supabase/server'
 import type { RolCodigo } from '@/lib/supabase/database.types'
 
@@ -81,7 +84,15 @@ export async function requireRol(
 ): Promise<PerfilActual> {
   const perfil = await getPerfilActual()
 
-  if (!perfil || !perfil.activo) {
+  if (!perfil) {
+    // La sesión parecía válida al `proxy` pero Auth ya no la reconoce (se
+    // cerró en otro equipo). En un dispositivo del equipo, a la entrada.
+    const marca = (await cookies()).get(COOKIE_EQUIPO)?.value
+    if (await esMarcaValida(marca)) redirect(rutaAccesoPanel())
+    notFound()
+  }
+
+  if (!perfil.activo) {
     notFound()
   }
 

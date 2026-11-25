@@ -252,22 +252,32 @@
 }
 
 /* ==========================================================================
-   MÓVIL · la tabla se convierte en tarjetas
+   MÓVIL · la tabla se convierte en UNA LISTA AGRUPADA  (25/11/2026)
+   --------------------------------------------------------------------------
+   Antes cada fila era una tarjeta con su sombra, las etiquetas en renglones
+   holgados y las acciones en un pie propio: ~230 px por miembro, una lista
+   de 25 eran seis pantallas de desplazamiento y «todo flotaba» (encargo del
+   propietario: «el web está correcto pero el móvil no tiene un buen
+   diseño»). Ahora es lo que hace una app nativa:
+
+     · UNA superficie (el marco, con su sombra) y las filas dentro, separadas
+       por un filo fino. Ninguna fila lleva sombra (la regla de siempre).
+     · La fila es una rejilla: el nombre arriba a la izquierda y, si las
+       acciones son solo el menú «…» o un botón suelto, ARRIBA A LA DERECHA,
+       en la misma línea. Si llevan un formulario (Activar/Desactivar), al
+       pie de la fila, alineadas a la derecha y sin filo propio.
+     · Los demás datos en renglones apretados: etiqueta gris a la izquierda,
+       valor a la derecha, en letra de nota.
+   La tabla sigue siendo UNA tabla semántica en el DOM.
    ========================================================================== */
 
 @media (max-width: 767px) {
   .envoltorio {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    overflow: visible;
+    border-radius: var(--tabla-radio, var(--radius-lg));
   }
 
   .tabla,
-  .tbody,
-  .fila,
-  .td {
+  .tbody {
     display: block;
     width: auto;
   }
@@ -283,60 +293,51 @@
   }
 
   .fila {
-    position: relative;
-    margin-bottom: var(--space-3);
-    padding: var(--space-4);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
 
-    /*
-      En móvil cada fila ES una superficie independiente —una tarjeta— y no una
-      fila de lista, así que aquí sí le corresponde su escalón. Es la excepción
-      que confirma la regla de arriba: lo que flota es lo que el dedo puede
-      levantar, y en móvil esto es la unidad que se toca.
-    */
-    border: 1px solid var(--border-superficie);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    box-shadow: var(--shadow-card), var(--edge);
-
-    /* Con las acciones al pie la tarjeta es más alta. Una estimación corta
-       hace que la barra de scroll salte al entrar cada fila en pantalla. */
-    contain-intrinsic-size: auto 190px;
-  }
-
-  /* Repone el borde que la vista de escritorio quita a la última fila. Sigue
-     siendo transparente en reposo: lo que importa es que la caja mida igual
-     que la de sus hermanas para que alto contraste no descuadre la lista. */
-  .tbody .fila:last-child {
-    border-bottom: 1px solid var(--border-superficie);
+    /* Lo que mide una fila con tres datos: la barra de desplazamiento no
+       salta al entrar cada una en pantalla. */
+    contain-intrinsic-size: auto 132px;
   }
 
   .td {
+    grid-column: 1 / -1;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-1) 0;
-    text-align: left;
+    min-width: 0;
+    padding: 3px 0;
+    font-size: var(--t-footnote-size);
+    line-height: var(--t-footnote-leading);
+    text-align: right;
   }
 
   /* La cabecera de la columna se convierte en etiqueta de la fila. */
   .td::before {
     content: attr(data-label);
     flex-shrink: 0;
-
     font-size: var(--t-caption-size);
     letter-spacing: var(--t-caption-tracking);
     font-weight: 500;
     color: var(--text-3);
+    text-align: left;
   }
 
-  /* La columna principal encabeza la tarjeta, sin etiqueta. */
+  /* La columna principal encabeza la fila, sin etiqueta. */
   .td.principal {
+    grid-column: 1;
+    grid-row: 1;
     display: block;
     padding: 0 0 var(--space-2);
-    font-size: var(--t-title-3-size);
-    line-height: var(--t-title-3-leading);
-    letter-spacing: var(--t-title-3-tracking);
+    font-size: var(--t-callout-size);
+    line-height: var(--t-callout-leading);
+    text-align: left;
   }
 
   .td.principal::before {
@@ -348,48 +349,43 @@
   }
 
   /*
-    Las acciones van al PIE de la tarjeta, en flujo normal.
-
-    Antes se anclaban en absoluto arriba a la derecha, con 40px reservados en
-    el título. Eso valía cuando la acción era un icono de 36px, pero al añadir
-    botones con etiqueta ("Desactivar", "Poner a la venta") el bloque pasa de
-    140px y se montaba encima del nombre.
-
-    Al pie, además, quedan en la zona del pulgar y pueden crecer sin pelearse
-    con nada.
+    Las acciones, arriba a la derecha, en la línea del nombre. `relative` y
+    no `static`: el `z-index: 1` que las deja por encima de la capa del
+    enlace de fila solo vale en un elemento posicionado.
   */
   .acciones {
-    /*
-      `relative`, NO `static`: el `z-index: 1` que las mantiene por encima del
-      pseudo-elemento del enlace de fila solo surte efecto en un elemento
-      posicionado. Con `static` los botones quedarían debajo de la capa
-      invisible del enlace y no se podrían pulsar.
-    */
     position: relative;
-    inset: auto;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
     gap: var(--space-2);
-
     width: auto;
-    /* Se anula el suelo de escritorio: aquí forzaría el ancho de la tarjeta. */
     min-width: 0;
-
-    margin-top: var(--space-3);
-    padding: var(--space-3) 0 0;
-    border-top: 1px solid var(--border-subtle);
+    margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
+    padding: 0;
+    border: 0;
   }
 
   .acciones::before {
     display: none;
   }
 
+  /* Con un formulario (Activar/Desactivar…) no caben junto al nombre: al
+     pie de la fila, a la derecha. */
+  .acciones:has(> form) {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin: var(--space-2) 0 0;
+  }
+
   .accionesOcultables {
     opacity: 1;
   }
 
-  /* Columnas secundarias que no aportan en una tarjeta. */
+  /* Columnas secundarias que no aportan en una fila del teléfono. */
   .ocultarEnMovil {
     display: none;
   }

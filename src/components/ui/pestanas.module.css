@@ -70,6 +70,30 @@
   }
 }
 
+/* Con CINCO pestañas o más (los periodos: Todo · Hoy · Esta semana · Este
+   mes · Últimos 30 días · Este año) la rejilla de dos eran tres filas de
+   pestañas, ~150 px de control (25/11/2026). En el teléfono van en UNA fila
+   que se desliza de lado, como la tira de categorías del directorio; la
+   elegida se coloca a la vista sola (`pestanas.tsx`). */
+@media (max-width: 520px) {
+  .pista:has(.pestana ~ .pestana ~ .pestana ~ .pestana ~ .pestana) {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .pista:has(.pestana ~ .pestana ~ .pestana ~ .pestana ~ .pestana)::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pista:has(.pestana ~ .pestana ~ .pestana ~ .pestana ~ .pestana) .pestana {
+    flex: 0 0 auto;
+    padding-inline: var(--space-3);
+  }
+}
+
 /* En los teléfonos más estrechos, «Sin membresía 9» se pasaba 3 px de su
    mitad: menos aire alrededor del punto y del recuento. */
 @media (max-width: 360px) {

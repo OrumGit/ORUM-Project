@@ -291,7 +291,7 @@ export function ComprasMiembro({
             </Card>
           ) : (
             <div className={styles.cuerpo}>
-              <Grid min="190px">
+              <Grid min="140px">
                 <Card>
                   <Cifra
                     etiqueta="Compras"

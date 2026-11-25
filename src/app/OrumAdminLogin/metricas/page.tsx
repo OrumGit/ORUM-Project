@@ -281,7 +281,7 @@ export default async function MetricasPage({
       </p>
 
       <Stack gap={7}>
-        <Grid min="190px">
+        <Grid min="140px">
           <Card>
             <Cifra
               etiqueta="Miembros nuevos"

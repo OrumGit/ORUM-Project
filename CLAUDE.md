@@ -1507,7 +1507,15 @@ marca. Si alguien propone `cover` «para llenar el círculo», el porqué de que
 está escrito en `comercio-logo.module.css`.
 
 **`DataList` sustituye a toda tabla.** Es una tabla semántica que CSS convierte en
-tarjetas bajo 768px. Nunca scroll horizontal en móvil.
+una LISTA AGRUPADA bajo 768px. Nunca scroll horizontal en móvil. **Desde el
+25/11/2026 no es una tarjeta por fila** («el móvil no tiene un buen diseño»:
+cada miembro medía ~240 px y una página de 25 eran seis pantallas): el marco
+conserva su sombra y las filas van dentro, separadas por un filo fino y sin
+sombra propia (~145 px). La fila es una rejilla: el nombre arriba y, si las
+acciones son solo el menú «…» o un botón suelto, a su derecha en la misma
+línea; si llevan un formulario (Activar/Desactivar), al pie de la fila. Los
+demás datos, en renglones de nota apretados (etiqueta a la izquierda, valor a
+la derecha). No vuelvas a las tarjetas por fila.
 
 **`<Card principal>`** sube un escalón de sombra (de `--shadow-card` a
 `--shadow-raised`). Una por pantalla, y solo la que de verdad es el elemento
@@ -1605,7 +1613,27 @@ paleta:
   enseñaba la puerta—, las acciones del panel sin permiso mandan a `/`,
   `robots.txt` no la lista, `activar-cuenta` no enlaza la del equipo y el
   módulo NUNCA se importa desde un componente de cliente (comprobado: la
-  dirección no aparece en `.next/static`). Cerrar sesión vuelve a ella.
+  dirección no aparece en `.next/static`).
+- **La APP INSTALADA del panel siempre abre** (25/11/2026, reporte del
+  propietario: «se usa, se cierra y al volver a abrirla da error; instalada
+  debería funcionar siempre»). Abría en `/OrumAdminLogin` y, sin sesión, eso
+  es 404; dentro de la app no hay barra de direcciones para ir a la puerta.
+  Ahora el dispositivo que ya pasó por la puerta (o entró, o tenía la sesión
+  abierta: `RecordarDispositivo` en el layout) guarda una marca
+  (`lib/auth/marca-equipo.ts`: cookie `orum_equipo`, `httpOnly`, 400 días,
+  HMAC de la dirección de la puerta — si la puerta cambia, todas caducan). Con
+  la marca y sin sesión, el `proxy` REESCRIBE `/OrumAdminLogin/...` por dentro
+  a la página de entrada: el formulario sale en la misma dirección, dentro
+  del ámbito de la app, sin enseñar la puerta. Sin la marca, 404 como antes.
+  **Cerrar sesión vuelve a `/OrumAdminLogin`** (antes, a la puerta, que
+  queda fuera del ámbito de la app). Si Auth ya no reconoce una sesión que
+  el `proxy` dio por buena (se cerró en otro equipo), `requireRol` manda a
+  la puerta en un dispositivo marcado. ⚠️ En un equipo COMPARTIDO, tras
+  cerrar sesión cualquiera que abra `/OrumAdminLogin` ahí verá la entrada
+  (no el panel). **Sin probar en un teléfono real ni con sesión real**: se
+  comprobó en local que sin marca da 404, que la puerta pone la marca, que
+  con ella `/OrumAdminLogin/miembros` enseña la entrada y que el formulario
+  responde desde esa dirección.
   **No la escribas en un enlace, un correo, un documento ni este archivo.**
   Esconde la puerta; lo que la cierra sigue siendo la cuenta del equipo,
   Turnstile y el límite de intentos (`limitador`).
@@ -1787,10 +1815,23 @@ paleta:
   lado a lado (bajo 768 px `.buscador` es `position: static`; antes se
   anclaba al borde derecho del campo y se salía por la izquierda), con los
   nombres en dos líneas y un solo aviso cuando nada coincide; las `Pestanas` van en una rejilla de dos
-  columnas iguales bajo 520 px; y los filtros de las listas (plan, orden,
+  columnas iguales bajo 520 px —y con CINCO o más (los periodos), en UNA
+  fila que se desliza de lado, con la elegida puesta a la vista (25/11/2026:
+  en rejilla eran tres filas)—; y los filtros de las listas (plan, orden,
   categoría) esconden su prefijo a la vista para caber en una fila
   (`.prefijoFiltro` de `lista-panel.module.css`; el lector lo sigue
   diciendo).
+- **Repaso del teléfono, 25/11/2026** («el web está correcto pero el móvil
+  no tiene un buen diseño; rendimiento, facilidad de uso y diseño»): las
+  listas son una lista agrupada (ver `DataList`); la portada pone sus cuatro
+  cifras en 2 × 2, cada vencimiento en UNA fila (vencimiento bajo el nombre,
+  «Renovar» a la derecha) y crear en una fila de tres; las acciones de
+  `PageHeader` dejan la principal (la ÚLTIMA) arriba y a lo ancho y reparten
+  las demás en filas de dos (la ficha del miembro eran seis botones
+  apilados); y las rejillas de cuatro cifras compactas (compras del
+  miembro, ventas del comercio, Métricas) van de dos en dos, con el monto un
+  paso menor (`Grid min="140px"`, `cifra.module.css`). Nada cambia en el
+  ordenador.
 
 **La Herramienta de Comercios** (`src/app/comercios/(portal)/`, rediseño del
 04/10/2026) es la tercera cara de la fachada. El layout pone la cabecera del

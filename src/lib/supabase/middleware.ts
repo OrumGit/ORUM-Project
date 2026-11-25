@@ -8,12 +8,17 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 export async function updateSession(
   request: NextRequest,
-  /** Si llega, la respuesta REESCRIBE a esta dirección (la puerta del panel). */
-  reescribirA?: URL,
+  /**
+   * Si llega, la respuesta REESCRIBE a esta dirección (la puerta del panel).
+   * Puede ser una función: decide DESPUÉS de saber si hay sesión (la app
+   * instalada del panel, `lib/auth/marca-equipo.ts`).
+   */
+  reescribirA?: URL | ((conSesion: boolean) => URL | undefined),
 ) {
+  const fija = typeof reescribirA === 'function' ? undefined : reescribirA
   // La misma respuesta, sigas o reescribas: las cookies refrescadas viajan igual.
   const responder = () =>
-    reescribirA ? NextResponse.rewrite(reescribirA, { request }) : NextResponse.next({ request })
+    fija ? NextResponse.rewrite(fija, { request }) : NextResponse.next({ request })
   let supabaseResponse = responder()
 
   const supabase = createServerClient(
@@ -47,7 +52,17 @@ export async function updateSession(
   // firma con ES256, clave asimétrica). El acceso lo sigue decidiendo
   // `getPerfilActual` con `getUser()`, que sí consulta a Auth: una sesión
   // revocada o un usuario bloqueado no pasa por esto.
-  await supabase.auth.getClaims()
+  const { data } = await supabase.auth.getClaims()
+
+  if (typeof reescribirA === 'function') {
+    const destino = reescribirA(Boolean(data?.claims))
+    if (destino) {
+      // La misma respuesta, reescrita, con las cookies que ya llevaba.
+      const reescrita = NextResponse.rewrite(destino, { request })
+      supabaseResponse.cookies.getAll().forEach((cookie) => reescrita.cookies.set(cookie))
+      return reescrita
+    }
+  }
 
   return supabaseResponse
 }

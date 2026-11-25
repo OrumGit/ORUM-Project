@@ -113,6 +113,26 @@ export function Pestanas({ items, etiqueta }: { items: Pestana[]; etiqueta: stri
       pieza.style.setProperty('--w', `${caja.w}px`)
       pieza.style.setProperty('--h', `${caja.h}px`)
 
+      // En el teléfono, con muchas pestañas, la pista se desliza de lado:
+      // la elegida tiene que quedar a la vista (25/11/2026).
+      if (contenedor.scrollWidth > contenedor.clientWidth + 1) {
+        const margen = 16
+        const izquierda = caja.x - margen
+        const derecha = caja.x + caja.w + margen - contenedor.clientWidth
+        const destinoScroll =
+          contenedor.scrollLeft > izquierda
+            ? Math.max(0, izquierda)
+            : contenedor.scrollLeft < derecha
+              ? derecha
+              : null
+        if (destinoScroll !== null) {
+          contenedor.scrollTo({
+            left: destinoScroll,
+            behavior: animar && !prefiereMovimientoReducido() ? 'smooth' : 'auto',
+          })
+        }
+      }
+
       // De dónde sale: la de este montaje o, si es nuevo, la que dejó el anterior.
       const recordada = ULTIMA.get(etiqueta)
       const desde =

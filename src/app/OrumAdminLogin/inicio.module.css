@@ -590,3 +590,104 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   EN EL TELÉFONO  ·  25/11/2026
+   --------------------------------------------------------------------------
+   «El web está correcto pero el móvil no tiene un buen diseño». En una
+   columna de 343 px la portada eran cuatro cifras a lo ancho, una debajo de
+   otra (~520 px solo para cuatro números), filas de «Vencen» que partían el
+   vencimiento y «Renovar» a una segunda línea, y los botones de crear en
+   dos columnas con uno huérfano. Aquí:
+     · las cifras en una rejilla de 2 × 2, más compactas;
+     · cada vencimiento en UNA fila: el miembro con su vencimiento debajo
+       del nombre y «Renovar» a la derecha;
+     · crear, en una fila de tres botones (o uno solo para el empleado).
+   ========================================================================== */
+
+@container contenido (max-width: 639px) {
+  .inicio {
+    gap: var(--space-6);
+  }
+
+  .cifras {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .cifra {
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-3);
+  }
+
+  /* La cifra ceremonial baja un paso: en media columna, 52 px no caben. */
+  .cifra > :first-child > :nth-child(2) {
+    font-size: var(--t-title-1-size);
+    line-height: 1.1;
+  }
+
+  .tarjetaCabeza {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .vacio {
+    padding: var(--space-1) var(--space-4) var(--space-5);
+  }
+
+  .vence {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'miembro accion'
+      'chip accion';
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .venceMiembro {
+    grid-area: miembro;
+  }
+
+  /* Debajo del nombre, alineado con él (avatar `sm` de 28 px + el hueco). */
+  .chip {
+    grid-area: chip;
+    justify-self: start;
+    height: 22px;
+    margin-left: calc(28px + var(--space-3));
+    padding: 0 var(--space-2);
+  }
+
+  .vence > :last-child {
+    grid-area: accion;
+    align-self: center;
+  }
+
+  .crear {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .crearBoton {
+    min-height: 0;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-2);
+  }
+
+  .crearIcono {
+    width: 38px;
+    height: 38px;
+  }
+
+  .crearNota {
+    display: none;
+  }
+
+  .actividad {
+    padding: var(--space-1) var(--space-4) var(--space-4);
+  }
+
+  .alerta {
+    padding: var(--space-4);
+  }
+}

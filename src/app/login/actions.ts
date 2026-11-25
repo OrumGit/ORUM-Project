@@ -1,7 +1,9 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { rutaAccesoPanel } from '@/lib/auth/ruta-panel'
+import { RUTA_PANEL } from '@/lib/auth/ruta-panel'
+import { COOKIE_EQUIPO, OPCIONES_COOKIE_EQUIPO, marcaDeEquipo } from '@/lib/auth/marca-equipo'
 import { createClient } from '@/lib/supabase/server'
 import { getPerfilActual } from '@/lib/auth/auth'
 import { cupoDeLogin, ERROR_LIMITE_LOGIN, reiniciarLogin } from '@/lib/auth/limitador'
@@ -59,16 +61,40 @@ export async function iniciarSesion(
     return { error: 'Esta cuenta no tiene acceso al portal administrativo.' }
   }
 
+  await recordarDispositivo()
+
   // redirect() lanza internamente; debe ir fuera de cualquier try/catch.
-  redirect('/OrumAdminLogin')
+  redirect(RUTA_PANEL)
+}
+
+/** Este dispositivo es del equipo: sin sesión, el panel le enseña la entrada. */
+async function recordarDispositivo() {
+  const almacen = await cookies()
+  const marca = await marcaDeEquipo()
+  if (almacen.get(COOKIE_EQUIPO)?.value !== marca) {
+    almacen.set(COOKIE_EQUIPO, marca, OPCIONES_COOKIE_EQUIPO)
+  }
 }
 
 /**
- * Cierra la sesión actual y vuelve a la puerta del panel, en su dirección
- * secreta (`lib/auth/ruta-panel.ts`): quien la cierra es del equipo.
+ * Para las sesiones que ya estaban abiertas antes de la marca
+ * (`RecordarDispositivo`, en el layout del panel). Solo a cuentas del equipo.
+ */
+export async function recordarEsteDispositivo() {
+  const perfil = await getPerfilActual()
+  if (!perfil?.activo || (perfil.rolCodigo !== 'super_admin' && perfil.rolCodigo !== 'empleado')) return
+  await recordarDispositivo()
+}
+
+/**
+ * Cierra la sesión y vuelve al panel, que en este dispositivo (ya marcado
+ * como del equipo) enseña la entrada en su misma dirección. Antes volvía a
+ * la puerta secreta, que queda FUERA del ámbito de la app instalada: la app
+ * la abría en una hoja del navegador (25/11/2026).
  */
 export async function cerrarSesion() {
+  await recordarEsteDispositivo()
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect(rutaAccesoPanel())
+  redirect(RUTA_PANEL)
 }

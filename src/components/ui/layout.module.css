@@ -387,8 +387,34 @@
     min-width: 0;
   }
 
+  /*
+    En el teléfono (25/11/2026): antes cada acción iba en su fila, a lo
+    ancho —la ficha de un miembro eran seis botones apilados, ~340 px antes
+    del primer dato—. Ahora la ÚLTIMA acción (la principal: «Renovar
+    membresía», «Crear…») va arriba y a lo ancho, y las demás se reparten en
+    filas de dos o tres, con menos relleno lateral, ocupando cada fila.
+  */
   .pageAcciones {
-    flex-direction: column-reverse;
+    flex-direction: row;
     align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .pageAcciones > * {
+    flex: 1 1 auto;
+  }
+
+  .pageAcciones > :last-child {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .pageAcciones > :not(:last-child):is(a, button),
+  .pageAcciones > :not(:last-child) :is(a, button) {
+    padding-inline: var(--space-4);
+  }
+
+  .pageAcciones > * > :is(a, button):only-child {
+    width: 100%;
   }
 }

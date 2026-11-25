@@ -58,3 +58,18 @@
   font-size: var(--t-caption-size);
   color: var(--text-3);
 }
+
+/*
+  En el teléfono las rejillas de cifras compactas van de DOS en dos
+  (25/11/2026; antes una debajo de otra, a lo ancho: cuatro cifras eran una
+  pantalla entera). En media columna un monto como «$ 2.780.750» no cabe a
+  26 px: baja un paso, sin partirse.
+*/
+@container contenido (max-width: 480px) {
+  .sm .valor {
+    font-size: var(--t-title-3-size);
+    line-height: var(--t-title-3-leading);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}

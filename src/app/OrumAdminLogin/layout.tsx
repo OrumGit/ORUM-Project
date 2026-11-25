@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 import { requireRol } from '@/lib/auth/auth'
-import { cerrarSesion } from '@/app/login/actions'
+import { COOKIE_EQUIPO, esMarcaValida } from '@/lib/auth/marca-equipo'
+import { cerrarSesion, recordarEsteDispositivo } from '@/app/login/actions'
+import { RecordarDispositivo } from '@/components/shell/recordar-dispositivo'
 import { AppShell } from '@/components/shell/app-shell'
 import { RouteProgress } from '@/components/shell/route-progress'
 import { RUTA_MANIFIESTO } from '@/lib/shared/manifiesto-app'
@@ -47,6 +50,8 @@ export default async function AdminLayout({
   // filtra los destinos por rol, pero eso es presentación: la autorización
   // real la sigue haciendo `requireRol` aquí y en cada página y server action.
   const perfil = await requireRol('super_admin', 'empleado')
+  // ¿Este dispositivo ya recuerda la entrada? (la app instalada, 25/11/2026)
+  const recordado = await esMarcaValida((await cookies()).get(COOKIE_EQUIPO)?.value)
 
   return (
     <>
@@ -57,6 +62,7 @@ export default async function AdminLayout({
       <Suspense fallback={null}>
         <RouteProgress />
       </Suspense>
+      {recordado ? null : <RecordarDispositivo recordar={recordarEsteDispositivo} />}
 
       <AppShell
         user={{
