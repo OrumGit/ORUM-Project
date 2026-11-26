@@ -265,3 +265,11 @@ Esta sección sustituye al orden de trabajo de §13.7 y §14.2. Se escribió com
 ### 15.4 Nota sobre el traspaso del 19/11
 
 El apartado §14 se escribió antes de los commits `afb5a03` y `2a8fc7d`. Su tabla de «lo que falta» ya no describe la rama. Se conserva como histórico.
+
+### 15.5 Cambios del 25/11/2026 que afectan a esta lista
+
+- **§6 (renovación automática en el perfil) queda retirado.** No hay interruptor, ni «cambiar tarjeta», ni «cancelar renovación», porque el modelo es pago único.
+- **§5.3 (pago pendiente)** sigue vigente y ahora aplica a Efecty: el mensaje debe decir el medio y el plazo que muestra Mercado Pago.
+- **La banda de gracia (§4, estado «En gracia») se elimina.** La gracia ya no existe en la base ni en el código.
+- **Lo que falta de interfaz**: estados de vencimiento, mensaje de pago pendiente con Efecty, y la pantalla de renovación para socios agregados por el administrador (depende del backend, ver `2026-11-09-mercado-pago-backend.md` §14.2).
+- La pantalla de retorno ya concilia pagos únicos. Falta revisarla con un pago real en Preview.

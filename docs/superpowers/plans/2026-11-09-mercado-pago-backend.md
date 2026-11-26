@@ -411,3 +411,43 @@ Por tanto, retirar la suscripción no afecta a socios reales. La suscripción de
 3. **Base de los 3 días:** si Mercado Pago permite cambiarla, se usan 3 días. Como en el sandbox no se pudo cambiar (pruebas del 25/11), **se queda el vencimiento que pone Mercado Pago**. Se puede volver a probar en producción cuando las credenciales estén activadas.
 
 **Pendiente antes de la fase 0:** la URL pública de Preview para `notification_url`, y la protección de Vercel desactivada en Preview.
+
+## 14. Estado al cierre del 25/11/2026
+
+Esta sección es la vigente. Lo que dice §1 a §13 sobre suscripciones, renovación automática y gracia queda superado (ver §12 y §13).
+
+### 14.1 Hecho (commit `d72ed14` en `feat/mercadopago-backend`, subido al remoto)
+
+- **Modelo**: pago único con preferencia de Checkout Pro, por defecto. Medios disponibles: tarjeta, Efecty, PSE y Bancolombia, sin configuración adicional (comprobado en el sandbox).
+- **Alta** (`registro/pagar/actions.ts`): crea la preferencia con `notification_url`, `external_reference` = id del registro y `back_urls` a `/registro/pago/retorno`. Guarda `mp_preference_id` en el registro.
+- **Webhook** (tópico `payment`, `procesar.ts`): consulta el pago real. Solo activa si está aprobado, no es tardío (`date_approved` después de `date_of_expiration`) y el monto es igual al precio del plan. Pendientes, rechazos y cancelados quedan en la bitácora sin dar membresía.
+- **Base de datos** (todas aplicadas en la base compartida):
+  - `20261125120000_pago_unico`: `registros_pendientes.mp_preference_id`, `membresias.recordatorio_enviado_at`.
+  - `20261125130000_activar_pago_unico`: alta del socio si aún no lo es, pago y membresía encadenada, idempotente por `payment_id`.
+  - `20261125140000_membresia_con_acceso_sin_gracia`: el acceso ya no mira la gracia.
+  - `20261125150000_retirar_suscripciones`: eliminadas las 8 funciones de suscripción, `gracia_hasta` y `conciliada_at`.
+- **Pantalla de retorno**: concilia el pago más reciente del registro con las mismas reglas del webhook (`conciliar-pago-unico.ts`).
+- **Recordatorio de vencimiento**: cron diario `/api/cron/recordatorio-vencimiento` (14:00 UTC), correo 5 días antes de `fecha_fin`, una vez por membresía. Si el envío falla, se reintenta al día siguiente.
+- **Retirado del código**: cron `conciliar-suscripciones`, `conciliar.ts`, `resumen-conciliacion.ts`, `periodo.ts`, `suscripcion-pendiente.ts`, `renovacion.ts`, `gracia.ts` y todas sus lecturas. La revocación del admin ya no corta cobros.
+- **Retirado del repositorio**: los scripts de verificación del flujo viejo.
+- **Verificación**: `tsc` sin errores, ESLint sin avisos en `src`, 1119 pruebas pasan. Datos comprobados en la base: 58 membresías con acceso hoy, 0 funciones de suscripción, 1 fila de prueba en `suscripciones_mercadopago`.
+
+### 14.2 Pendiente
+
+1. **Prueba de punta a punta en Preview.** Requiere la URL pública del preview para `notification_url`. Sin ella, el pago se crea y se paga en el sandbox, pero el webhook no recibe el aviso y la membresía no se activa. Pasos: alta con tarjeta de prueba (debe activar), alta con Efecty (debe quedar pendiente), y revisar la bitácora.
+2. **Verificar el build del preview** de la rama `d72ed14`.
+3. **Pago en efectivo que llega después del vencimiento**: la regla está en el código, pero no se ha probado con un pago real aprobado después de su fecha.
+4. **Socios agregados por el administrador que renuevan**: conservan su número. Hoy no hay preferencia para ellos, porque la preferencia solo se crea desde el registro público. Falta el camino de renovación (una preferencia ligada al número de membresía).
+5. **Vencimiento del efectivo**: se usa el de Mercado Pago (unos 6 días). Confirmar con el cliente que es aceptable como base de los 3 días.
+6. **Producción**: las credenciales de ORUMMembresias no están activadas en el panel. Hasta entonces no hay cobros reales.
+7. **Limpieza restante** (decisión pendiente):
+   - La tabla `suscripciones_mercadopago` (1 fila de prueba) y `registros_pendientes.mp_preapproval_id`, que se conservan como histórico.
+   - Código puro que quedó sin uso, si lo hubiera.
+8. **Vercel Cron**: `limpiar-pendientes` nunca había corrido por falta de `CRON_SECRET` en Production. Antes de activarlo en producción hay que revisarlo, porque borra cuentas de la base compartida.
+9. **Commit de esta actualización de documentos**: pendiente de tu indicación.
+
+### 14.3 Riesgos conocidos
+
+- Preview y producción comparten base de datos. Cualquier prueba con `CRON_SECRET` en Preview puede enviar correos reales del recordatorio.
+- `live_mode: true` aparece en pagos del sandbox con credenciales APP_USR. Revisar en el panel antes de dar algo por bueno.
+- El recordatorio y el webhook de pago único no se han ejecutado con datos reales.
