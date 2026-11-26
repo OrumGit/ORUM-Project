@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getPerfilActual, type PerfilActual } from '@/lib/auth/auth'
 import { hoyISO } from '@/lib/shared/fecha'
 import { esMembresiaVigente } from './membresia-vigente'
-import { graciaPorMembresia } from './gracia'
 import type { EstadoMembresia, TipoMembresia } from '@/lib/supabase/database.types'
 
 export type MiembroActual = {
@@ -18,8 +17,6 @@ export type MiembroActual = {
     estado: EstadoMembresia
     fechaInicio: string
     fechaFin: string
-    /** Fecha hasta la que dura la gracia de un cobro rechazado, o null. */
-    graciaHasta: string | null
   }
 }
 
@@ -88,9 +85,8 @@ export async function requireMiembroVigente(): Promise<MiembroActual> {
 
   const ultima = membresias?.[0] ?? null
   const hoy = hoyISO()
-  const gracia = ultima ? (await graciaPorMembresia([ultima.id])).get(ultima.id) ?? null : null
 
-  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy, gracia)) {
+  if (!ultima || !esMembresiaVigente(ultima.estado, ultima.fecha_fin, hoy)) {
     redirect('/miembros/inactiva')
   }
 
@@ -106,7 +102,6 @@ export async function requireMiembroVigente(): Promise<MiembroActual> {
       estado: ultima.estado,
       fechaInicio: ultima.fecha_inicio,
       fechaFin: ultima.fecha_fin,
-      graciaHasta: gracia,
     },
   }
 }

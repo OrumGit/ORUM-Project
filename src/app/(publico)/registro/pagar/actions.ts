@@ -5,8 +5,8 @@ import { urlBaseSitio } from '@/lib/auth/activacion'
 import { claveCupo, huella, LIMITES } from '@/lib/auth/limite-uso'
 import { hayCupo } from '@/lib/auth/limitador'
 import { puedeAbrirPago, type MotivoNoPagar } from '@/lib/auth/registro-pago'
-import { cancelarSuscripcion, crearSuscripcion, ErrorMercadoPago } from '@/lib/mercadopago/cliente'
-import { construirCuerpoSuscripcion, correoPagador } from '@/lib/mercadopago/suscripcion-pendiente'
+import { crearPreferencia } from '@/lib/mercadopago/cliente'
+import { construirPreferenciaPago } from '@/lib/mercadopago/preferencia-pago'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -20,6 +20,45 @@ const MENSAJE_POR_MOTIVO: Record<MotivoNoPagar, string> = {
 }
 
 const ERROR_PAGO = 'No pudimos abrir el pago. Inténtalo de nuevo en un momento.'
+
+/**
+ * Pago único (Checkout Pro): crea la preferencia, guarda su id en el registro y
+ * manda a la persona a la página de Mercado Pago. Sin cancelar nada: una
+ * preferencia no cobra por sí sola, y el pago que llegue se casa con el
+ * registro por `external_reference`.
+ */
+async function abrirPagoUnico(
+  admin: ReturnType<typeof createAdminClient>,
+  registro: { id: number },
+  plan: { nombre: string; precio: number | string },
+): Promise<IniciarPagoState> {
+  const origen = new URL(urlBaseSitio()).origin
+  const cuerpo = construirPreferenciaPago({
+    titulo: `Membresía ORUM · ${plan.nombre}`,
+    monto: Number(plan.precio),
+    referenciaExterna: String(registro.id),
+    urlRetorno: `${origen}/registro/pago/retorno`,
+    urlNotificacion: `${origen}/api/mercadopago/webhook`,
+  })
+
+  let preferencia: { id: string; init_point: string }
+  try {
+    preferencia = await crearPreferencia(cuerpo)
+  } catch (error) {
+    console.error('[registro] no se pudo crear la preferencia de pago', error)
+    return { error: ERROR_PAGO }
+  }
+
+  const { data: guardado, error: errGuardar } = await admin
+    .from('registros_pendientes')
+    .update({ mp_preference_id: preferencia.id, updated_at: new Date().toISOString() })
+    .eq('id', registro.id)
+    .eq('estado', 'pendiente')
+    .select('id')
+  if (errGuardar || !guardado || guardado.length === 0) return { error: ERROR_PAGO }
+
+  redirect(preferencia.init_point)
+}
 
 /**
  * Abre el pago de la membresía: crea la suscripción en Mercado Pago y manda a
@@ -81,62 +120,5 @@ export async function iniciarPagoRegistro(
     if (errCambio) return { error: ERROR_PAGO }
   }
 
-  // Cancelar el intento anterior. Si falla, no se crea otro.
-  if (registro.mp_preapproval_id) {
-    try {
-      await cancelarSuscripcion(registro.mp_preapproval_id)
-    } catch (error) {
-      // Si Mercado Pago ya no la conoce, se sigue; cualquier otro fallo corta.
-      if (!(error instanceof ErrorMercadoPago && error.status === 404)) {
-        console.error('[registro] no se pudo cancelar el intento anterior', error)
-        return { error: ERROR_PAGO }
-      }
-    }
-  }
-
-  const origen = new URL(urlBaseSitio()).origin
-  const cuerpo = construirCuerpoSuscripcion({
-    razon: `Membresía ORUM · ${plan.nombre}`,
-    monto: Number(plan.precio),
-    duracionMeses: plan.duracion_meses,
-    emailPagador: correoPagador(registro.correo, process.env.MP_PAGADOR_PRUEBA),
-    urlRetorno: `${origen}/registro/pago/retorno`,
-    referenciaExterna: String(registro.id),
-  })
-
-  let suscripcion: { id: string; init_point: string }
-  try {
-    suscripcion = await crearSuscripcion(cuerpo)
-  } catch (error) {
-    console.error('[registro] no se pudo crear la suscripción', error)
-    return { error: ERROR_PAGO }
-  }
-
-  // Se guarda SOLO si nadie cambió el intento mientras tanto (dos pestañas, un
-  // doble clic). Sin esta condición, dos peticiones a la vez dejaban dos
-  // enlaces de pago abiertos y solo uno guardado: si la persona pagaba el otro,
-  // Mercado Pago cobraba —y seguía cobrando cada mes— y ORUM no sabía de quién
-  // era el cobro. La que pierde cancela el suyo.
-  let guardar = admin
-    .from('registros_pendientes')
-    .update({ mp_preapproval_id: suscripcion.id, updated_at: new Date().toISOString() })
-    .eq('id', registro.id)
-    .eq('estado', 'pendiente')
-  guardar = registro.mp_preapproval_id
-    ? guardar.eq('mp_preapproval_id', registro.mp_preapproval_id)
-    : guardar.is('mp_preapproval_id', null)
-  const { data: guardado, error: errGuardar } = await guardar.select('id')
-  if (errGuardar || !guardado || guardado.length === 0) {
-    // Sin guardar el id no se puede casar la notificación: se cancela lo creado.
-    await cancelarSuscripcion(suscripcion.id).catch((error) =>
-      console.error('[registro] no se pudo cancelar el intento sobrante', suscripcion.id, error),
-    )
-    return {
-      error: errGuardar
-        ? ERROR_PAGO
-        : 'Ya estamos abriendo tu pago en otra ventana. Si la cerraste, inténtalo de nuevo.',
-    }
-  }
-
-  redirect(suscripcion.init_point)
+  return abrirPagoUnico(admin, { id: registro.id }, plan)
 }

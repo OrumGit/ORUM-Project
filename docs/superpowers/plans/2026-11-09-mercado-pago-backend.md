@@ -10,7 +10,7 @@
 Tomadas con el propietario durante la conversación del 09/11/2026:
 
 1. El socio crea su cuenta desde la sección de precios; el plan elegido viaja anotado.
-2. El pago es una **suscripción de Mercado Pago con renovación automática**, activada por defecto. El socio puede desactivarla.
+2. ~~El pago es una **suscripción de Mercado Pago con renovación automática**, activada por defecto. El socio puede desactivarla.~~ **SUPERSEDIDO el 25/11/2026 por §12: solo pagos únicos, sin renovación automática.**
 3. La membresía **nace solo cuando Mercado Pago confirma el cobro**, nunca al crear la cuenta.
 4. Correos: pago confirmado, renovación cobrada y cobro rechazado.
 5. Cobro rechazado: **3 días de gracia** contados desde el día del fallo. Vencida la gracia, el acceso se desactiva.
@@ -297,3 +297,117 @@ Dependencias antes de programar:
 - **Caducidad del enlace de confirmación** (plazo de Supabase) frente a la limpieza de 10 días de §10.
 
 **Corrección (11/11/2026):** el correo de confirmación **no depende** de activar el correo de Supabase ni de su SMTP. La app ya envía sus correos de activación y de recuperación por Gmail (`src/lib/correo/correo.ts`, con `GMAIL_SMTP_*`, presentes en `.env.local`): Supabase genera el enlace con `generateLink` y la app lo manda. La confirmación del registro sigue ese mismo camino, con `generateLink({ type: 'signup', … })`. Pendiente de verificar en pruebas que `signup` crea el usuario sin confirmar y devuelve el enlace sin depender del interruptor del panel.
+
+## 12. Cambio de modelo: solo pagos únicos (25/11/2026)
+
+**Decisión del cliente, tras la conversación del 25/11/2026:** el socio puede pagar con cualquier medio que ofrezca Mercado Pago (tarjeta, efectivo, PSE u otros). No se exige cuenta de Mercado Pago ni tarjeta guardada. **Se quita la renovación automática.** Cada membresía se paga a mano antes de vencer.
+
+Motivo técnico (**no verificado; revisarlo antes de implementar**): se supuso que una suscripción (`preapproval`) cobra solo con tarjeta o cuenta de Mercado Pago, y que por eso no admite efectivo ni PSE. La lectura de la página de suscripciones de Colombia (25/11/2026, por resumen de un agente, no completa) **no lo confirma**: lista «Dinero en cuenta, tarjeta de crédito o débito, PSE, Efecty» como medios de pago. Hasta confirmarlo con la documentación completa o con el MCP de Mercado Pago, la decisión «solo pagos únicos» se mantiene por indicación del cliente, pero su motivo técnico queda en duda.
+
+### 12.1 Lo que cambia respecto a §1 y §4
+
+- **§1.2 (renovación automática): superseded.** Desaparece el interruptor de renovación del perfil.
+- **§1.5 (gracia de 3 días tras un cobro rechazado): superseded.** Con pagos únicos no hay un cobro que falle en una fecha futura. La membresía vence en `fecha_fin` y el socio paga de nuevo. La gracia opción B (`20261118130000_gracia_acceso.sql`) queda sin uso; decidir si se retira.
+- **§1.6 (cancelar la renovación): superseded.** Ya no hay nada que cancelar. El acceso dura hasta `fecha_fin`, igual que hoy.
+- **§1.4 (correos):** se mantienen el de pago confirmado y el de rechazo. Se **añade** un recordatorio antes del vencimiento, porque ahora el socio tiene que pagar a mano. Plazo a decidir.
+- **§1.3, §1.7 y el alta:** se mantienen.
+
+### 12.2 Lo que habría que construir (sin empezar)
+
+1. **Creación del pago.** Sustituir la suscripción por una preferencia de pago único (Checkout Pro, `POST /checkout/preferences`), con los medios que MP ofrezca para Colombia. `cliente.ts` y `suscripcion-pendiente.ts` cambian. **No verificado:** si la preferencia devuelve Efecty y PSE en Colombia sin configuración extra.
+2. **Webhook.** El tópico principal pasa a ser `payment`, con consulta a `/v1/payments/{id}`. Los tópicos de suscripción dejan de procesarse para los pagos nuevos.
+3. **Estados del pago.** `approved` activa la membresía. `pending` deja al socio en «confirmando» y no activa nada. `rejected`, `cancelled` y el vencimiento de un pago en efectivo no activan nada y dejan el registro reintentable. `estados.ts` ya tiene casi todo.
+4. **Base de datos.** `pagos_mercadopago.suscripcion_id` apunta a `suscripciones_mercadopago`. Un pago único no tiene suscripción. **Requiere migración** (quizá una referencia nueva o hacer el campo opcional). Por ahora solo es una hipótesis.
+5. **Activación.** `activar_membresia_desde_cobro` hoy sale de una suscripción. Tendrá que leer el plan y el miembro del propio pago. **Requiere migración** y revisión de la cadena de membresías (§encadenada de 23/11).
+6. **Retirar** la renovación automática, la conciliación horaria de suscripciones (`conciliar-suscripciones`) y el cron de gracia. Revisar qué pasa con la suscripción de prueba (registro 12, membresía 71) y con las suscripciones autorizadas en el sandbox.
+7. **Recordatorio de vencimiento** por correo, con su plazo.
+8. **Socios actuales con suscripción activa:** migración de datos. Decidir si siguen con su suscripción hasta vencer, o si se cancelan y pagan a mano.
+
+### 12.3 Preguntas abiertas antes de implementar
+
+- ¿Cuánto espera un pago en efectivo antes de cancelarse? (Lo fija Mercado Pago en el medio; ORUM decide qué pasa al vencer.)
+- ¿Cuántos días antes se manda el recordatorio de vencimiento?
+- ¿Se retira ya `gracia_acceso`, o se deja como estaba?
+- ¿Qué pasa con los socios que hoy tienen suscripción activa?
+
+### 12.4 Estado
+
+**Decisión confirmada por el propietario el 25/11/2026: solo pagos únicos, con cualquier medio.** Verificado con la documentación oficial de Colombia (consultada por el MCP de Mercado Pago el 25/11/2026):
+
+- La página de suscripciones para vendedores de Colombia dice que los clientes pueden pagar con «tarjeta de crédito y débito o dinero en Mercado Pago» y que no necesitan cuenta de Mercado Pago. No lista efectivo ni PSE. Por eso las suscripciones quedan descartadas (§12.1). La lista de «PSE, Efecty» de un resumen anterior venía de una página general, no de la de Colombia.
+- Checkout Pro muestra por defecto todos los medios disponibles de Mercado Pago, con Efecty y PSE incluidos, sin configuración adicional.
+- Vencimiento del pago en efectivo: se fija con `date_of_expiration` en la preferencia. La documentación recomienda al menos **3 días** entre la creación y el vencimiento, porque el banco tarda hasta 2 horas hábiles en compensar. Si el pago llega después del vencimiento, Mercado Pago **devuelve el dinero a la cuenta del pagador**. ORUM no activa la membresía en ese caso.
+
+**Pendiente antes de programar:**
+
+1. **Aplicación de Mercado Pago a usar.** La única del MCP es `ORUMMembresias` (producto «Suscripciones», no homologada, sin notificaciones recibidas). La documentación dice que las opciones «pueden variar según el producto y el tipo de aplicación» y no aclara si una aplicación de suscripciones puede usar preferencias de Checkout Pro. Hay dos caminos: probar primero con esta aplicación en el sandbox, o crear una nueva con producto Checkout Pro. Decidir antes de crear nada.
+2. Plan técnico, con las migraciones de `pagos_mercadopago` y de `activar_membresia_desde_cobro`, y aprobación antes de aplicarlas en la base compartida.
+3. Cómo tratar un pago en efectivo que llega después del vencimiento (si se devuelve y el socio pierde ese pago, o si ORUM lo acepta como pago tardío).
+
+## 13. Respuestas del propietario y plan de implementación (25/11/2026)
+
+### 13.1 Respuestas a §12.3
+
+1. **Vencimiento del pago en efectivo.** Se quiere 3 días. En el sandbox, Mercado Pago fija el vencimiento de Efecty en unos 6 días (25/11 → 01/12), y no se pudo cambiar desde la preferencia (`date_of_expiration` en raíz o en el item, pruebas del 25/11). **Decisión propuesta:** usar el vencimiento de Mercado Pago tal cual, que ya supera los 3 días, y guardar en ORUM el `date_of_expiration` de cada pago. Pendiente de confirmar con el propietario que esa base (la de Mercado Pago, no la de ORUM) es aceptable.
+2. **Recordatorio.** Por correo, **5 días antes del vencimiento** de la membresía.
+3. **`gracia_acceso`.** Se retira.
+4. **Socios actuales agregados por el administrador.** Conservan su número de membresía. Renuevan con el nuevo flujo de pago único. No se migran como suscripciones.
+
+### 13.2 Estado de los datos (consultado el 25/11/2026)
+
+- `suscripciones_mercadopago`: **1 fila** (la de prueba del registro 12). No hay suscripciones reales que migrar.
+- `pagos_mercadopago`: **1 fila** (la de prueba).
+- `miembros`: 58. `membresias`: 78. La mayoría fue agregada por el administrador.
+
+Por tanto, retirar la suscripción no afecta a socios reales. La suscripción de prueba se cancela en el sandbox al final.
+
+### 13.3 Principio de no romper lo que ya funciona
+
+- **Migraciones aditivas.** No se borran columnas, tablas ni funciones existentes. Se añaden: `pagos_mercadopago.suscripcion_id` pasa a admitir nulo, y se añaden las referencias que falten (registro, preferencia). `activar_membresia_desde_cobro` se deja como está; la función nueva se llama distinto (`activar_membresia_desde_pago`) hasta que la anterior no tenga uso.
+- **Retirar código al final, no al principio.** Primero se añade el flujo nuevo, luego se apaga el viejo, y por último se borra. Así en ningún momento falta un camino.
+- **Un único punto de activación.** Solo `approved` activa membresía, y solo desde el webhook o desde la conciliación. Idempotente por `payment_id`.
+- **Pruebas antes de cada fase** (`tsc`, `eslint`, `vitest`, y el script SQL con `rollback`).
+
+### 13.4 Fases
+
+| Fase | Qué | Riesgo | Salida |
+|---|---|---|---|
+| **0. Prerrequisitos** | Decidir la aplicación de Mercado Pago. Tener la URL pública de Preview y la protección de Vercel desactivada. Confirmar la base de los 3 días (§13.1). | Bajo | Decisiones escritas |
+| **1. Base de datos aditiva** | Migración: `suscripcion_id` nulo, referencias de registro y preferencia, función `activar_membresia_desde_pago`, columna `recordatorio_enviado_at` en `membresias`. Verificación SQL con `rollback` | Medio: base compartida | Script de verificación pasa |
+| **2. Crear pago único** | `cliente.ts`: crear preferencia con `notification_url`, `external_reference` = id del registro. Los actions de registro llaman a esta función detrás de la variable `MP_MODO_PAGO` (`preferencia` o `suscripcion`), que queda en `suscripcion` por defecto hasta probar | Bajo con el interruptor | Preferencia creada en Preview con el flujo activado |
+| **3. Webhook de pagos** | Tópico `payment`, consulta a `/v1/payments/{id}`, mapeo de estados, activación con `activar_membresia_desde_pago`. Los tópicos de suscripción siguen aceptándose para la suscripción de prueba | Medio: afecta al webhook | Pago aprobado con tarjeta de prueba activa membresía; Efecty queda pendiente sin activar |
+| **4. Recordatorio** | Cron diario que busca membresías que vencen en 5 días y envía el correo una sola vez (`recordatorio_enviado_at`) | Bajo | Correo recibido en prueba |
+| **5. Retirada** | Quitar: sección de renovación automática del perfil, `conciliar-suscripciones` y su entrada en `vercel.json`, `gracia.ts` y su uso. Cambiar `MP_MODO_PAGO` a `preferencia` por defecto | Medio: hay que confirmar que nada depende de la gracia | Tests en verde sin referencias |
+| **6. Pantallas** | Estados de pago pendiente y vencimiento, según `2026-11-09-mercado-pago-frontend.md` (§6 queda retirado) | Bajo | Vistas previas en `/dev/` |
+| **7. Verificación** | Recorrer en Preview: tarjeta aprobada, Efecty pendiente, rechazo, recordatorio. Luego, producción solo cuando las credenciales estén activadas | Bajo | Checklist firmado |
+
+### 13.5 Pruebas que sí se pueden hacer en el sandbox
+
+- **Pago aprobado:** con tarjetas de prueba de Mercado Pago (la documentación de Colombia las lista).
+- **Pago pendiente:** con Efecty, como hoy.
+- **Pago pendiente que se confirma después:** no se pudo simular desde la API. Se prueba solo con el aviso real del webhook, si Mercado Pago lo envía en el sandbox. Sin prueba, queda como riesgo.
+
+### 13.6 Riesgos abiertos
+
+- La URL pública de Preview para `notification_url` todavía no la tenemos (§12.2).
+- `live_mode: true` en pagos de sandbox con credenciales APP_USR. Hay que comprobar en el panel que no sea producción antes de dar nada por bueno.
+- Un pago en efectivo que llega después del vencimiento. Mercado Pago lo devuelve al pagador, pero la notificación puede llegar igual. Se debe ignorar sin activar.
+- La credencial de producción de ORUMMembresias no está activada. No se puede probar producción hasta completar la configuración en el panel.
+
+### 13.7 Decisiones que faltan
+
+1. Aplicación de Mercado Pago: `ORUMMembresias` o una nueva con producto Checkout Pro.
+2. Qué hacer con un pago en efectivo que llega después del vencimiento: ignorarlo y devolverlo, o aceptarlo como pago tardío y extender la membresía.
+3. Confirmar que el vencimiento de 6 días de Mercado Pago es aceptable como «base de 3 días».
+
+### 13.8 Estado
+
+**Plan escrito, sin código.** Se empieza por la fase 0 cuando el propietario responda los tres puntos de §13.7.
+
+### 13.9 Decisiones tomadas por el propietario (25/11/2026)
+
+1. **Aplicación:** se usa `ORUMMembresias` para Checkout Pro. Ya se comprobó en el sandbox que crea preferencias y ofrece Efecty, PSE, Bancolombia y tarjetas. No se crea una aplicación nueva.
+2. **Pago en efectivo tardío:** se acepta y **extiende** la membresía mientras el pago llegue dentro del vencimiento de Mercado Pago. Si llega después de ese vencimiento, Mercado Pago lo devuelve y el socio pierde el acceso, como cualquier vencimiento. Esto pide que la fase 3 compare la fecha del pago con `date_of_expiration`, y no solo con el estado.
+3. **Base de los 3 días:** si Mercado Pago permite cambiarla, se usan 3 días. Como en el sandbox no se pudo cambiar (pruebas del 25/11), **se queda el vencimiento que pone Mercado Pago**. Se puede volver a probar en producción cuando las credenciales estén activadas.
+
+**Pendiente antes de la fase 0:** la URL pública de Preview para `notification_url`, y la protección de Vercel desactivada en Preview.

@@ -55,8 +55,7 @@ export type MotivoInactiva = 'vencida' | 'cancelada' | 'suspendida'
  * motivo es un dato secundario, no otro color de badge.
  */
 export type EstadoDerivado =
-  | { activa: true; diasRestantes: number; enGracia?: false }
-  | { activa: true; diasRestantes: number; enGracia: true; graciaHasta: string }
+  | { activa: true; diasRestantes: number }
   | { activa: false; motivo: MotivoInactiva }
 
 /** Días completos entre dos fechas 'YYYY-MM-DD' (negativo si `hasta` ya pasó). */
@@ -88,10 +87,9 @@ export function derivarEstadoMembresia(
   estado: EstadoMembresia,
   fechaFin: string,
   hoy: string,
-  graciaHasta: string | null = null,
 ): EstadoDerivado {
   // Las decisiones administrativas mandan sobre cualquier fecha: una membresía
-  // cancelada no revive porque le queden días pagados ni porque haya gracia.
+  // cancelada no revive porque le queden días pagados ni porque le queden días pagados.
   if (estado === 'cancelada' || estado === 'suspendida') {
     return { activa: false, motivo: estado }
   }
@@ -101,12 +99,6 @@ export function derivarEstadoMembresia(
   // Vence HOY todavía cuenta como activa: el miembro pagó por el día completo.
   if (estado === 'activa' && diasRestantes >= 0) {
     return { activa: true, diasRestantes }
-  }
-
-  // Cobro rechazado: el acceso sigue hasta `gracia_hasta` (inclusive). Misma
-  // regla que `membresia_con_acceso` en la base.
-  if (estado === 'activa' && graciaHasta !== null && graciaHasta >= hoy) {
-    return { activa: true, diasRestantes, enGracia: true, graciaHasta }
   }
 
   return { activa: false, motivo: 'vencida' }

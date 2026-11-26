@@ -1,7 +1,7 @@
 # Mercado Pago · Plan de frontend
 
 - **Fecha:** 2026-11-09
-- **Estado:** Parcial desde el 18/11/2026. Lo mínimo para pagar de punta a punta ya funciona en Preview; el resto de la interfaz (§13) sigue pendiente. Ver «Estado al 18/11/2026» al final de §13.
+- **Estado:** Parcial al 25/11/2026. El overlay de registro, el sondeo del retorno y «Completa tu membresía» ya existen en el código. Lo que falta, y la verificación en Preview, está en §15. Las secciones §13 y §14 son el histórico del traspaso del 19/11: su orden de trabajo ya no es el vigente.
 - **Par:** [`2026-11-09-mercado-pago-backend.md`](2026-11-09-mercado-pago-backend.md)
 
 ## 1. Decisiones que este plan ya asume
@@ -233,3 +233,35 @@ Los puntos 1 a 3 pueden avanzar sin esperar a ninguna prueba del sandbox.
 
 - Estado y decisiones: `2026-11-09-mercado-pago-backend.md`, sección «Estado al 19/11/2026».
 - Pruebas pendientes: `2026-11-18-mercado-pago-pruebas.md`.
+
+## 15. Estado al 25/11/2026
+
+Esta sección sustituye al orden de trabajo de §13.7 y §14.2. Se escribió comprobando el código de la rama `feat/mercadopago-backend` (commits hasta `2a8fc7d`), no solo los commits de traspaso.
+
+### 15.1 Ya existe en el código
+
+| Punto del traspaso | Dónde está | Commit |
+|---|---|---|
+| §13.1 Overlay de registro desde precios | `src/app/(publico)/@modal/(.)registro/page.tsx` intercepta `/registro?plan=N`. El enlace de cada plan está en `(publico)/_components/membresias-publicas.tsx` | `afb5a03`, `2a8fc7d` |
+| §5.2 y §13.3 Retorno con sondeo | `registro/pago/_components/estado-pago.tsx`: consulta cada 3 s, tope de un minuto, «Revisar de nuevo», vistas separadas para rechazado y pendiente | `afb5a03` |
+| §13.2 «Completa tu membresía» | `src/app/(publico)/registro/completar/page.tsx`, con la lista de planes y el botón de pagar | `afb5a03` |
+| Interfaz de registro, código y pago en una ventana | `registro/_components/ventana-registro.tsx`, `codigo-actions.ts`, `pagar/actions.ts` | `5cfa2ee`, `afb5a03`, `2a8fc7d` |
+
+### 15.2 Sigue pendiente
+
+1. **Mensaje de `cedula_ya_es_socio` (§13.5 y §14.4).** No hay ningún código que emita ni maneje ese caso en `src`. El texto lo decide el propietario.
+2. **Verificación en Preview (§10).** Ningún punto de §15.1 se ha visto con sesión real en esta rama. Hay que recorrer el overlay, el sondeo y los estados de rechazo y pendiente con el comprador de prueba.
+3. **Renovaciones en el perfil (§6).** Depende del webhook del backend (`2026-11-09-mercado-pago-backend.md`, §10).
+4. **Accesibilidad y móvil (§13.7).** Pasar `accessibility-auditor` y `mobile-ux-specialist` sobre las pantallas de §15.1.
+5. **Vistas previas en `/dev/` (§13.6).** Existe `/dev/pago`. No se ha comprobado si cubre los estados de rechazo y pendiente.
+
+### 15.3 Orden sugerido a partir de hoy
+
+1. Verificar §15.1 en Preview y registrar qué falla.
+2. Decidir el texto de `cedula_ya_es_socio` con el propietario, e implementarlo.
+3. Accesibilidad y móvil de las pantallas de §15.1.
+4. Renovaciones en el perfil, cuando el webhook esté probado.
+
+### 15.4 Nota sobre el traspaso del 19/11
+
+El apartado §14 se escribió antes de los commits `afb5a03` y `2a8fc7d`. Su tabla de «lo que falta» ya no describe la rama. Se conserva como histórico.

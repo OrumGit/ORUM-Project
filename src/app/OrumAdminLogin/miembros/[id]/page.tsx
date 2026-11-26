@@ -3,7 +3,6 @@ import { Ban, Camera, CreditCard, Gift, Hash, Pencil, Trash2 } from 'lucide-reac
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { derivarEstadoMembresia, estadoEnHistorial, type EstadoMembresia } from '@/lib/miembros/membresias'
-import { graciasVigentes } from '@/lib/miembros/gracia'
 import { resumirEventoBitacora } from '@/lib/bitacora/bitacora'
 import { ETIQUETA_MOTIVO_REVOCACION, esMotivoRevocacion } from '@/lib/miembros/revocacion'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -220,10 +219,7 @@ export default async function FichaMiembroPage({
   const conSucesoraActiva = new Set(
     (membresias ?? []).filter((m) => m.estado === 'activa').map((m) => m.membresia_anterior_id),
   )
-  // Cobro de Mercado Pago rechazado: la gracia sigue dando acceso hasta su fecha.
-  const gracias = await graciasVigentes(hoy)
   const historial = (membresias ?? []).map((m) => {
-    const gracia = gracias.get(m.id) ?? null
     const enHistorial = estadoEnHistorial(
       { estado: m.estado as EstadoMembresia, fecha_inicio: m.fecha_inicio, fecha_fin: m.fecha_fin },
       hoy,
@@ -236,9 +232,7 @@ export default async function FichaMiembroPage({
       // «Empieza el …».
       derivado: enHistorial.futura
         ? derivarEstadoMembresia('activa', m.fecha_fin, hoy)
-        : gracia
-          ? derivarEstadoMembresia(m.estado as EstadoMembresia, m.fecha_fin, hoy, gracia)
-          : enHistorial.estado,
+        : enHistorial.estado,
       empieza: enHistorial.futura ? enHistorial.desde : null,
       plan: nombrePlan.get(m.plan_id) ?? `Plan #${m.plan_id}`,
     }

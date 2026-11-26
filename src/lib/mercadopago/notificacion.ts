@@ -55,71 +55,10 @@ export type PagoMP = {
   transaction_amount?: number | null
   currency_id?: string | null
   metadata?: Record<string, unknown> | null
-}
-
-export type CobroRecurrenteMP = {
-  id: number | string
-  preapproval_id?: string | null
-  status?: string | null
-  payment?: { id?: number | string | null } | null
-}
-
-export type SuscripcionMP = {
-  id: string
-  status?: string | null
-}
-
-export type ArgsRegistrarCobro = {
-  p_payment_id: string
-  p_preapproval_id: string
-  p_monto: number
-  p_moneda: string
-  p_estado_mp: string
-  p_status_detail: string | null
-}
-
-/**
- * Convierte un pago de la API en los argumentos de `registrar_cobro_mp`.
- * Devuelve null si al pago le falta lo mínimo para registrarlo (estado o monto
- * válido): en ese caso el webhook lo deja como error en la bitácora.
- */
-export function argsRegistrarCobro(
-  pago: PagoMP,
-  preapprovalId: string,
-): ArgsRegistrarCobro | null {
-  if (!preapprovalId || !pago.status) return null
-  const monto = pago.transaction_amount
-  if (typeof monto !== 'number' || !Number.isFinite(monto) || monto < 0) return null
-
-  return {
-    p_payment_id: String(pago.id),
-    p_preapproval_id: preapprovalId,
-    p_monto: monto,
-    p_moneda: pago.currency_id ?? 'COP',
-    p_estado_mp: pago.status,
-    p_status_detail: pago.status_detail ?? null,
-  }
-}
-
-/**
- * ¿El cobro aprobado es por lo que vale el plan? Segunda barrera (23/11/2026):
- * el monto lo fija ORUM al crear la suscripción, pero un cobro que no cuadre
- * —otra moneda, menos dinero— no debe dar membresía sin que alguien lo mire.
- * Se tolera medio peso por redondeo. Más dinero del precio sí cuadra.
- */
-export function montoCuadra(pago: PagoMP, precioPlan: number): boolean {
-  if ((pago.currency_id ?? 'COP') !== 'COP') return false
-  const monto = pago.transaction_amount
-  if (typeof monto !== 'number' || !Number.isFinite(monto)) return false
-  return monto >= precioPlan - 0.5
-}
-
-/**
- * Id de la suscripción de un pago, si Mercado Pago lo deja en los metadatos.
- * PENDIENTE DE VERIFICAR con un pago real de suscripción: no está confirmado
- * que el pago de una cuota traiga `metadata.preapproval_id`.
- */
-export function preapprovalDePago(pago: PagoMP): string | null {
-  const valor = pago.metadata?.preapproval_id
-  return typeof valor === 'string' && valor.length > 0 ? valor : null
+  /** Pago único: id del registro público (`preferencia-pago.ts`). */
+  external_reference?: string | null
+  /** Pago único: fecha límite del pago en efectivo, con zona horaria. */
+  date_of_expiration?: string | null
+  /** Pago único: cuándo se aprobó. Sirve para detectar un pago tardío. */
+  date_approved?: string | null
 }

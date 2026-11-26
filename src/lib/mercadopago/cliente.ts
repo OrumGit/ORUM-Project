@@ -6,8 +6,8 @@
 
 import 'server-only'
 
-import type { CobroRecurrenteMP, PagoMP, SuscripcionMP } from './notificacion'
-import type { CuerpoSuscripcion } from './suscripcion-pendiente'
+import type { PagoMP } from './notificacion'
+import type { CuerpoPreferencia } from './preferencia-pago'
 
 const BASE = 'https://api.mercadopago.com'
 const TIEMPO_MAXIMO_MS = 10_000
@@ -48,23 +48,6 @@ export function obtenerPago(id: string): Promise<PagoMP> {
   return leer<PagoMP>(`/v1/payments/${encodeURIComponent(id)}`)
 }
 
-/** Cuota de una suscripción (`/authorized_payments/{id}`). */
-export function obtenerCobroRecurrente(id: string): Promise<CobroRecurrenteMP> {
-  return leer<CobroRecurrenteMP>(`/authorized_payments/${encodeURIComponent(id)}`)
-}
-
-/** Suscripción (`/preapproval/{id}`). */
-export function obtenerSuscripcion(id: string): Promise<SuscripcionMP> {
-  return leer<SuscripcionMP>(`/preapproval/${encodeURIComponent(id)}`)
-}
-
-/** Cuotas (`authorized_payments`) de una suscripción. Para conciliar lo que el webhook no entregó. */
-export function listarCuotasSuscripcion(
-  preapprovalId: string,
-): Promise<{ results?: Array<{ id: number | string; payment?: { id?: number | string | null } | null }> }> {
-  return leer(`/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`)
-}
-
 async function escribir<T>(metodo: 'POST' | 'PUT', ruta: string, cuerpo: unknown): Promise<T> {
   const token = process.env.MP_ACCESS_TOKEN
   if (!token) throw new Error('Falta MP_ACCESS_TOKEN.')
@@ -91,14 +74,18 @@ async function escribir<T>(metodo: 'POST' | 'PUT', ruta: string, cuerpo: unknown
   return (await respuesta.json()) as T
 }
 
-/** Crea una suscripción en `pending` y devuelve su id y el enlace de pago (`init_point`). */
-export function crearSuscripcion(
-  cuerpo: CuerpoSuscripcion,
-): Promise<{ id: string; init_point: string; status: string }> {
-  return escribir('POST', '/preapproval', cuerpo)
+/** Crea una preferencia de pago único (Checkout Pro) y devuelve su id y el enlace de pago (`init_point`). */
+export function crearPreferencia(
+  cuerpo: CuerpoPreferencia,
+): Promise<{ id: string; init_point: string }> {
+  return escribir('POST', '/checkout/preferences', cuerpo)
 }
 
-/** Cancela una suscripción (p. ej. un intento de pago que la persona reemplaza). */
-export function cancelarSuscripcion(id: string): Promise<{ id: string; status: string }> {
-  return escribir('PUT', `/preapproval/${encodeURIComponent(id)}`, { status: 'cancelled' })
+/** Pagos de una referencia externa (el id del registro en pago único), el más reciente primero. */
+export function buscarPagosPorReferencia(
+  referencia: string,
+): Promise<{ results?: Array<{ id: number | string; status?: string | null }> }> {
+  return leer(
+    `/v1/payments/search?external_reference=${encodeURIComponent(referencia)}&sort=date_created&criteria=desc`,
+  )
 }

@@ -2,7 +2,6 @@ import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { derivarEstadoMembresia, type EstadoMembresia } from '@/lib/miembros/membresias'
-import { graciaPorMembresia } from '@/lib/miembros/gracia'
 import { hoyISO } from '@/lib/shared/fecha'
 
 export type DatosRevocacion = {
@@ -45,8 +44,7 @@ export async function cargarRevocacion(miembroId: number): Promise<DatosRevocaci
   const hoy = hoyISO()
   const fila = membresias?.[0]
   if (!fila) return null
-  const gracia = (await graciaPorMembresia([fila.id])).get(fila.id) ?? null
-  const derivado = derivarEstadoMembresia(fila.estado as EstadoMembresia, fila.fecha_fin, hoy, gracia)
+  const derivado = derivarEstadoMembresia(fila.estado as EstadoMembresia, fila.fecha_fin, hoy)
   if (!derivado.activa) return null
 
   const { data: plan } = await admin.from('planes_membresia').select('nombre').eq('id', fila.plan_id).maybeSingle()

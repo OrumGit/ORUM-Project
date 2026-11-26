@@ -4,7 +4,6 @@ import {
   type EstadoDerivado,
   type EstadoMembresia,
 } from '@/lib/miembros/membresias'
-import { graciasVigentes } from '@/lib/miembros/gracia'
 import { hoyISO } from '@/lib/shared/fecha'
 
 /*
@@ -86,7 +85,6 @@ export async function buscarMiembros(
   }
 
   const hoy = hoyISO()
-  const gracias = await graciasVigentes(hoy)
   const porMiembro = new Map<number, { estado: EstadoDerivado; plan: string | null }>()
 
   for (const fila of (membresias ?? []) as FilaMembresia[]) {
@@ -98,7 +96,7 @@ export async function buscarMiembros(
     const plan = Array.isArray(relacion) ? (relacion[0]?.nombre ?? null) : (relacion?.nombre ?? null)
 
     porMiembro.set(fila.miembro_id, {
-      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy, gracias.get(fila.id) ?? null),
+      estado: derivarEstadoMembresia(fila.estado, fila.fecha_fin, hoy),
       plan,
     })
   }

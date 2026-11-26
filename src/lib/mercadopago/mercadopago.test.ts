@@ -1,32 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { accionCobro, accionSuscripcion } from './estados'
-import { graciaHasta, graciaVencida, sumarDiasCivil } from './periodo'
+import { accionCobro } from './estados'
 import { parsearXSignature, verificarFirma, construirManifest } from './firma'
-
-describe('periodo (fechas civiles)', () => {
-  it('suma días cruzando fin de mes y de año', () => {
-    expect(sumarDiasCivil('2026-01-30', 3)).toBe('2026-02-02')
-    expect(sumarDiasCivil('2026-12-30', 3)).toBe('2027-01-02')
-  })
-
-  it('la gracia son 3 días después de fecha_fin', () => {
-    expect(graciaHasta('2026-11-30')).toBe('2026-12-03')
-  })
-
-  it('no se retrasa un día por zona horaria (sin tocar la hora local)', () => {
-    expect(sumarDiasCivil('2026-03-01', 0)).toBe('2026-03-01')
-  })
-
-  it('la gracia vence el día siguiente al último día de gracia', () => {
-    expect(graciaVencida('2026-12-03', '2026-12-03')).toBe(false)
-    expect(graciaVencida('2026-12-03', '2026-12-04')).toBe(true)
-  })
-
-  it('rechaza fechas mal formadas', () => {
-    expect(() => sumarDiasCivil('2026/12/03', 1)).toThrow()
-  })
-})
 
 describe('firma (x-signature)', () => {
   const secreto = 'secreto-de-prueba'
@@ -83,21 +58,10 @@ describe('firma (x-signature)', () => {
   })
 })
 
-describe('estados de suscripción y cobro', () => {
-  it('authorized activa la renovación; paused y canceled la desactivan', () => {
-    expect(accionSuscripcion('authorized')).toEqual({ tipo: 'sincronizar_renovacion', renovacionActiva: true })
-    expect(accionSuscripcion('paused')).toEqual({ tipo: 'sincronizar_renovacion', renovacionActiva: false })
-    expect(accionSuscripcion('canceled')).toEqual({ tipo: 'sincronizar_renovacion', renovacionActiva: false })
-    expect(accionSuscripcion('cancelled')).toEqual({ tipo: 'sincronizar_renovacion', renovacionActiva: false })
-  })
-
-  it('pending no cambia nada en ORUM', () => {
-    expect(accionSuscripcion('pending').tipo).toBe('ignorar')
-  })
-
-  it('un estado desconocido se ignora sin lanzar', () => {
-    expect(accionSuscripcion('algo_nuevo').tipo).toBe('ignorar')
+describe('estados de cobro (pago único)', () => {
+  it('un estado desconocido o vacío se ignora sin lanzar', () => {
     expect(accionCobro(undefined).tipo).toBe('ignorar')
+    expect(accionCobro('algo_nuevo').tipo).toBe('ignorar')
   })
 
   it('solo el estado del pago (approved/rejected) aprueba o rechaza', () => {

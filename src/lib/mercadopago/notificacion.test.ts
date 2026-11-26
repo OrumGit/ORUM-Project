@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { argsRegistrarCobro, leerNotificacion, montoCuadra, preapprovalDePago } from './notificacion'
+import { leerNotificacion } from './notificacion'
 
 describe('leerNotificacion', () => {
   it('toma el tipo, el recurso y el id de la notificación del cuerpo', () => {
@@ -38,74 +38,3 @@ describe('leerNotificacion', () => {
   })
 })
 
-describe('argsRegistrarCobro', () => {
-  it('mapea un pago aprobado a los argumentos de registrar_cobro_mp', () => {
-    expect(
-      argsRegistrarCobro(
-        { id: 42, status: 'approved', status_detail: 'accredited', transaction_amount: 25000, currency_id: 'COP' },
-        'pre-1',
-      ),
-    ).toEqual({
-      p_payment_id: '42',
-      p_preapproval_id: 'pre-1',
-      p_monto: 25000,
-      p_moneda: 'COP',
-      p_estado_mp: 'approved',
-      p_status_detail: 'accredited',
-    })
-  })
-
-  it('usa COP y detalle nulo cuando no vienen', () => {
-    const a = argsRegistrarCobro({ id: '7', status: 'rejected', transaction_amount: 0 }, 'pre-1')
-    expect(a?.p_moneda).toBe('COP')
-    expect(a?.p_status_detail).toBeNull()
-  })
-
-  it('no registra sin id de suscripción, sin estado o con monto inválido', () => {
-    expect(argsRegistrarCobro({ id: 1, status: 'approved', transaction_amount: 10 }, '')).toBeNull()
-    expect(argsRegistrarCobro({ id: 1, transaction_amount: 10 }, 'pre-1')).toBeNull()
-    expect(argsRegistrarCobro({ id: 1, status: 'approved' }, 'pre-1')).toBeNull()
-    expect(argsRegistrarCobro({ id: 1, status: 'approved', transaction_amount: -5 }, 'pre-1')).toBeNull()
-    expect(argsRegistrarCobro({ id: 1, status: 'approved', transaction_amount: NaN }, 'pre-1')).toBeNull()
-  })
-})
-
-describe('preapprovalDePago', () => {
-  it('lee el preapproval_id de los metadatos', () => {
-    expect(preapprovalDePago({ id: 1, metadata: { preapproval_id: 'pre-9' } })).toBe('pre-9')
-  })
-
-  it('devuelve null si no está o no es texto', () => {
-    expect(preapprovalDePago({ id: 1 })).toBeNull()
-    expect(preapprovalDePago({ id: 1, metadata: { preapproval_id: 5 } })).toBeNull()
-    expect(preapprovalDePago({ id: 1, metadata: { preapproval_id: '' } })).toBeNull()
-  })
-})
-
-describe('montoCuadra', () => {
-  const pago = (extra: object) => ({ id: 1, status: 'approved', transaction_amount: 30000, currency_id: 'COP', ...extra })
-
-  it('cuadra el precio exacto del plan', () => {
-    expect(montoCuadra(pago({}), 30000)).toBe(true)
-  })
-
-  it('tolera medio peso de redondeo', () => {
-    expect(montoCuadra(pago({ transaction_amount: 29999.6 }), 30000)).toBe(true)
-  })
-
-  it('no cuadra si se cobró menos', () => {
-    expect(montoCuadra(pago({ transaction_amount: 3000 }), 30000)).toBe(false)
-  })
-
-  it('no cuadra en otra moneda', () => {
-    expect(montoCuadra(pago({ currency_id: 'USD' }), 30000)).toBe(false)
-  })
-
-  it('sin monto no cuadra', () => {
-    expect(montoCuadra(pago({ transaction_amount: null }), 30000)).toBe(false)
-  })
-
-  it('sin moneda se entiende COP, la única con la que ORUM crea suscripciones', () => {
-    expect(montoCuadra(pago({ currency_id: null }), 30000)).toBe(true)
-  })
-})

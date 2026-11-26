@@ -4,7 +4,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { hoyISO } from '@/lib/shared/fecha'
 import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
 import { derivarEstadoMembresia, type EstadoMembresia } from './membresias'
-import { graciasVigentes } from './gracia'
 import type { FilaMiembro } from './listado'
 
 /*
@@ -53,7 +52,6 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
 
   const nombrePlan = new Map((planes ?? []).map((p) => [p.id, p.nombre]))
   const hoy = hoyISO()
-  const gracias = await graciasVigentes(hoy)
 
   // Ya vienen de la más reciente a la más antigua: la primera de cada
   // miembro es la que manda.
@@ -80,7 +78,7 @@ export async function cargarListadoMiembros(): Promise<{ filas: FilaMiembro[]; p
       fotoUrl: (m.foto_url ?? '').trim() || null,
       plan: u?.plan_id != null ? (nombrePlan.get(u.plan_id) ?? null) : null,
       planId: u?.plan_id ?? null,
-      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy, gracias.get(u.id) ?? null) : null,
+      estado: u ? derivarEstadoMembresia(u.estado, u.fecha_fin, hoy) : null,
       fechaFin: u?.fecha_fin ?? null,
     }
   })

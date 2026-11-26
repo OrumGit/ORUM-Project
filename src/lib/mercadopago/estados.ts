@@ -1,15 +1,8 @@
 // Mapeo de estados de Mercado Pago a acciones internas.
 //
-// Estados de la suscripción (`preapproval`): `pending`, `authorized`,
-// `paused`, `canceled` (la gestión de la API usa `canceled`).
-// Estados de cada cobro recurrente (`authorized_payment`): `processed`,
-// `recycling` (reintento), `waiting for gateway`.
+// Estados de la suscripción y de sus cuotas se retiraron el 25/11/2026 (pago único).
 // Estados de un pago (`payment`): `approved`, `rejected`, `pending`,
 // `in_process`, `cancelled`, `refunded`, `charged_back`.
-
-export type AccionSuscripcion =
-  | { tipo: 'sincronizar_renovacion'; renovacionActiva: boolean }
-  | { tipo: 'ignorar'; motivo: string }
 
 export type AccionCobro =
   | { tipo: 'registrar_aprobado' }
@@ -18,23 +11,6 @@ export type AccionCobro =
   | { tipo: 'esperar' }
   | { tipo: 'revisar_manual'; motivo: string }
   | { tipo: 'ignorar'; motivo: string }
-
-export function accionSuscripcion(status: string | null | undefined): AccionSuscripcion {
-  switch (status) {
-    case 'authorized':
-      return { tipo: 'sincronizar_renovacion', renovacionActiva: true }
-    case 'paused':
-      return { tipo: 'sincronizar_renovacion', renovacionActiva: false }
-    case 'canceled':
-    case 'cancelled':
-      return { tipo: 'sincronizar_renovacion', renovacionActiva: false }
-    case 'pending':
-      // Aún no hay medio de pago: no cambia nada en ORUM.
-      return { tipo: 'ignorar', motivo: 'pendiente_de_pago' }
-    default:
-      return { tipo: 'ignorar', motivo: `estado_desconocido:${status ?? 'vacio'}` }
-  }
-}
 
 /**
  * Estado de un cobro. Dos fuentes con vocabularios distintos:

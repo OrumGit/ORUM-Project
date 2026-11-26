@@ -2,10 +2,8 @@
 
 import { claveCupo, huella, type Limite } from '@/lib/auth/limite-uso'
 import { hayCupo } from '@/lib/auth/limitador'
-import { listarCuotasSuscripcion, obtenerPago } from '@/lib/mercadopago/cliente'
-import { conciliarSuscripcion } from '@/lib/mercadopago/conciliar'
+import { conciliarPagoUnico } from '@/lib/mercadopago/conciliar-pago-unico'
 import {
-  cobroDesdeEstado,
   estadoPagoRegistro,
   type CobroMP,
   type EstadoPagoRegistro,
@@ -58,7 +56,7 @@ export async function consultarPagoRegistro(): Promise<RespuestaPago> {
   const leerRegistro = async () => {
     const { data } = await admin
       .from('registros_pendientes')
-      .select('estado, mp_preapproval_id, miembro_id')
+      .select('id, estado, mp_preapproval_id, mp_preference_id, miembro_id')
       .eq('auth_user_id', user.id)
       .maybeSingle()
     return data
@@ -67,15 +65,13 @@ export async function consultarPagoRegistro(): Promise<RespuestaPago> {
   let registro = await leerRegistro()
   let ultimoCobro: CobroMP | null = null
 
-  if (conCupo && registro?.estado === 'pendiente' && registro.mp_preapproval_id) {
-    // Aplica lo que Mercado Pago ya cobró aunque el aviso no haya llegado (idempotente).
-    await conciliarSuscripcion(admin, registro.mp_preapproval_id).catch((error) =>
-      console.error('[registro] no se pudo conciliar la suscripción', error),
-    )
+  // Pago único: se pregunta a Mercado Pago por los pagos del registro.
+  if (conCupo && registro?.estado === 'pendiente' && registro.mp_preference_id) {
+    ultimoCobro = await conciliarPagoUnico(admin, registro.id).catch((error) => {
+      console.error('[registro] no se pudo conciliar el pago único', error)
+      return null
+    })
     registro = await leerRegistro()
-    if (registro?.estado === 'pendiente') {
-      ultimoCobro = await leerUltimoCobro(registro.mp_preapproval_id!)
-    }
   }
 
   // Quien ya era socio antes (renovación) no tiene registro: basta con su ficha.
@@ -89,27 +85,12 @@ export async function consultarPagoRegistro(): Promise<RespuestaPago> {
   const estado = estadoPagoRegistro({
     estadoRegistro: registro?.estado ?? null,
     tieneFicha: Boolean(miembro),
-    tienePago: Boolean(registro?.mp_preapproval_id),
+    tienePago: Boolean(registro?.mp_preapproval_id || registro?.mp_preference_id),
     ultimoCobro,
   })
 
   if (estado !== 'activa') return { estado }
   return { estado: 'activa', socio: miembro ? await datosBienvenida(admin, miembro) : null }
-}
-
-/** El estado del último pago de la suscripción en Mercado Pago, o null si aún no hay. */
-async function leerUltimoCobro(preapprovalId: string): Promise<CobroMP | null> {
-  try {
-    const { results = [] } = await listarCuotasSuscripcion(preapprovalId)
-    const conPago = results.filter((c) => c.payment?.id != null)
-    const ultima = conPago[conPago.length - 1]
-    if (!ultima) return null
-    const pago = await obtenerPago(String(ultima.payment!.id))
-    return cobroDesdeEstado(pago.status)
-  } catch (error) {
-    console.error('[registro] no se pudo leer el último cobro', error)
-    return null
-  }
 }
 
 async function datosBienvenida(

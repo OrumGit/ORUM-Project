@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { DIAS_PLAZO_SIN_PAGO, sePuedeBorrar, type CuentaParaRevisar } from '@/lib/auth/limpieza-pendientes'
-import { cancelarSuscripcion, ErrorMercadoPago } from '@/lib/mercadopago/cliente'
 import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -101,20 +100,6 @@ export async function GET(request: Request) {
     if (!sePuedeBorrar(candidata, ahora)) {
       conservadas++
       continue
-    }
-
-    if (r.mp_preapproval_id) {
-      try {
-        await cancelarSuscripcion(r.mp_preapproval_id)
-      } catch (error) {
-        // 404: Mercado Pago ya no la conoce, se puede seguir. Cualquier otro
-        // fallo deja la cuenta para mañana (pagoAbierto).
-        if (!(error instanceof ErrorMercadoPago && error.status === 404)) {
-          console.error('[cron limpiar-pendientes] no se pudo cancelar el pago', r.id, error)
-          conservadas++
-          continue
-        }
-      }
     }
 
     // El registro pendiente se borra en cascada con el usuario (on delete cascade).

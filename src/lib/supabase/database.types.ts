@@ -365,6 +365,7 @@ export type Database = {
       }
       registros_pendientes: {
         Row: {
+          mp_preference_id: string | null
           apellidos: string
           auth_user_id: string
           cedula: string
@@ -384,6 +385,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          mp_preference_id?: string | null
           apellidos: string
           auth_user_id: string
           cedula: string
@@ -403,6 +405,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          mp_preference_id?: string | null
           apellidos?: string
           auth_user_id?: string
           cedula?: string
@@ -453,6 +456,7 @@ export type Database = {
       }
       membresias: {
         Row: {
+          recordatorio_enviado_at: string | null
           /** Quién hizo el cambio. Solo viaja en la escritura: `fn_capturar_actor` lo pasa a la bitácora y lo vacía. */
           updated_by: string | null
           id: number
@@ -472,6 +476,7 @@ export type Database = {
           updated_at: Timestamp
         }
         Insert: {
+          recordatorio_enviado_at?: string | null
           updated_by?: string | null
           id?: number
           miembro_id: number
@@ -840,10 +845,8 @@ export type Database = {
       }
       suscripciones_mercadopago: {
         Row: {
-          conciliada_at?: string | null
           created_at: string
           estado_mp: string
-          gracia_hasta: string | null
           id: number
           membresia_id: number | null
           miembro_id: number
@@ -853,10 +856,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          conciliada_at?: string | null
           created_at?: string
           estado_mp: string
-          gracia_hasta?: string | null
           id?: never
           membresia_id?: number | null
           miembro_id: number
@@ -866,10 +867,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          conciliada_at?: string | null
+          recordatorio_enviado_at?: string | null
           created_at?: string
           estado_mp?: string
-          gracia_hasta?: string | null
           id?: never
           membresia_id?: number | null
           miembro_id?: number
@@ -1155,31 +1155,13 @@ export type Database = {
         Args: { p_comercio_id: number }
         Returns: boolean
       }
-      alta_socio_mercadopago: {
-        Args: { p_preapproval_id: string }
-        Returns: number | null
-      }
-      registrar_cobro_mp: {
+      activar_pago_unico: {
         Args: {
-          p_estado_mp: string
-          p_moneda: string
-          p_monto: number
+          p_registro_id: number
           p_payment_id: string
-          p_periodo_desde: string | null
-          p_periodo_hasta: string | null
-          p_preapproval_id: string
-          p_status_detail: string | null
+          p_monto: number
         }
-        Returns: Record<string, unknown>
-      }
-
-      espejar_estado_suscripcion: {
-        Args: {
-          p_estado_mp: string
-          p_preapproval_id: string
-          p_renovacion_activa: boolean
-        }
-        Returns: boolean
+        Returns: number
       }
 
     }
