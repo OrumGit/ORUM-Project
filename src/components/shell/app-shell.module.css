@@ -404,8 +404,19 @@
   }
 }
 
-.registrar {
+/*
+  «Registrar miembro» en el ORO CLARO (`--gold-300`, 26/11/2026: «utiliza
+  el amarillo más claro»), igual que la píldora de la barra inferior. Texto
+  e icono en tinta: 12,65:1. El relleno pálido no marca un filo de 3:1
+  contra el blanco; lo sostienen su sombra, su texto (en el teléfono, su
+  `aria-label`) y el foco visible — la misma relajación que el botón de
+  WhatsApp de la fachada. Solo este botón: los demás `brand` del panel
+  siguen en `--gold-500`. Dos clases para ganarle a `.brand` sin depender
+  del orden de las hojas.
+*/
+.barra .registrar {
   flex-shrink: 0;
+  --action-gold: var(--gold-300);
 }
 
 /*
@@ -477,9 +488,9 @@
    «muy sobria». Ahora es el material claro del resto del teléfono: blanca y
    translúcida (cromo fijo: el único sitio donde vale `backdrop-filter`), con
    su sombra hacia arriba en vez de un trazo. La pestaña en la que estás
-   lleva su icono dentro de una PÍLDORA en relleno `--gold-500` con el icono
-   en tinta (8,5:1; el mismo par que el día elegido de `SelectorFecha`) y el
-   nombre en tinta y 700; las demás, en gris. Nunca solo el color: la
+   lleva su icono dentro de una PÍLDORA en el ORO CLARO, `--gold-300`
+   (26/11/2026: «el amarillo más claro»; antes `--gold-500`), con el icono
+   en tinta (12,65:1) y el nombre en tinta y 700; las demás, en gris. Nunca solo el color: la
    píldora es una forma y `aria-current` lo dice.
    Sin «Buscar» (está arriba, a la vista).
    ========================================================================== */
@@ -572,7 +583,7 @@
 }
 
 .tab[data-activo='true'] .tabMarca {
-  background: var(--gold-500);
+  background: var(--gold-300);
   color: var(--tinta-1);
 }
 
