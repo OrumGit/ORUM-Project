@@ -6,7 +6,6 @@ import {
   LayoutGrid,
   Megaphone,
   MessageSquareText,
-  Search,
   ScrollText,
   Store,
   UserPlus,
@@ -48,7 +47,6 @@ export type NavGroup = {
 /** Destino de la barra inferior en móvil. */
 export type TabItem =
   | ({ kind: 'link' } & NavItem)
-  | { kind: 'search'; label: string; icon: LucideIcon }
   | { kind: 'more'; label: string; icon: LucideIcon }
 
 const INICIO: NavItem = { href: '/OrumAdminLogin', label: 'Inicio', icon: Home, exact: true }
@@ -98,11 +96,13 @@ export function navegacionPara(rol: RolCodigo): NavGroup[] {
 /**
  * Barra inferior de móvil. Máximo 5 destinos, en la zona del pulgar.
  *
+ * SIN «Buscar» (26/11/2026: «ya está en la parte de arriba, no es necesario
+ * ponerlo dos veces»): el buscador vive en la barra de arriba, a la vista.
+ *
  * Para el empleado, "Vender" apunta directo al flujo estrella —registrar
  * cliente y venderle la membresía—, que es lo que hace todo el día.
  */
 export function tabsPara(rol: RolCodigo): TabItem[] {
-  const buscar = { kind: 'search', label: 'Buscar', icon: Search } as const
   const mas = { kind: 'more', label: 'Más', icon: LayoutGrid } as const
 
   if (rol === 'super_admin') {
@@ -110,7 +110,6 @@ export function tabsPara(rol: RolCodigo): TabItem[] {
       { kind: 'link', ...INICIO },
       { kind: 'link', ...MIEMBROS },
       { kind: 'link', ...COMERCIOS },
-      buscar,
       mas,
     ]
   }
@@ -118,7 +117,6 @@ export function tabsPara(rol: RolCodigo): TabItem[] {
   return [
     { kind: 'link', ...INICIO },
     { kind: 'link', ...MIEMBROS },
-    buscar,
     {
       kind: 'link',
       href: '/OrumAdminLogin/miembros/nuevo',

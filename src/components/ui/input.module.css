@@ -119,6 +119,33 @@
 /* La X la viste `globals.css` («La X de los buscadores»): gris oscura y
    animada, ya no la azul del navegador. */
 
+/*
+  FECHA Y HORA EN EL IPHONE (26/11/2026, reportado por el cliente: en la
+  ficha del miembro «Hasta» se salía de la pantalla). Safari iOS da a
+  `type="date"`/`"time"` su aspecto nativo, con un ancho mínimo propio que no
+  baja de su contenido: dentro de una fila estrecha empuja fuera de la caja,
+  y vacío no enseña nada (un recuadro en blanco). Sin aspecto nativo respeta
+  el `width: 100%` y la altura de los demás campos; el valor va a la
+  izquierda, como en cualquier campo. Los filtros por fechas del panel usan
+  `SelectorFecha`; esto cubre los que quedan (formularios de novedades,
+  promociones y horarios).
+*/
+.control[type='date'],
+.control[type='time'],
+.control[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+}
+
+.control[type='date']::-webkit-date-and-time-value,
+.control[type='time']::-webkit-date-and-time-value,
+.control[type='datetime-local']::-webkit-date-and-time-value {
+  min-height: 1lh;
+  text-align: left;
+}
+
 /* Cifras que se alinean en columna o se leen dígito a dígito: número de
    membresía, cédula, teléfono, montos. */
 .numerico {

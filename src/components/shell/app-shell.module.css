@@ -408,11 +408,20 @@
   flex-shrink: 0;
 }
 
-/* En el teléfono el botón queda en su círculo, sin el relleno lateral del
-   texto que no se ve. */
+/*
+  En el teléfono el botón queda en su CÍRCULO, solo con el icono.
+  ⚠️ Con DOS clases (0,2,0), no una (26/11/2026, reportado por el cliente:
+  «un círculo amarillo sin nada»). `.pildora` de `button.module.css` pone
+  `padding-inline: var(--space-6)` con una sola clase, y en producción su
+  hoja llega DESPUÉS de esta: los 48 px de relleno dentro de 44 px de ancho
+  dejaban la caja de contenido a cero y el icono se recortaba. En desarrollo
+  el orden de las hojas es otro y no se veía. Que gane por especificidad,
+  nunca por el orden en que Next junte las hojas.
+*/
 @media (max-width: 639px) {
-  .registrar {
+  .barra .registrar {
     width: var(--tap-min);
+    min-width: var(--tap-min);
     padding-inline: 0;
     justify-content: center;
   }
@@ -462,7 +471,17 @@
 }
 
 /* ==========================================================================
-   LA BARRA INFERIOR  ·  <768px, negra como el resto del cromo
+   LA BARRA INFERIOR  ·  <768 px, BLANCA (26/11/2026)
+   --------------------------------------------------------------------------
+   Antes era negra, como la barra lateral, y el propietario la encontró
+   «muy sobria». Ahora es el material claro del resto del teléfono: blanca y
+   translúcida (cromo fijo: el único sitio donde vale `backdrop-filter`), con
+   su sombra hacia arriba en vez de un trazo. La pestaña en la que estás
+   lleva su icono dentro de una PÍLDORA en relleno `--gold-500` con el icono
+   en tinta (8,5:1; el mismo par que el día elegido de `SelectorFecha`) y el
+   nombre en tinta y 700; las demás, en gris. Nunca solo el color: la
+   píldora es una forma y `aria-current` lo dice.
+   Sin «Buscar» (está arriba, a la vista).
    ========================================================================== */
 
 .tabbar {
@@ -474,14 +493,25 @@
 
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-auto-columns: minmax(0, 1fr);
 
   /* Por encima de la barra de gestos del iPhone (`viewport-fit=cover`). */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding: 0 max(var(--space-2), env(safe-area-inset-right, 0px))
+    env(safe-area-inset-bottom, 0px) max(var(--space-2), env(safe-area-inset-left, 0px));
 
-  background: var(--franja-bg);
-  color: var(--franja-fg-2);
-  box-shadow: var(--shadow-flotante);
+  background: color-mix(in srgb, var(--blanco) 88%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px);
+  backdrop-filter: saturate(1.6) blur(18px);
+  color: var(--text-2);
+  box-shadow:
+    0 -1px 0 var(--border-subtle),
+    0 -8px 24px color-mix(in srgb, var(--negro-900) 6%, transparent);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar {
+    background: var(--blanco);
+  }
 }
 
 @media (min-width: 768px) {
@@ -492,15 +522,15 @@
 
 .tab {
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
 
+  min-width: 0;
   min-height: var(--tabbar-h);
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-2);
   border: none;
   background: none;
 
@@ -509,40 +539,53 @@
   line-height: 1.2;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--franja-fg-2);
+  color: var(--text-2);
   text-decoration: none;
+  white-space: nowrap;
 
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+/* La píldora del icono: en reposo, transparente; en la activa, oro. */
+.tabMarca {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: transparent;
   transition:
-    color var(--dur-fast) var(--ease-out),
-    opacity var(--dur-press) var(--ease-out);
-}
-
-/* La activa, en plata y con más peso: el mismo lenguaje que la barra
-   lateral, sin oro (15/10/2026). */
-.tab[data-activo='true'] {
-  color: var(--n-50);
-  font-weight: 700;
-}
-
-.tab[data-activo='true'] .tabIcono {
-  color: var(--n-100);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--n-100) 35%, transparent));
-}
-
-.tab:active {
-  opacity: 0.62;
-}
-
-.tab:focus-visible {
-  outline: 2px solid var(--n-100);
-  outline-offset: -4px;
+    background-color var(--dur-fast) var(--ease-out),
+    scale var(--dur-press) var(--ease-out);
 }
 
 .tabIcono {
   width: 21px;
   height: 21px;
+}
+
+.tab[data-activo='true'] {
+  color: var(--tinta-1);
+  font-weight: 700;
+}
+
+.tab[data-activo='true'] .tabMarca {
+  background: var(--gold-500);
+  color: var(--tinta-1);
+}
+
+/* Al apretar, la píldora se hunde un poco (`:active` = `pointerdown`). Es
+   el gesto más frecuente del teléfono: sin viaje ni rebote. */
+.tab:active .tabMarca {
+  scale: 0.92;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -4px;
+  border-radius: var(--radius-md);
 }
 
 /* ==========================================================================

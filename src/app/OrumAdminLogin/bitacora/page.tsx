@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
 import { Input } from '@/components/ui/input'
+import { SelectorFecha } from '@/components/ui/selector-fecha'
 import { ContenidoPestana, Pestanas, type TonoPestana } from '@/components/ui/pestanas'
 import { PageHeader } from '@/components/ui/layout'
 import { Paginacion } from '@/components/ui/paginacion'
@@ -328,14 +329,14 @@ export default async function BitacoraPage({
           <label className={styles.etiqueta} htmlFor="f-desde">
             Desde
           </label>
-          <Input id="f-desde" type="date" name="desde" defaultValue={desde ?? ''} />
+          <SelectorFecha id="f-desde" name="desde" etiqueta="Desde" placeholder="Elige el día" defaultValue={desde ?? ''} />
         </div>
 
         <div>
           <label className={styles.etiqueta} htmlFor="f-hasta">
             Hasta
           </label>
-          <Input id="f-hasta" type="date" name="hasta" defaultValue={hasta ?? ''} />
+          <SelectorFecha id="f-hasta" name="hasta" etiqueta="Hasta" placeholder="Elige el día" defaultValue={hasta ?? ''} />
         </div>
 
         <div className={styles.acciones}>

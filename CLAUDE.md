@@ -1436,8 +1436,13 @@ sube 1px. Teclado de la cuadrícula de fechas de ARIA (flechas, Inicio/Fin,
 RePág/AvPág, Intro), con tabindex itinerante. El valor viaja en un campo
 oculto 'YYYY-MM-DD' que avisa con un `input` que burbujea, y no valida
 solo. La lógica es pura y probada (`lib/shared/calendario.ts`). Hoy lo usa
-«Hasta una fecha» de la cortesía; **un campo de fecha nuevo del panel usa
-este, no `type="date"`**.
+«Hasta una fecha» de la cortesía y, desde el 26/11/2026, los «Desde /
+Hasta» de las compras del miembro, las ventas del comercio, las
+membresías vendidas por empleado, Métricas y la Bitácora (en el iPhone el `type="date"` nativo no baja de su ancho y se
+salía de la pantalla; `id` para un `<label htmlFor>` propio); **un campo de
+fecha nuevo del panel usa este, no `type="date"`**. Los `date`/`time`
+nativos que quedan (novedades, promociones, horarios) van sin aspecto
+nativo (`input.module.css`), que es lo que los hace caber.
 
 **`Agitar`** envuelve un icono y lo agita **una vez** cuando su prop `activo`
 pasa de `false` a `true` — el acento de «seleccionado» en un filtro. Se le pasa
@@ -1656,15 +1661,24 @@ paleta:
   sección o ficha nueva del panel se añade a `LUGARES` y a `NOMBRES`.**
 - **La barra de arriba, blanca y pegada**: «Panel / sección», el
   **buscador** y «Registrar miembro» en oro. En el teléfono, el logotipo en
-  oro a la izquierda y la barra inferior negra con la hoja «Más» (la activa,
-  en plata).
+  oro a la izquierda y la barra inferior con la hoja «Más». ⚠️ **La barra
+  inferior es BLANCA desde el 26/11/2026** («no me gusta que sea de color
+  negro o tan sobrio»): translúcida, con su sombra hacia arriba, y la
+  pestaña activa con el icono en una PÍLDORA `--gold-500` (icono en tinta)
+  y el nombre en tinta y 700. **Sin «Buscar»** («ya está arriba, no es
+  necesario ponerlo dos veces»): Inicio · Miembros · Comercios · Más
+  (empleado: Inicio · Miembros · Vender · Más). La barra LATERAL del
+  ordenador sigue negra. «Registrar miembro» en el teléfono es un círculo
+  con su icono, y su regla va con DOS clases (`.barra .registrar`): con una,
+  en producción ganaba el relleno de `.pildora` y el icono quedaba a 0 px
+  («un círculo amarillo sin nada»).
 - **El buscador (`BuscadorPanel`) sustituye a la paleta**: un campo normal
   que, al escribir, despliega debajo los miembros (con su estado y
   «Renovar» al lado si está vencido o por vencer) y las acciones que casan
   (`acciones-panel.ts`). **No se enseña ningún atajo** («no quiero que
   aparezcan comandos»): Ctrl/⌘+K y «/» siguen llevando al campo, en
-  silencio. `enfocarBuscador()` (un evento) lo pide desde fuera — lo usa la
-  pestaña «Buscar» del teléfono. **Nada sale marcado al abrir la lista** (29/10/2026:
+  silencio. `enfocarBuscador()` (un evento) lo pide desde fuera (la pestaña
+  «Buscar» del teléfono que lo usaba se retiró el 26/11/2026). **Nada sale marcado al abrir la lista** (29/10/2026:
   «no me gusta que se vea como señalada esa opción»): solo las FLECHAS
   marcan, con un filo dorado fino; el ratón no marca, la fila se desliza
   3px; Enter sin nada marcado abre la primera.
@@ -1831,7 +1845,9 @@ paleta:
   apilados); y las rejillas de cuatro cifras compactas (compras del
   miembro, ventas del comercio, Métricas) van de dos en dos, con el monto un
   paso menor (`Grid min="140px"`, `cifra.module.css`). Nada cambia en el
-  ordenador.
+  ordenador. Y una rejilla `auto-fit`/`auto-fill` con mínimo fijo se escribe
+  `minmax(min(200px, 100%), 1fr)` (26/11/2026: la de las novedades pedía 300
+  px y en 320 no cabía).
 
 **La Herramienta de Comercios** (`src/app/comercios/(portal)/`, rediseño del
 04/10/2026) es la tercera cara de la fachada. El layout pone la cabecera del

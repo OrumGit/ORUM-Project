@@ -17,7 +17,7 @@ import { Sheet } from '@/components/ui/sheet'
 import { ToastProvider } from '@/components/ui/toast'
 import type { RolCodigo } from '@/lib/supabase/database.types'
 import cromo from '@/app/miembros/(portal)/portal.module.css'
-import { BuscadorPanel, enfocarBuscador } from './buscador-panel'
+import { BuscadorPanel } from './buscador-panel'
 import { VolverPanel } from './volver-panel'
 import { hayVolver } from '@/lib/shared/volver-panel'
 import {
@@ -47,7 +47,8 @@ import styles from './app-shell.module.css'
       comandos a la vista) y «Registrar miembro» en oro.
     · EL CONTENIDO, sobre blanco, con la paleta de la fachada (`cromo`).
     · EN EL TELÉFONO, sin barra lateral: la barra de arriba con el logotipo y
-      la barra inferior negra en la zona del pulgar, con la hoja «Más».
+      la barra inferior BLANCA en la zona del pulgar (26/11/2026; antes
+      negra), con la hoja «Más». Sin «Buscar»: el buscador ya está arriba.
 
   SIEMPRE EN CLARO (`data-theme="light"`). La barra lateral se pinta negra
   con los tokens de la franja (`--franja-*`), no con `data-theme="dark"`: el
@@ -155,7 +156,7 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
             {/* En el teléfono no hay barra lateral: el logotipo va aquí,
                 en oro (sobre blanco, oro). */}
             <Link href="/OrumAdminLogin" className={styles.marcaMovil} aria-label="ORUM, ir al inicio del panel">
-              <LogoOrum variante="dorado" className={styles.logoMovil} />
+              <LogoOrum variante="dorado" className={styles.logoMovil} preload />
             </Link>
 
             <nav className={styles.ruta} aria-label="Dónde estás">
@@ -202,7 +203,6 @@ export function AppShell({ user, cerrarSesion, buscar, rutaSimulada, children }:
         <TabBar
           tabs={tabs}
           pathname={pathname}
-          onBuscar={enfocarBuscador}
           onMas={() => setMas(true)}
         />
 
@@ -309,12 +309,10 @@ function Secciones({ grupos, pathname }: { grupos: NavGroup[]; pathname: string 
 function TabBar({
   tabs,
   pathname,
-  onBuscar,
   onMas,
 }: {
   tabs: ReturnType<typeof tabsPara>
   pathname: string
-  onBuscar: () => void
   onMas: () => void
 }) {
   return (
@@ -330,16 +328,19 @@ function TabBar({
               data-activo={activo}
               aria-current={activo ? 'page' : undefined}
             >
-              <tab.icon className={styles.tabIcono} aria-hidden="true" />
+              <span className={styles.tabMarca} aria-hidden="true">
+                <tab.icon className={styles.tabIcono} />
+              </span>
               {tab.label}
             </Link>
           )
         }
 
-        const alPulsar = tab.kind === 'search' ? onBuscar : onMas
         return (
-          <button key={tab.kind} type="button" className={styles.tab} onClick={alPulsar}>
-            <tab.icon className={styles.tabIcono} aria-hidden="true" />
+          <button key={tab.kind} type="button" className={styles.tab} onClick={onMas}>
+            <span className={styles.tabMarca} aria-hidden="true">
+              <tab.icon className={styles.tabIcono} />
+            </span>
             {tab.label}
           </button>
         )

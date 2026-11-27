@@ -19,7 +19,7 @@ import { Card } from '@/components/ui/card'
 import { Cifra } from '@/components/ui/cifra'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
-import { Input } from '@/components/ui/input'
+import { SelectorFecha } from '@/components/ui/selector-fecha'
 import { Grid, PageHeader, Section, Stack } from '@/components/ui/layout'
 import { Paginacion } from '@/components/ui/paginacion'
 import { leerEnPaginas } from '@/lib/shared/leer-en-paginas'
@@ -247,14 +247,14 @@ export default async function MetricasPage({
           <label className={styles.etiqueta} htmlFor="m-desde">
             Desde
           </label>
-          <Input id="m-desde" type="date" name="desde" defaultValue={desde} />
+          <SelectorFecha id="m-desde" name="desde" etiqueta="Desde" placeholder="Elige el día" defaultValue={desde} />
         </div>
 
         <div className={styles.campo}>
           <label className={styles.etiqueta} htmlFor="m-hasta">
             Hasta
           </label>
-          <Input id="m-hasta" type="date" name="hasta" defaultValue={hasta} />
+          <SelectorFecha id="m-hasta" name="hasta" etiqueta="Hasta" placeholder="Elige el día" defaultValue={hasta} />
         </div>
 
         <Button type="submit" variant="secondary" icon={<Filter size={16} />}>

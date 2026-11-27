@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Cifra } from '@/components/ui/cifra'
 import { DataList, type Column } from '@/components/ui/data-list'
 import { EmptyState } from '@/components/ui/feedback'
-import { Input } from '@/components/ui/input'
+import { SelectorFecha } from '@/components/ui/selector-fecha'
 import { Grid } from '@/components/ui/layout'
 import { Paginacion } from '@/components/ui/paginacion'
 import { ContenidoPestana, Pestanas } from '@/components/ui/pestanas'
@@ -169,23 +169,13 @@ export function VentasComercio({
             <label className={styles.etiqueta} htmlFor="ventas-desde">
               Desde
             </label>
-            <Input
-              id="ventas-desde"
-              type="date"
-              name="desde"
-              defaultValue={rango.periodo === 'rango' ? (rango.desde ?? '') : ''}
-            />
+            <SelectorFecha id="ventas-desde" name="desde" etiqueta="Desde" placeholder="Elige el día" defaultValue={rango.periodo === 'rango' ? (rango.desde ?? '') : ''} />
           </div>
           <div className={styles.campo}>
             <label className={styles.etiqueta} htmlFor="ventas-hasta">
               Hasta
             </label>
-            <Input
-              id="ventas-hasta"
-              type="date"
-              name="hasta"
-              defaultValue={rango.periodo === 'rango' ? (rango.hasta ?? '') : ''}
-            />
+            <SelectorFecha id="ventas-hasta" name="hasta" etiqueta="Hasta" placeholder="Elige el día" defaultValue={rango.periodo === 'rango' ? (rango.hasta ?? '') : ''} />
           </div>
           <Button type="submit" variant="secondary" size="sm" icon={<Filter size={15} />}>
             Ver entre fechas

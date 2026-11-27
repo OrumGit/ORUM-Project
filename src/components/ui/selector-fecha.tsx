@@ -49,6 +49,8 @@ import styles from './selector-fecha.module.css'
 
 type Props = {
   name: string
+  /** Para un `<label htmlFor>` propio, fuera de un `Field`. Dentro de un `Field`, sobra. */
+  id?: string
   /** El texto del `Field` que lo envuelve: forma parte del nombre accesible. */
   etiqueta: string
   value?: string
@@ -62,6 +64,7 @@ type Props = {
 
 export function SelectorFecha({
   name,
+  id: idPropio,
   etiqueta,
   value: controlado,
   defaultValue = '',
@@ -70,7 +73,9 @@ export function SelectorFecha({
   max,
   placeholder = 'Elige un día',
 }: Props) {
-  const { id, describedBy, invalid } = useField()
+  const campoField = useField()
+  const id = idPropio ?? campoField.id
+  const { describedBy, invalid } = campoField
   const [propio, setPropio] = useState(defaultValue)
   const value = controlado ?? propio
   const oculto = useRef<HTMLInputElement>(null)
