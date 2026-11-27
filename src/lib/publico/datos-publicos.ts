@@ -11,6 +11,7 @@ import { leerHorariosDeSucursales } from '@/lib/comercios/horario-datos'
 import type { HorarioSucursal } from '@/lib/comercios/horario'
 import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
 import { formatearBeneficio, formatearBeneficioCorto } from '@/lib/comercios/beneficios-formato'
+import { armarBeneficiosFicha, type BeneficioSocio } from '@/lib/comercios/beneficios-ficha'
 import { TOPE_PUBLICIDAD, textoAlternativo } from '@/lib/publicidad/publicidad'
 import { leerEncuadrePrevia, type EncuadrePrevia } from '@/lib/videos/video'
 import { hoyISO } from '@/lib/shared/fecha'
@@ -575,8 +576,12 @@ export type FichaPublica = {
   portadaUrl: string | null
   ciudades: string[]
   sedes: SedePublica[]
-  /** Beneficios vigentes, ya formateados. La ficha los enseña desenfocados. */
+  /** Beneficios vigentes, ya formateados. Con el interruptor en 'oculto'
+   *  (`beneficios-publicos.ts`), la ficha los enseña desenfocados. */
   beneficios: string[]
+  /** Los mismos, ENTEROS (titular, descripción, cuándo, condiciones), como
+   *  los ve el socio. Con el interruptor en 'a-la-vista'. */
+  detalleBeneficios: BeneficioSocio[]
   fotos: FotoPublica[]
   /** `false` = la ficha lleva `noindex` y no entra en el sitemap. */
   indexable: boolean
@@ -623,10 +628,12 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
       .limit(3),
     supabase
       .from('promociones')
-      .select('valor, tipo_beneficio_id, activo, fecha_inicio, fecha_fin')
+      // `*`: trae `franjas_horarias` si la migración está aplicada, y no falla si no.
+      .select('*')
       .eq('comercio_id', id)
       .eq('activo', true)
       .is('deleted_at', null)
+      .order('titulo')
       .limit(50),
     supabase.from('tipos_beneficio').select('id, codigo').limit(100),
     supabase
@@ -727,6 +734,7 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
     ciudades: Array.from(new Set(sedes.flatMap((s) => (s.ciudadNombre ? [s.ciudadNombre] : [])))),
     sedes,
     beneficios,
+    detalleBeneficios: armarBeneficiosFicha(promociones ?? [], codigoTipo, hoy),
     fotos,
     indexable: comercio.indexable,
   }
@@ -735,7 +743,7 @@ async function leerFichaPublica(id: number): Promise<FichaPublica | null> {
 // El `id` entra en la clave de caché automáticamente (argumentos de la función).
 const fichaEnCache = unstable_cache(
   (id: number) => circuito.ejecutar(`ficha-${id}`, () => leerFichaPublica(id)),
-  ['publico-ficha'],
+  ['publico-ficha-v2'],
   OPCIONES_CACHE,
 )
 export const obtenerFichaPublica = cache((id: number) =>

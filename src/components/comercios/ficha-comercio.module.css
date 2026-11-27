@@ -341,6 +341,15 @@
   color: var(--text-2);
 }
 
+/* Público con los beneficios a la vista (27/11/2026): «Hazte socio para
+   usarlo», bajo los beneficios y separado por el mismo filo fino que hay
+   entre uno y otro. */
+.beneficioSocios {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
 /*
   «Preguntar por WhatsApp» en el oro pálido del rediseño (`--gold-300`) con
   texto en tinta: 12,65:1. Sobre la ficha blanca el relleno pálido no marca

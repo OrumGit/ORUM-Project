@@ -3,6 +3,7 @@ import { Lock, TicketPercent } from 'lucide-react'
 import { ComercioLogo } from '@/components/ui/comercio-logo'
 import type { ComercioVitrina } from '@/lib/publico/datos-publicos'
 import { detalleComercio } from '@/lib/publico/directorio'
+import { beneficioLegible } from '@/lib/publico/beneficios-publicos'
 import estilos from './tarjeta-directorio.module.css'
 
 /*
@@ -11,12 +12,13 @@ import estilos from './tarjeta-directorio.module.css'
   Foto arriba, y debajo el logotipo GRANDE junto al nombre, la categoría con
   la ciudad y el beneficio.
 
-  EL BENEFICIO DEPENDE DE QUIÉN MIRA (29/09/2026):
-    · En el Portal Público se ve DESENFOCADO: quien no es socio ve que hay
-      algo y no puede leerlo. Para un lector de pantalla el texto
-      desenfocado no existe (`aria-hidden`) y se anuncia «Beneficio
-      exclusivo para socios»; el candado es el segundo portador.
-    · En el Portal de Miembros (`socio`) se LEE: el socio ya pagó por verlo.
+  EL BENEFICIO SE LEE (27/11/2026: «que los que no son miembros también
+  puedan ver los beneficios»). En el Portal de Miembros siempre; en el
+  Público, según el interruptor de `lib/publico/beneficios-publicos.ts`
+  (hoy, a la vista). La versión DESENFOCADA (29/09–27/11/2026) se conserva:
+  quien no es socio veía que hay algo y no podía leerlo; para un lector de
+  pantalla el texto desenfocado no existía (`aria-hidden`) y se anunciaba
+  «Beneficio exclusivo para socios», con el candado de segundo portador.
 
   La tarjeta entera es UN enlace a la ficha: en la fachada se abre encima
   (ruta interceptada, `scroll={false}` conserva la posición); en miembros va
@@ -60,7 +62,7 @@ export function TarjetaDirectorio({
           <span className={estilos.nombre}>{comercio.nombre}</span>
           {detalle && <span className={estilos.detalle}>{detalle}</span>}
           {comercio.beneficioDestacado &&
-            (socio ? (
+            (beneficioLegible(socio) ? (
               <span className={estilos.beneficio}>
                 <TicketPercent size={13} aria-hidden="true" className={estilos.candado} />
                 {/* La cifra va sola («10%»): el icono y el sitio ya dicen que

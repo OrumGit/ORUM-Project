@@ -16,8 +16,9 @@ import estilos from './ficha-comercio.module.css'
   30/09/2026 el propietario pidió que la del Portal de Miembros fuera IGUAL,
   así que la estructura vive aquí y cada portal pone solo lo que le es propio:
 
-    · `beneficio` — el público lo enseña desenfocado con «inicia sesión»; el
-                    socio, legible.
+    · `beneficio` — legible en los dos (el público, desde el 27/11/2026, con
+                    «Hazte socio»; desenfocado si se vuelve a ocultar:
+                    `lib/publico/beneficios-publicos.ts`).
     · `accion`    — «Preguntar por WhatsApp» / «Mostrar mi carnet».
     · `resenas`   — solo el socio: promedio, lista y su propia reseña.
 

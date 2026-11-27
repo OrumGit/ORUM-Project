@@ -10,8 +10,9 @@ import { ProveedorFavoritos } from './favoritos'
   IGUAL que `/explorar`. Para que lo sea por construcción y no por copia, el
   directorio vive aquí y lo montan las dos páginas:
 
-    · `/explorar` (Portal Público): beneficios desenfocados, la ficha se abre
-      encima (ruta interceptada).
+    · `/explorar` (Portal Público): beneficios legibles desde el 27/11/2026
+      (desenfocados si el interruptor de `lib/publico/beneficios-publicos.ts`
+      vuelve a 'oculto'), la ficha se abre encima (ruta interceptada).
     · `/miembros` (`socio`): beneficios legibles, la ficha del socio, el
       corazón de favoritos y el filtro «Favoritos».
 

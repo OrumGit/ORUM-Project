@@ -3,13 +3,9 @@
 import { BadgeDollarSign, CalendarClock, Gift, Percent, Ticket } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { sinCortarHoras } from '@/lib/comercios/horario'
-import {
-  estadoPromocion,
-  partesDisponibilidad,
-  type FranjaPromocion,
-  type GrupoUso,
-} from '@/lib/comercios/franjas-promocion'
+import { estadoPromocion, partesDisponibilidad } from '@/lib/comercios/franjas-promocion'
 import type { TipoBeneficioCodigo } from '@/lib/supabase/database.types'
+import type { BeneficioSocio } from '@/lib/comercios/beneficios-ficha'
 import { useInstanteAlMinuto } from './use-minuto'
 import estilos from './beneficios-socio.module.css'
 
@@ -37,20 +33,7 @@ import estilos from './beneficios-socio.module.css'
   llega pintado del servidor y el estado aparece al montar.
 */
 
-export type BeneficioSocio = {
-  id: number
-  tipo: TipoBeneficioCodigo
-  /** «10% de descuento», «Regalo». */
-  valor: string
-  /** «Brunch», «Bebida GRATIS»; vacío si el título no añade nada. */
-  asunto: string
-  descripcion: string | null
-  /** Cuándo se puede usar: un grupo de días con sus horas (`cuandoUsarlo`). */
-  cuando: GrupoUso[]
-  dias: number[] | null
-  franjas: FranjaPromocion[] | null
-  restricciones: string | null
-}
+export type { BeneficioSocio }
 
 const ICONO: Record<TipoBeneficioCodigo, ReactNode> = {
   porcentaje: <Percent size={18} strokeWidth={2.25} />,

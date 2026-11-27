@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { Lock } from 'lucide-react'
+import { Lock, Sparkles } from 'lucide-react'
 import { FichaComercio } from '@/components/comercios/ficha-comercio'
 import estilos from '@/components/comercios/ficha-comercio.module.css'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,9 @@ import { detalleComercio } from '@/lib/publico/directorio'
 import { URL_SITIO } from '@/lib/publico/sitio'
 import { MENSAJE_WHATSAPP_PUBLICO } from '@/lib/publico/whatsapp'
 import { AdornoEstrella } from '@/components/ui/marca/marca'
+import { BeneficiosSocio } from '@/components/comercios/beneficios-socio'
+import { beneficiosALaVista } from '@/lib/publico/beneficios-publicos'
+import { HREF_UNETE } from '../../_components/anclas'
 
 /*
   LA FICHA PÚBLICA DE UN COMERCIO — el MISMO componente en dos superficies
@@ -25,8 +28,12 @@ import { AdornoEstrella } from '@/components/ui/marca/marca'
   copias se desincronizan a la primera corrección.
 
   Es la ficha de QUIEN NO ES SOCIO: foto, dirección, descripción, galería y
-  el beneficio desenfocado con la invitación a iniciar sesión. Nada que exija
-  sesión ni nada que identifique a una persona (ver `datos-publicos.ts`).
+  los beneficios. Desde el 27/11/2026 los beneficios se LEEN enteros, como
+  los ve el socio (`BeneficiosSocio`), con «Hazte socio»; la versión
+  desenfocada con «Inicia sesión para verlo» se conserva y vuelve cambiando
+  UNA línea (`lib/publico/beneficios-publicos.ts`). Nunca las reseñas ni la
+  calificación: eso es solo del Portal de Miembros. Nada que exija sesión ni
+  nada que identifique a una persona (ver `datos-publicos.ts`).
 
   Server Component. El único cliente es el envoltorio del overlay, que vive
   en la ranura y no aquí.
@@ -166,33 +173,59 @@ export default async function FichaPublicaPage({
         volver={{ href: '/explorar', texto: 'Ver todos los comercios' }}
         enOverlay={enOverlay}
         beneficio={
-          /*
-            EL BENEFICIO, DESENFOCADO. Se ve que existe y no se lee sin ser
-            socio: encargo del cliente. El lector de pantalla recibe la misma
-            información que el vidente —«exclusivo para socios»—, no el texto
-            que el vidente tampoco puede leer.
-          */
-          <>
+          beneficiosALaVista() ? (
+            /*
+              LOS BENEFICIOS, A LA VISTA (27/11/2026): los mismos que ve el
+              socio, con cuándo se usan y sus condiciones. «Hazte socio» dice
+              lo que falta para usarlos.
+            */
             <div className={estilos.beneficioTextos}>
               <p className={estilos.beneficioEtiqueta}>
                 <AdornoEstrella />
-                Tu beneficio ORUM
+                {ficha.detalleBeneficios.length > 1 ? 'Beneficios para socios ORUM' : 'Beneficio para socios ORUM'}
               </p>
-              {ficha.beneficios.length > 0 ? (
+              {ficha.detalleBeneficios.length > 0 ? (
                 <>
-                  <p className={`${estilos.beneficioValor} ${estilos.desenfocado}`} aria-hidden="true">
-                    {ficha.beneficios.join(' · ')}
+                  <BeneficiosSocio beneficios={ficha.detalleBeneficios} />
+                  <p className={estilos.beneficioSocios}>
+                    <Button href={HREF_UNETE} variant="ghost" size="sm" icon={<Sparkles size={14} />}>
+                      Hazte socio para usarlo
+                    </Button>
                   </p>
-                  <p className="sr-only">Beneficio exclusivo para socios.</p>
                 </>
               ) : (
                 <p className={estilos.beneficioPronto}>Pronto con beneficio para socios.</p>
               )}
             </div>
-            <Button href="/miembros/login" variant="ghost" size="sm" icon={<Lock size={14} />}>
-              Inicia sesión para verlo
-            </Button>
-          </>
+          ) : (
+            /*
+              EL BENEFICIO, DESENFOCADO (29/09–27/11/2026; se conserva). Se ve
+              que existe y no se lee sin ser socio. El lector de pantalla
+              recibe la misma información que el vidente —«exclusivo para
+              socios»—, no el texto que el vidente tampoco puede leer.
+            */
+            <>
+              <div className={estilos.beneficioTextos}>
+                <p className={estilos.beneficioEtiqueta}>
+                  <AdornoEstrella />
+                  Tu beneficio ORUM
+                </p>
+                {ficha.beneficios.length > 0 ? (
+                  <>
+                    <p className={`${estilos.beneficioValor} ${estilos.desenfocado}`} aria-hidden="true">
+                      {ficha.beneficios.join(' · ')}
+                    </p>
+                    <p className="sr-only">Beneficio exclusivo para socios.</p>
+                  </>
+                ) : (
+                  <p className={estilos.beneficioPronto}>Pronto con beneficio para socios.</p>
+                )}
+              </div>
+              <Button href="/miembros/login" variant="ghost" size="sm" icon={<Lock size={14} />}>
+                Inicia sesión para verlo
+              </Button>
+            </>
+          )
         }
         accion={
           soporte && (

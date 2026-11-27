@@ -4,11 +4,8 @@ import { notFound } from 'next/navigation'
 import { requireMiembroVigente } from '@/lib/miembros/requerir-miembro'
 import { resolverVolverAlCatalogo } from '@/lib/miembros/volver-catalogo'
 import { createClient } from '@/lib/supabase/server'
-import { esPromocionVigente } from '@/lib/comercios/promocion-vigente'
-import { formatearBeneficio } from '@/lib/comercios/beneficios-formato'
-import { cuandoUsarlo, normalizarFranjas } from '@/lib/comercios/franjas-promocion'
-import { asuntoDelTitulo } from '@/lib/comercios/titulo-beneficio'
-import { BeneficiosSocio, type BeneficioSocio } from '@/components/comercios/beneficios-socio'
+import { armarBeneficiosFicha } from '@/lib/comercios/beneficios-ficha'
+import { BeneficiosSocio } from '@/components/comercios/beneficios-socio'
 import { AdornoEstrella } from '@/components/ui/marca/marca'
 import { resolverLogoComercio } from '@/lib/comercios/logo-comercio'
 import { leerHorariosDeSucursales } from '@/lib/comercios/horario-datos'
@@ -236,30 +233,7 @@ export default async function FichaComercioPage({
   /* SOLO PROMOCIONES VIGENTES, con el mismo criterio que el directorio: una
      ficha que anunciara un beneficio caducado prometería lo que la caja
      rechaza. */
-  const beneficios: BeneficioSocio[] = (promociones ?? [])
-    .filter((p) => esPromocionVigente(p.activo, p.fecha_inicio, p.fecha_fin, hoy))
-    .flatMap((p) => {
-      const tipoCodigo = codigoTipo.get(p.tipo_beneficio_id)
-      if (!tipoCodigo) return []
-      const valor = formatearBeneficio(tipoCodigo, p.valor)
-      const franjas = normalizarFranjas(p.franjas_horarias)
-      return [
-        {
-          id: p.id,
-          tipo: tipoCodigo,
-          // El titular: «10% de descuento · Brunch» (sin repetir el valor).
-          valor,
-          asunto: asuntoDelTitulo(valor, p.titulo),
-          descripcion: p.descripcion,
-          // CUÁNDO, lo que el socio necesita saber antes de ir: los días
-          // enteros con sus horas completas (o «Todo el día»).
-          cuando: cuandoUsarlo(p.dias_semana, franjas),
-          dias: p.dias_semana,
-          franjas,
-          restricciones: p.restricciones,
-        },
-      ]
-    })
+  const beneficios = armarBeneficiosFicha(promociones ?? [], codigoTipo, hoy)
 
   /* Con la sesión del socio (la política deja ver solo sucursales activas de
      comercios activos). Si la tabla no existe, llega vacío y no se dice nada. */

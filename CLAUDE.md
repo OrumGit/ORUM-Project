@@ -1374,6 +1374,25 @@ el cierre» es 23:59), hasta `MAX_FRANJAS` (6) y sin cruzarse el mismo día.
   no) y la escritura (`escribirConFranjas`) reintenta sin ella; solo si la
   promoción LLEVA franjas avisa de que falta aplicarla.
 
+**Los beneficios del Portal Público SE LEEN** (27/11/2026: «que los
+usuarios que no son miembros también puedan ver los beneficios, pero no las
+reseñas ni nada de eso que pueda perjudicar al negocio; guarda la lógica de
+los beneficios ocultos por si el cliente quiere volver a ponerlo»). La
+tarjeta del directorio dice el beneficio («20%») y la ficha pública enseña
+cada beneficio ENTERO con `BeneficiosSocio` —titular, descripción, cuándo y
+condiciones— bajo «Beneficio(s) para socios ORUM», con «Hazte socio para
+usarlo» (a `#membresias`). Las dos fichas arman la lista con la MISMA
+función, `armarBeneficiosFicha` (`lib/comercios/beneficios-ficha.ts`, pura y
+probada); la pública la guarda en `FichaPublica.detalleBeneficios` (clave de
+caché `publico-ficha-v2`). **El interruptor es UNA línea**:
+`BENEFICIOS_EN_EL_PORTAL_PUBLICO` en `lib/publico/beneficios-publicos.ts`
+(`'a-la-vista'` · `'oculto'`); con `'oculto'` vuelve la versión desenfocada
+con el candado e «Inicia sesión para verlo», que se conserva entera en la
+tarjeta y en la ficha. El Portal Público NUNCA enseña reseñas, calificación
+ni ventas, sea cual sea el interruptor. Comprobado con los comercios reales
+(lectura) a 390 y 1280 px, en la ficha completa y en la que abre encima, y
+con el interruptor en los dos valores.
+
 **Los beneficios en la ficha del socio** (`BeneficiosSocio`; versión
 MINIMALISTA del 29/10/2026: «mucha negrita, se ve muy cargado; que se
 entienda a la primera»). El recuadro del beneficio (`.beneficio`) es una
