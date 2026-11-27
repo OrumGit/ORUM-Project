@@ -376,8 +376,10 @@ contraste de esta sección. Donde no se cumplan, sigue siendo tinta.
   **píldora** (`--boton-radio`, el gancho de `button.module.css` que pone el
   shell), los secundarios sin borde y con sombra (15/10/2026), y su acción
   ceremonial —«Registrar miembro», en la barra de arriba— es
-  `variant="brand"` con texto en tinta; desde el 26/11/2026 en el oro CLARO
-  `--gold-300` (12,65:1; «el amarillo más claro»), solo ese botón. `--action` NO se pasó al oro: también pinta la casilla marcada,
+  `variant="brand"` con texto en tinta; desde el 26/11/2026 TODOS los
+  `brand` del panel van en el oro CLARO `--gold-300` (12,65:1; «el amarillo
+  más claro», primero «Registrar miembro» y el mismo día «los demás botones
+  dorados»; lo pone `--action-gold` en `.panel`). `--action` NO se pasó al oro: también pinta la casilla marcada,
   y su filo daría 1,9:1 contra el blanco.
 - **Herramienta de Comercios** (desde el 04/10/2026): la acción principal va
   en píldora con relleno `--gold-500` y texto en tinta (8,5:1), el mismo par
@@ -1670,9 +1672,9 @@ paleta:
   tinta y 700. **Sin «Buscar»** («ya está arriba, no es
   necesario ponerlo dos veces»): Inicio · Miembros · Comercios · Más
   (empleado: Inicio · Miembros · Vender · Más). La barra LATERAL del
-  ordenador sigue negra. «Registrar miembro» va también en `--gold-300`
-  (solo él; los demás `brand` del panel siguen en `--gold-500`). En el
-  teléfono es un círculo con su icono, y su regla va con DOS clases (`.barra .registrar`): con una,
+  ordenador sigue negra. «Registrar miembro» va también en `--gold-300`,
+  como todos los botones dorados del panel. En el teléfono es un círculo
+  con su icono, y su regla va con DOS clases (`.barra .registrar`): con una,
   en producción ganaba el relleno de `.pildora` y el icono quedaba a 0 px
   («un círculo amarillo sin nada»).
 - **El buscador (`BuscadorPanel`) sustituye a la paleta**: un campo normal

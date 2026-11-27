@@ -12,9 +12,13 @@
 
 /*
   LOS BOTONES DEL PANEL, EN PÍLDORA. `--boton-radio` es el gancho de
-  `button.module.css`. La acción ceremonial (`variant="brand"`) en
-  `--gold-500` con texto en tinta (8,5:1). El primario de trabajo
-  (`variant="primary"`) sigue en tinta.
+  `button.module.css`. La acción ceremonial (`variant="brand"`) en el ORO
+  CLARO, `--gold-300`, con texto en tinta (12,65:1; 26/11/2026: «pon el
+  amarillo claro en los demás botones dorados»; antes `--gold-500`). El
+  relleno pálido no marca un filo de 3:1 contra el blanco: lo sostienen la
+  sombra, el texto y el foco visible, la misma relajación que el botón de
+  WhatsApp de la fachada. El primario de trabajo (`variant="primary"`)
+  sigue en tinta.
 
   Y LOS SECUNDARIOS, SIN BORDE: una píldora blanca con su sombra (encargo:
   «no me gustan los bordes; pon una sombra y un efecto al pasar el ratón»).
@@ -26,7 +30,7 @@
 */
 .panel[data-theme='light'] {
   --boton-radio: var(--radius-full);
-  --action-gold: var(--gold-500);
+  --action-gold: var(--gold-300);
   --action-gold-fg: var(--tinta-1);
   --boton-secundario-borde: transparent;
   --boton-secundario-sombra: var(--shadow-card);
@@ -404,19 +408,8 @@
   }
 }
 
-/*
-  «Registrar miembro» en el ORO CLARO (`--gold-300`, 26/11/2026: «utiliza
-  el amarillo más claro»), igual que la píldora de la barra inferior. Texto
-  e icono en tinta: 12,65:1. El relleno pálido no marca un filo de 3:1
-  contra el blanco; lo sostienen su sombra, su texto (en el teléfono, su
-  `aria-label`) y el foco visible — la misma relajación que el botón de
-  WhatsApp de la fachada. Solo este botón: los demás `brand` del panel
-  siguen en `--gold-500`. Dos clases para ganarle a `.brand` sin depender
-  del orden de las hojas.
-*/
-.barra .registrar {
+.registrar {
   flex-shrink: 0;
-  --action-gold: var(--gold-300);
 }
 
 /*
