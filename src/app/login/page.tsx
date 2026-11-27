@@ -1,20 +1,23 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { RUTA_MANIFIESTO } from '@/lib/shared/manifiesto-app'
+import { rutaManifiestoPanel } from '@/lib/auth/app-panel'
 import { getPerfilActual } from '@/lib/auth/auth'
 import { PantallaAcceso } from '@/components/ui/pantalla-acceso'
 import { LoginForm } from './login-form'
 
 // La puerta del panel instala la aplicación del panel, como el panel mismo.
-export const metadata: Metadata = {
-  title: 'Iniciar sesión · ORUM',
-  manifest: RUTA_MANIFIESTO.admin,
-  applicationName: 'ORUM Admin',
-  appleWebApp: {
-    capable: true,
-    title: 'ORUM Admin',
-    statusBarStyle: 'black-translucent',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Iniciar sesión · ORUM',
+    // Su dirección sale de la llave de la app (`lib/auth/app-panel.ts`).
+    manifest: await rutaManifiestoPanel(),
+    applicationName: 'ORUM Admin',
+    appleWebApp: {
+      capable: true,
+      title: 'ORUM Admin',
+      statusBarStyle: 'black-translucent',
+    },
+  }
 }
 
 const MENSAJES: Record<string, string> = {

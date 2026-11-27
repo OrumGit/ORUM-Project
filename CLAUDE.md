@@ -1642,6 +1642,22 @@ paleta:
   comprobó en local que sin marca da 404, que la puerta pone la marca, que
   con ella `/OrumAdminLogin/miembros` enseña la entrada y que el formulario
   responde desde esa dirección.
+  ⚠️ **Y la app TRAE SU LLAVE** (26/11/2026: «la cerré, intenté volver a
+  entrar y me volvió a aparecer el mensaje»). La marca sola no bastaba: una
+  app instalada antes, o la de un iPhone —que guarda sus cookies aparte de
+  Safari—, nunca la tenía y no podía conseguirla. Ahora la app abre en
+  `/OrumAdminLogin?app=<llave>` (`lib/auth/app-panel.ts`, otro HMAC de la
+  puerta): el `proxy` deja la marca y redirige sin el parámetro (303; una
+  llave mala recibe la misma redirección, sin marca). El manifiesto del
+  panel ya no es `/manifest-admin.webmanifest` (retirado): vive en
+  `/app-panel/<llave>.webmanifest`, y lo enlazan SOLO el panel con sesión
+  del equipo (el `generateMetadata` del layout lo comprueba: los metadatos
+  se resuelven aunque `requireRol` dé 404, y sin eso el 404 lo enlazaba) y
+  la página de entrada. **Las apps instaladas antes del 26/11 se
+  desinstalan y se instalan otra vez desde el panel**: su arranque es un
+  404 y no pueden leer el manifiesto nuevo. Comprobado en local con la
+  compilación de producción (sin llave, 404 y sin manifiesto; con ella,
+  marca y entrada); sin probar en un teléfono real.
   **No la escribas en un enlace, un correo, un documento ni este archivo.**
   Esconde la puerta; lo que la cierra sigue siendo la cuenta del equipo,
   Turnstile y el límite de intentos (`limitador`).
@@ -2050,9 +2066,10 @@ logo»). Todas llevan la «O» con la estrella del cliente, cada una en su
 color: **socio** dorada sobre BLANCO (abre en `/miembros`, `scope: '/'`),
 **comercio** dorada sobre NEGRO (`/comercios`) y **panel** plateada sobre
 NEGRO (`/admin`, la de antes abría en `/miembros`). Cada una tiene su
-manifiesto (`manifest-miembros|comercios|admin.webmanifest`, Route
-Handlers que salen de `lib/shared/manifiesto-app.ts`: nombres, colores,
-iconos, atajos) y su `id`, así que son aplicaciones distintas en el
+manifiesto (`manifest-miembros|comercios.webmanifest` y, el del panel,
+`/app-panel/<llave>.webmanifest` desde el 26/11/2026 —ver «La APP
+INSTALADA del panel siempre abre»—; Route Handlers que salen de
+`lib/shared/manifiesto-app.ts`: nombres, colores, iconos, atajos) y su `id`, así que son aplicaciones distintas en el
 teléfono. Las enlaza el layout de cada portal y de su acceso
 (`miembros/layout.tsx` y `comercios/layout.tsx`, que no pintan nada;
 `admin/layout.tsx`; `login/page.tsx`, servida en la dirección secreta), con su `apple-icon.png` en la misma

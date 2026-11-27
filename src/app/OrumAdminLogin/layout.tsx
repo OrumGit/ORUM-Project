@@ -1,28 +1,39 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { cookies } from 'next/headers'
-import { requireRol } from '@/lib/auth/auth'
+import { getPerfilActual, requireRol } from '@/lib/auth/auth'
 import { COOKIE_EQUIPO, esMarcaValida } from '@/lib/auth/marca-equipo'
 import { cerrarSesion, recordarEsteDispositivo } from '@/app/login/actions'
 import { RecordarDispositivo } from '@/components/shell/recordar-dispositivo'
 import { AppShell } from '@/components/shell/app-shell'
 import { RouteProgress } from '@/components/shell/route-progress'
-import { RUTA_MANIFIESTO } from '@/lib/shared/manifiesto-app'
+import { rutaManifiestoPanel } from '@/lib/auth/app-panel'
 
 /*
   El panel enlaza SU aplicación instalable (abre en `/OrumAdminLogin`, la «O»
   plateada sobre negro; ver `lib/shared/manifiesto-app.ts`). `appleWebApp`
   va completo: los metadatos se fusionan por clave, sin mezclar por dentro.
 */
-export const metadata: Metadata = {
-  title: 'Panel · ORUM',
-  manifest: RUTA_MANIFIESTO.admin,
-  applicationName: 'ORUM Admin',
-  appleWebApp: {
-    capable: true,
-    title: 'ORUM Admin',
-    statusBarStyle: 'black-translucent',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  /*
+    El manifiesto lleva la llave de la app: SOLO para el equipo con sesión.
+    Los metadatos se resuelven aunque `requireRol` dé «no encontrado», y sin
+    esta comprobación el 404 de `/OrumAdminLogin` enlazaba el manifiesto.
+  */
+  const perfil = await getPerfilActual()
+  const delEquipo =
+    !!perfil?.activo && (perfil.rolCodigo === 'super_admin' || perfil.rolCodigo === 'empleado')
+  return {
+    title: 'Panel · ORUM',
+    // Su dirección sale de la llave de la app (`lib/auth/app-panel.ts`).
+    manifest: delEquipo ? await rutaManifiestoPanel() : undefined,
+    applicationName: 'ORUM Admin',
+    appleWebApp: {
+      capable: true,
+      title: 'ORUM Admin',
+      statusBarStyle: 'black-translucent',
+    },
+  }
 }
 
 /**

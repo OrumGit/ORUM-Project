@@ -38,10 +38,11 @@ const NEGRO = '#0A0A0C'
 const BLANCO = '#FFFFFF'
 
 /** Dónde se sirve el manifiesto de cada aplicación. */
-export const RUTA_MANIFIESTO: Record<AppInstalable, string> = {
+export const RUTA_MANIFIESTO: Record<Exclude<AppInstalable, 'admin'>, string> = {
   socio: '/manifest-miembros.webmanifest',
   comercio: '/manifest-comercios.webmanifest',
-  admin: '/manifest-admin.webmanifest',
+  // La del panel NO tiene dirección fija: sale de su llave
+  // (`lib/auth/app-panel.ts`, `rutaManifiestoPanel`).
 }
 
 function iconos(app: AppInstalable): NonNullable<MetadataRoute.Manifest['icons']> {
@@ -139,8 +140,12 @@ export const MANIFIESTOS: Record<AppInstalable, MetadataRoute.Manifest> = {
 }
 
 /** La respuesta de un Route Handler de manifiesto. */
-export function respuestaManifiesto(app: AppInstalable): Response {
-  return new Response(JSON.stringify(MANIFIESTOS[app]), {
-    headers: { 'Content-Type': 'application/manifest+json; charset=utf-8' },
+export function respuestaManifiesto(app: AppInstalable, cambios?: MetadataRoute.Manifest): Response {
+  return new Response(JSON.stringify({ ...MANIFIESTOS[app], ...cambios }), {
+    headers: {
+      'Content-Type': 'application/manifest+json; charset=utf-8',
+      // El del panel lleva su llave: que no lo guarde ninguna caché compartida.
+      ...(app === 'admin' ? { 'Cache-Control': 'private, no-store' } : {}),
+    },
   })
 }

@@ -55,7 +55,12 @@ export function marcaDeEquipo(puerta: string = rutaAccesoPanel()): Promise<strin
   return marca
 }
 
-async function calcularMarca(puerta: string): Promise<string> {
+function calcularMarca(puerta: string): Promise<string> {
+  return firmarConPuerta(puerta, MENSAJE)
+}
+
+/** HMAC-SHA256 de `mensaje` con la puerta como clave, en hex de 64. */
+export async function firmarConPuerta(puerta: string, mensaje: string): Promise<string> {
   const codificar = new TextEncoder()
   const clave = await crypto.subtle.importKey(
     'raw',
@@ -64,7 +69,7 @@ async function calcularMarca(puerta: string): Promise<string> {
     false,
     ['sign'],
   )
-  const firma = await crypto.subtle.sign('HMAC', clave, codificar.encode(MENSAJE))
+  const firma = await crypto.subtle.sign('HMAC', clave, codificar.encode(mensaje))
   return Array.from(new Uint8Array(firma), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
