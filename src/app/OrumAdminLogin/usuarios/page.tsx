@@ -1,4 +1,4 @@
-import { Camera, MoreHorizontal, Pencil, UserPlus } from 'lucide-react'
+import { Camera, MoreHorizontal, Pencil, Receipt, UserPlus } from 'lucide-react'
 import { requireRol } from '@/lib/auth/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AccionEstado } from '@/components/ui/accion-estado'
@@ -126,9 +126,15 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
         title="Usuarios"
         description="Empleados y administradores con acceso al panel."
         actions={
-          <Button href="/OrumAdminLogin/usuarios/nuevo" icon={<UserPlus size={16} />}>
-            Crear usuario
-          </Button>
+          <>
+            {/* Las membresías sin empleado (las del super admin no tienen fila aquí). */}
+            <Button href="/OrumAdminLogin/usuarios/super-admin/ventas" variant="secondary" icon={<Receipt size={16} />}>
+              Ventas del super admin
+            </Button>
+            <Button href="/OrumAdminLogin/usuarios/nuevo" icon={<UserPlus size={16} />}>
+              Crear usuario
+            </Button>
+          </>
         }
       />
 
@@ -184,6 +190,12 @@ export default async function UsuariosPage({ searchParams }: { searchParams: Pro
                     </Button>
                   }
                 >
+                  <MenuItem
+                    href={`/OrumAdminLogin/usuarios/${f.perfilId}/ventas`}
+                    icon={<Receipt size={16} />}
+                  >
+                    Membresías vendidas
+                  </MenuItem>
                   <MenuItem
                     href={`/OrumAdminLogin/usuarios/${f.perfilId}/editar`}
                     icon={<Pencil size={16} />}

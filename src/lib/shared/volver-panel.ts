@@ -54,6 +54,8 @@ const LUGARES: readonly RegExp[] = [
   /^\/OrumAdminLogin\/comercios\/\d+$/,
   /^\/OrumAdminLogin\/miembros\/\d+$/,
   /^\/OrumAdminLogin\/miembros\/numeros$/,
+  /^\/OrumAdminLogin\/usuarios\/[0-9a-f-]{36}\/ventas$/,
+  /^\/OrumAdminLogin\/usuarios\/super-admin\/ventas$/,
 ]
 
 const esLugar = (ruta: string) => LUGARES.some((r) => r.test(ruta))

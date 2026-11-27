@@ -111,6 +111,15 @@ describe('rutaPadre', () => {
     expect(rutaPadre('/OrumAdminLogin/metricas/comercio/5')).toBe('/OrumAdminLogin/metricas')
   })
 
+  it('las membresías vendidas por un empleado son un lugar, y vuelven a Usuarios', () => {
+    const empleado = '/OrumAdminLogin/usuarios/0f110701-c7de-4a42-ad13-bc41c0a515bf/ventas?periodo=mes'
+    expect(anotarVisita([], empleado)).toEqual([empleado])
+    expect(rutaPadre(empleado)).toBe('/OrumAdminLogin/usuarios')
+    const superAdmin = '/OrumAdminLogin/usuarios/super-admin/ventas?desde=2026-11-01'
+    expect(anotarVisita([], superAdmin)).toEqual([superAdmin])
+    expect(rutaPadre(superAdmin)).toBe('/OrumAdminLogin/usuarios')
+  })
+
   it('lo de la ficha del comercio vuelve a SU pestaña', () => {
     expect(rutaPadre('/OrumAdminLogin/comercios/43/sucursales/nueva')).toBe('/OrumAdminLogin/comercios/43?pestana=sucursales')
     expect(rutaPadre('/OrumAdminLogin/comercios/43/promociones/7/editar')).toBe('/OrumAdminLogin/comercios/43?pestana=promociones')
